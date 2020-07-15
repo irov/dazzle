@@ -26,48 +26,86 @@ void dz_service_destroy( dz_service_t * _service )
     DZ_FREE( _service, _service );
 }
 //////////////////////////////////////////////////////////////////////////
-typedef struct dz_timeline_data_t
+void dz_service_get_providers( dz_service_t * _service, dz_service_providers_t * _providers )
 {
-    float time;
-} dz_timeline_data_t;
+    *_providers = _service->providers;
+}
+//////////////////////////////////////////////////////////////////////////
+typedef struct dz_timeline_interpolate_t
+{
+    dz_timeline_interpolate_type_e type;
+
+    struct dz_timeline_key_t * key;
+
+    dz_userdata_t ud;
+} dz_timeline_interpolate_t;
+//////////////////////////////////////////////////////////////////////////
+typedef struct dz_timeline_interpolate_none_t
+{
+    dz_timeline_interpolate_t base;
+
+} dz_timeline_interpolate_none_t;
+//////////////////////////////////////////////////////////////////////////
+typedef struct dz_timeline_interpolate_randomize_t
+{
+    dz_timeline_interpolate_t base;
+
+} dz_timeline_interpolate_randomize_t;
+//////////////////////////////////////////////////////////////////////////
+typedef struct dz_timeline_interpolate_bezier2_t
+{
+    dz_timeline_interpolate_t base;
+
+    float p0;
+    float p1;
+} dz_timeline_interpolate_bezier2_t;
+//////////////////////////////////////////////////////////////////////////
+typedef struct dz_timeline_key_t
+{
+    float time;    
+    float value;
+
+    dz_timeline_interpolate_t * interpolate;
+
+    dz_userdata_t ud;
+} dz_timeline_key_t;
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_emitter_data_t
 {
     dz_emitter_shape_type_e shape_type;
 
-    dz_timeline_data_t * delay_min;
-    dz_timeline_data_t * delay_max;
+    dz_timeline_key_t * delay;
 
     dz_userdata_t ud;
 } dz_emitter_data_t;
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_emitter_data_point_t
 {
-    dz_emitter_data_t data;
+    dz_emitter_data_t base;
     
-    dz_timeline_data_t * x;
-    dz_timeline_data_t * y;
+    dz_timeline_key_t * x;
+    dz_timeline_key_t * y;
 } dz_emitter_data_point_t;
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_emitter_data_circle_t
 {
-    dz_emitter_data_t data;
+    dz_emitter_data_t base;
 
-    dz_timeline_data_t * x;
-    dz_timeline_data_t * y;
+    dz_timeline_key_t * x;
+    dz_timeline_key_t * y;
 
-    dz_timeline_data_t * r;
+    dz_timeline_key_t * r;
 } dz_emitter_data_circle_t;
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_emitter_data_line_t
 {
-    dz_emitter_data_t data;
+    dz_emitter_data_t base;
 
-    dz_timeline_data_t * bx;
-    dz_timeline_data_t * by;
+    dz_timeline_key_t * bx;
+    dz_timeline_key_t * by;
 
-    dz_timeline_data_t * ex;
-    dz_timeline_data_t * ey;
+    dz_timeline_key_t * ex;
+    dz_timeline_key_t * ey;
 } dz_emitter_data_line_t;
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t ** _emitter_data, dz_emitter_shape_type_e _type, dz_userdata_t _ud )
@@ -104,3 +142,70 @@ void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emit
 {
     DZ_FREE( _service, _emitter_data );
 }
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _time, float _value, dz_userdata_t _ud )
+{
+    dz_timeline_key_t * key = DZ_NEW( _service, dz_timeline_key_t );
+
+    key->time = _time;
+    key->value = _value;
+    key->ud = _ud;
+
+    *_key = key;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_timeline_key_destroy( dz_service_t * _service, dz_timeline_key_t * _key )
+{
+    DZ_FREE( _service, _key );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud )
+{
+    dz_timeline_interpolate_t * interpolate = DZ_NEW( _service, dz_timeline_interpolate_t );
+
+    interpolate->type = _type;
+    interpolate->ud = _ud;
+
+    *_interpolate = interpolate;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_timeline_interpolate_destroy( dz_service_t * _service, dz_timeline_interpolate_t * _interpolate )
+{
+    DZ_FREE( _service, _interpolate );
+}
+//////////////////////////////////////////////////////////////////////////
+typedef struct dz_emitter_t
+{
+    const dz_emitter_data_t * data;
+
+    float time;
+} dz_emitter_t;
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_emitter_create( dz_service_t * _service, const dz_emitter_data_t * _emitter_data, dz_emitter_t ** _emitter )
+{
+    dz_emitter_t * emitter = DZ_NEW( _service, dz_emitter_t );
+
+    emitter->data = _emitter_data;
+    emitter->time = 0.f;
+
+    *_emitter = emitter;
+
+    return DZ_FAILURE;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter )
+{
+    DZ_FREE( _service, _emitter );
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float _time )
+{
+    DZ_UNUSED( _service );
+
+    _emitter->time += _time;
+}
+//////////////////////////////////////////////////////////////////////////
