@@ -8,6 +8,8 @@ typedef struct dz_service_t dz_service_t;
 typedef void * (*dz_malloc_t)(dz_size_t _size, dz_userdata_t _ud);
 typedef void * (*dz_realloc_t)(void * _ptr, dz_size_t _size, dz_userdata_t _ud);
 typedef void (*dz_free_t)(void * _ptr, dz_userdata_t _ud);
+typedef float (*dz_cosf_t)(float _a, dz_userdata_t _ud);
+typedef float (*dz_sinf_t)(float _a, dz_userdata_t _ud);
 typedef float (*dz_randomize_t)(float _r, dz_userdata_t _ud);
 
 typedef struct dz_service_providers_t
@@ -15,6 +17,8 @@ typedef struct dz_service_providers_t
     dz_malloc_t f_malloc;
     dz_realloc_t f_realloc;
     dz_free_t f_free;
+    dz_cosf_t f_cosf;
+    dz_sinf_t f_sinf;
     dz_randomize_t f_randomize;
 } dz_service_providers_t;
 
@@ -59,7 +63,7 @@ void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emit
 
 typedef struct dz_emitter_t dz_emitter_t;
 
-dz_result_t dz_emitter_create( dz_service_t * _service, const dz_emitter_data_t * _emitter_data, dz_emitter_t ** _emitter );
+dz_result_t dz_emitter_create( dz_service_t * _service, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, dz_emitter_t ** _emitter );
 void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter );
 
 void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float _time );
