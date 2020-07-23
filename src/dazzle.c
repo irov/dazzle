@@ -84,6 +84,11 @@ dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline
 //////////////////////////////////////////////////////////////////////////
 void dz_timeline_interpolate_destroy( dz_service_t * _service, dz_timeline_interpolate_t * _interpolate )
 {
+    if( _interpolate->key != DZ_NULLPTR )
+    {
+        dz_timeline_key_destroy( _service, _interpolate->key );
+    }
+
     DZ_FREE( _service, _interpolate );
 }
 //////////////////////////////////////////////////////////////////////////
@@ -147,6 +152,11 @@ dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t *
 //////////////////////////////////////////////////////////////////////////
 void dz_timeline_key_destroy( dz_service_t * _service, dz_timeline_key_t * _key )
 {
+    if( _key->interpolate != DZ_NULLPTR )
+    {
+        dz_timeline_interpolate_destroy( _service, _key->interpolate );
+    }
+
     DZ_FREE( _service, _key );
 }
 //////////////////////////////////////////////////////////////////////////
@@ -189,33 +199,33 @@ dz_result_t dz_timeline_key_randomize_get_min_max( const dz_timeline_key_t * _ke
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_affector_data_t
 {
-    dz_timeline_key_t * life;
-    dz_timeline_key_t * chance_extra_life;
-    dz_timeline_key_t * extra_life;
-    dz_timeline_key_t * move_speed;
-    dz_timeline_key_t * move_accelerate;
-    dz_timeline_key_t * rotate_speed;
-    dz_timeline_key_t * rotate_accelerate;
-    dz_timeline_key_t * size;
-    dz_timeline_key_t * transparent;
-    dz_timeline_key_t * color_r;
-    dz_timeline_key_t * color_g;
-    dz_timeline_key_t * color_b;
+    const dz_timeline_key_t * timeline_life;
+    const dz_timeline_key_t * timeline_chance_extra_life;
+    const dz_timeline_key_t * timeline_extra_life;
+    const dz_timeline_key_t * timeline_move_speed;
+    const dz_timeline_key_t * timeline_move_accelerate;
+    const dz_timeline_key_t * timeline_rotate_speed;
+    const dz_timeline_key_t * timeline_rotate_accelerate;
+    const dz_timeline_key_t * timeline_size;
+    const dz_timeline_key_t * timeline_transparent;
+    const dz_timeline_key_t * timeline_color_r;
+    const dz_timeline_key_t * timeline_color_g;
+    const dz_timeline_key_t * timeline_color_b;
 } dz_affector_data_t;
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data )
 {
     dz_affector_data_t * affector_data = DZ_NEW( _service, dz_affector_data_t );
 
-    affector_data->life = DZ_NULLPTR;
-    affector_data->chance_extra_life = DZ_NULLPTR;
-    affector_data->extra_life = DZ_NULLPTR;
-    affector_data->move_speed = DZ_NULLPTR;
-    affector_data->move_accelerate = DZ_NULLPTR;
-    affector_data->rotate_speed = DZ_NULLPTR;
-    affector_data->rotate_accelerate = DZ_NULLPTR;
-    affector_data->size = DZ_NULLPTR;
-    affector_data->transparent = DZ_NULLPTR;
+    affector_data->timeline_life = DZ_NULLPTR;
+    affector_data->timeline_chance_extra_life = DZ_NULLPTR;
+    affector_data->timeline_extra_life = DZ_NULLPTR;
+    affector_data->timeline_move_speed = DZ_NULLPTR;
+    affector_data->timeline_move_accelerate = DZ_NULLPTR;
+    affector_data->timeline_rotate_speed = DZ_NULLPTR;
+    affector_data->timeline_rotate_accelerate = DZ_NULLPTR;
+    affector_data->timeline_size = DZ_NULLPTR;
+    affector_data->timeline_transparent = DZ_NULLPTR;
 
     *_affector_data = affector_data;
 
@@ -224,17 +234,137 @@ dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t
 //////////////////////////////////////////////////////////////////////////
 void dz_affector_data_destory( dz_service_t * _service, dz_affector_data_t * _affector_data )
 {
-    DZ_FREE( _service, _affector_data->life );
-    DZ_FREE( _service, _affector_data->chance_extra_life );
-    DZ_FREE( _service, _affector_data->extra_life );
-    DZ_FREE( _service, _affector_data->move_speed );
-    DZ_FREE( _service, _affector_data->move_accelerate );
-    DZ_FREE( _service, _affector_data->rotate_speed );
-    DZ_FREE( _service, _affector_data->rotate_accelerate );
-    DZ_FREE( _service, _affector_data->size );
-    DZ_FREE( _service, _affector_data->transparent );
+    DZ_FREE( _service, _affector_data->timeline_life );
+    DZ_FREE( _service, _affector_data->timeline_chance_extra_life );
+    DZ_FREE( _service, _affector_data->timeline_extra_life );
+    DZ_FREE( _service, _affector_data->timeline_move_speed );
+    DZ_FREE( _service, _affector_data->timeline_move_accelerate );
+    DZ_FREE( _service, _affector_data->timeline_rotate_speed );
+    DZ_FREE( _service, _affector_data->timeline_rotate_accelerate );
+    DZ_FREE( _service, _affector_data->timeline_size );
+    DZ_FREE( _service, _affector_data->timeline_transparent );
 
     DZ_FREE( _service, _affector_data );
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_life = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_life( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_life;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_chance_extra_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_chance_extra_life = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_chance_extra_life( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_chance_extra_life;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_extra_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_extra_life = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_extra_life( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_extra_life;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_move_speed( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_move_speed = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_move_speed( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_move_speed;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_move_accelerate( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_move_accelerate = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_move_accelerate( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_move_accelerate;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_rotate_speed( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_rotate_speed = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_rotate_speed( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_rotate_speed;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_rotate_accelerate( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_rotate_accelerate = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_rotate_accelerate( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_rotate_accelerate;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_size( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_size = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_size( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_size;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_transparent( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_transparent = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_transparent( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_transparent;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_color_r( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_color_r = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_color_r( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_color_r;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_color_g( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_color_g = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_color_g( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_color_g;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_affector_data_set_color_b( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline )
+{
+    _affector_data->timeline_color_b = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_affector_data_get_color_b( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->timeline_color_b;
 }
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_emitter_data_t
@@ -317,6 +447,36 @@ void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emit
     DZ_FREE( _service, _emitter_data );
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_emitter_data_set_life( dz_emitter_data_t * _emitter_data, float _life )
+{
+    _emitter_data->life = _life;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_emitter_data_get_life( const dz_emitter_data_t * _emitter_data )
+{
+    return _emitter_data->life;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_emitter_data_set_timeline_key_spawn_delay( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline )
+{
+    _emitter_data->spawn_delay = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_delay( const dz_emitter_data_t * _emitter_data )
+{
+    return _emitter_data->spawn_delay;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_emitter_data_set_timeline_key_spawn_count( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline )
+{
+    _emitter_data->spawn_count = _timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_count( const dz_emitter_data_t * _emitter_data )
+{
+    return _emitter_data->spawn_count;
+}
+//////////////////////////////////////////////////////////////////////////
 typedef struct dz_timeline_value_t
 {
     const dz_timeline_key_t * begin;
@@ -373,7 +533,7 @@ static float __get_randf( uint32_t * _seed )
     return valuef;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_key_value( uint32_t _seed, const dz_timeline_key_t * _key )
+static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key )
 {
     switch( _key->type )
     {
@@ -389,9 +549,7 @@ static float __get_timeline_key_value( uint32_t _seed, const dz_timeline_key_t *
         {
             const dz_timeline_key_randomize_t * key_randomize = (const dz_timeline_key_randomize_t *)_key;
 
-            float rf = __get_randf0( _seed );
-
-            float value = key_randomize->value_min + (key_randomize->value_max - key_randomize->value_min) * rf;
+            float value = key_randomize->value_min + (key_randomize->value_max - key_randomize->value_min) * _t;
 
             return value;
         }break;
@@ -402,7 +560,7 @@ static float __get_timeline_key_value( uint32_t _seed, const dz_timeline_key_t *
     return 0.f;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value( uint32_t _seed, dz_timeline_value_t * _value, float _time )
+static float __get_timeline_value( float _t, dz_timeline_value_t * _value, float _time )
 {
     for( const dz_timeline_key_t * current = _value->current; current != DZ_NULLPTR && current->interpolate != DZ_NULLPTR; current = current->interpolate->key )
     {
@@ -410,11 +568,11 @@ static float __get_timeline_value( uint32_t _seed, dz_timeline_value_t * _value,
 
         if( current->time < dt )
         {
-            float current_value = __get_timeline_key_value( _seed, current );
+            float current_value = __get_timeline_key_value( _t, current );
 
             const dz_timeline_key_t * next = current->interpolate->key;
 
-            float next_value = __get_timeline_key_value( _seed, next );
+            float next_value = __get_timeline_key_value( _t, next );
 
             float t = (_time - _value->time) * current->inv_time;
 
@@ -430,9 +588,18 @@ static float __get_timeline_value( uint32_t _seed, dz_timeline_value_t * _value,
 
     const dz_timeline_key_t * last = _value->current;
 
-    float last_value = __get_timeline_key_value( _seed, last );
+    float last_value = __get_timeline_key_value( _t, last );
 
     return last_value;
+}
+//////////////////////////////////////////////////////////////////////////
+static float __get_timeline_value_seed( uint32_t * _seed, dz_timeline_value_t * _value, float _time )
+{
+    float t = __get_rand( _seed );
+
+    float value = __get_timeline_value( t, _value, _time );
+
+    return value;
 }
 //////////////////////////////////////////////////////////////////////////
 typedef enum dz_particle_seed_e
@@ -455,7 +622,7 @@ typedef enum dz_particle_seed_e
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_particle_t
 {
-    uint32_t seeds[__DZ_PARTICLE_SEED_MAX__];
+    float rands[__DZ_PARTICLE_SEED_MAX__];
 
     float life;
     float time;
@@ -535,18 +702,18 @@ dz_result_t dz_emitter_create( dz_service_t * _service, const dz_emitter_data_t 
     emitter->spawn_delay = __new_timeline_value( _service, emitter->emitter_data->spawn_delay );
     emitter->spawn_count = __new_timeline_value( _service, emitter->emitter_data->spawn_count );
 
-    emitter->life = __new_timeline_value( _service, emitter->affector_data->life );
-    emitter->chance_extra_life = __new_timeline_value( _service, emitter->affector_data->chance_extra_life );
-    emitter->extra_life = __new_timeline_value( _service, emitter->affector_data->extra_life );
-    emitter->move_speed = __new_timeline_value( _service, emitter->affector_data->move_speed );
-    emitter->move_accelerate = __new_timeline_value( _service, emitter->affector_data->move_accelerate );
-    emitter->rotate_speed = __new_timeline_value( _service, emitter->affector_data->rotate_speed );
-    emitter->rotate_accelerate = __new_timeline_value( _service, emitter->affector_data->rotate_accelerate );
-    emitter->size = __new_timeline_value( _service, emitter->affector_data->size );
-    emitter->transparent = __new_timeline_value( _service, emitter->affector_data->transparent );
-    emitter->color_r = __new_timeline_value( _service, emitter->affector_data->color_r );
-    emitter->color_g = __new_timeline_value( _service, emitter->affector_data->color_g );
-    emitter->color_b = __new_timeline_value( _service, emitter->affector_data->color_b );
+    emitter->life = __new_timeline_value( _service, emitter->affector_data->timeline_life );
+    emitter->chance_extra_life = __new_timeline_value( _service, emitter->affector_data->timeline_chance_extra_life );
+    emitter->extra_life = __new_timeline_value( _service, emitter->affector_data->timeline_extra_life );
+    emitter->move_speed = __new_timeline_value( _service, emitter->affector_data->timeline_move_speed );
+    emitter->move_accelerate = __new_timeline_value( _service, emitter->affector_data->timeline_move_accelerate );
+    emitter->rotate_speed = __new_timeline_value( _service, emitter->affector_data->timeline_rotate_speed );
+    emitter->rotate_accelerate = __new_timeline_value( _service, emitter->affector_data->timeline_rotate_accelerate );
+    emitter->size = __new_timeline_value( _service, emitter->affector_data->timeline_size );
+    emitter->transparent = __new_timeline_value( _service, emitter->affector_data->timeline_transparent );
+    emitter->color_r = __new_timeline_value( _service, emitter->affector_data->timeline_color_r );
+    emitter->color_g = __new_timeline_value( _service, emitter->affector_data->timeline_color_g );
+    emitter->color_b = __new_timeline_value( _service, emitter->affector_data->timeline_color_b );
 
     *_emitter = emitter;
 
@@ -560,18 +727,18 @@ void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter )
 //////////////////////////////////////////////////////////////////////////
 static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter, dz_particle_t * _p, float _time )
 {
-    _p->move_speed = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_MOVE_SPEED], _emitter->move_speed, _time );
-    _p->move_accelerate = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_MOVE_ACCELERATE], _emitter->move_accelerate, _time );
+    _p->move_speed = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_MOVE_SPEED], _emitter->move_speed, _time );
+    _p->move_accelerate = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_MOVE_ACCELERATE], _emitter->move_accelerate, _time );
 
-    _p->rotate_speed = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_ROTATE_SPEED], _emitter->rotate_speed, _time );
-    _p->rotate_accelerate = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_MOVE_ACCELERATE], _emitter->rotate_accelerate, _time );
+    _p->rotate_speed = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_ROTATE_SPEED], _emitter->rotate_speed, _time );
+    _p->rotate_accelerate = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_MOVE_ACCELERATE], _emitter->rotate_accelerate, _time );
 
-    _p->size = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_SIZE], _emitter->size, _time );
+    _p->size = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_SIZE], _emitter->size, _time );
 
-    _p->transparent = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_TRANSPARENT], _emitter->transparent, _time );
-    _p->color_r = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_COLOR_R], _emitter->color_r, _time );
-    _p->color_g = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_COLOR_G], _emitter->color_g, _time );
-    _p->color_b = __get_timeline_value( _p->seeds[DZ_PARTICLE_SEED_COLOR_B], _emitter->color_b, _time );
+    _p->transparent = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_TRANSPARENT], _emitter->transparent, _time );
+    _p->color_r = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_COLOR_R], _emitter->color_r, _time );
+    _p->color_g = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_COLOR_G], _emitter->color_g, _time );
+    _p->color_b = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_COLOR_B], _emitter->color_b, _time );
 
     _p->rotate_accelerate_aux += _p->rotate_accelerate * _time;
 
@@ -609,7 +776,7 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
 
     for( uint32_t index = 0; index != __DZ_PARTICLE_SEED_MAX__; ++index )
     {
-        p->seeds[index] = __get_rand( &_emitter->seed );
+        p->rands[index] = __get_randf( &_emitter->seed );
     }
 
     p->life = _life;
@@ -642,7 +809,7 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
 
     for( ;;)
     {
-        float delay = __get_timeline_value( _emitter->seed, _emitter->spawn_delay, _emitter->emitter_time );
+        float delay = __get_timeline_value_seed( &_emitter->seed, _emitter->spawn_delay, _emitter->emitter_time );
 
         if( _emitter->emitter_time + delay < _emitter->time )
         {
@@ -651,16 +818,16 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
 
         float spawn_time = _emitter->emitter_time + delay;
 
-        float count = __get_timeline_value( _emitter->seed, _emitter->spawn_count, spawn_time );
+        float count = __get_timeline_value_seed( &_emitter->seed, _emitter->spawn_count, spawn_time );
 
         while( count > 0.f )
         {
-            float life = __get_timeline_value( _emitter->seed, _emitter->life, spawn_time );
-            float chance_extra_life = __get_timeline_value( _emitter->seed, _emitter->chance_extra_life, spawn_time );
+            float life = __get_timeline_value_seed( &_emitter->seed, _emitter->life, spawn_time );
+            float chance_extra_life = __get_timeline_value_seed( &_emitter->seed, _emitter->chance_extra_life, spawn_time );
 
             if( __get_randf( &_emitter->seed ) <= chance_extra_life )
             {
-                float extra_life = __get_timeline_value( _emitter->seed, _emitter->extra_life, spawn_time );
+                float extra_life = __get_timeline_value_seed( &_emitter->seed, _emitter->extra_life, spawn_time );
 
                 life += extra_life;
             }

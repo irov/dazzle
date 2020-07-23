@@ -26,13 +26,13 @@ static void * dz_realloc( void * _ptr, dz_size_t _size, dz_userdata_t _ud )
     return (dz_size_t *)p + 1;
 }
 //////////////////////////////////////////////////////////////////////////
-static void dz_free( void * _ptr, dz_userdata_t _ud )
+static void dz_free( const void * _ptr, dz_userdata_t _ud )
 {
     dz_size_t * p = (dz_size_t *)_ptr - 1;
 
     *(dz_size_t *)_ud -= *p;
 
-    free( p );
+    free( (void *)p );
 }
 //////////////////////////////////////////////////////////////////////////
 static float dz_cosf( float _a, dz_userdata_t _ud )

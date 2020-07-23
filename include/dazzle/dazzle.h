@@ -7,7 +7,7 @@ typedef struct dz_service_t dz_service_t;
 
 typedef void * (*dz_malloc_t)(dz_size_t _size, dz_userdata_t _ud);
 typedef void * (*dz_realloc_t)(void * _ptr, dz_size_t _size, dz_userdata_t _ud);
-typedef void (*dz_free_t)(void * _ptr, dz_userdata_t _ud);
+typedef void (*dz_free_t)(const void * _ptr, dz_userdata_t _ud);
 typedef float (*dz_cosf_t)(float _a, dz_userdata_t _ud);
 typedef float (*dz_sinf_t)(float _a, dz_userdata_t _ud);
 
@@ -58,6 +58,42 @@ typedef struct dz_affector_data_t dz_affector_data_t;
 dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data );
 void dz_affector_data_destory( dz_service_t * _service, dz_affector_data_t * _affector_data );
 
+void dz_affector_data_set_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_life( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_chance_extra_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_chance_extra_life( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_extra_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_extra_life( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_move_speed( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_move_speed( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_move_accelerate( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_move_accelerate( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_rotate_speed( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_rotate_speed( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_rotate_accelerate( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_rotate_accelerate( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_size( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_size( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_transparent( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_transparent( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_color_r( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_color_r( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_color_g( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_color_g( const dz_affector_data_t * _affector_data );
+
+void dz_affector_data_set_color_b( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_color_b( const dz_affector_data_t * _affector_data );
+
 typedef struct dz_emitter_data_t dz_emitter_data_t;
 
 typedef enum dz_emitter_shape_type_e
@@ -69,6 +105,15 @@ typedef enum dz_emitter_shape_type_e
 
 dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t ** _data, dz_emitter_shape_type_e _type, dz_userdata_t _ud );
 void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emitter_data );
+
+void dz_emitter_data_set_life( dz_emitter_data_t * _emitter_data, float _life );
+float dz_emitter_data_get_life( const dz_emitter_data_t * _emitter_data );
+
+void dz_emitter_data_set_timeline_key_spawn_delay( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline );
+dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_delay( const dz_emitter_data_t * _emitter_data );
+
+void dz_emitter_data_set_timeline_key_spawn_count( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline );
+dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_count( const dz_emitter_data_t * _emitter_data );
 
 typedef struct dz_emitter_t dz_emitter_t;
 
