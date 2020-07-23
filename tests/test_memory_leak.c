@@ -1,6 +1,7 @@
 #include "dazzle/dazzle.h"
 
 #include <stdlib.h>
+#include <math.h>
 
 //////////////////////////////////////////////////////////////////////////
 static void * dz_malloc( dz_size_t _size, dz_userdata_t _ud )
@@ -34,13 +35,22 @@ static void dz_free( void * _ptr, dz_userdata_t _ud )
     free( p );
 }
 //////////////////////////////////////////////////////////////////////////
-static float dz_randomize( float _r, dz_userdata_t _ud )
+static float dz_cosf( float _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
-    float r = (float)(rand()) / (float)(RAND_MAX)*_r;
+    float value = cosf( _a );
 
-    return r;
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static float dz_sinf( float _a, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    float value = sinf( _a );
+
+    return value;
 }
 //////////////////////////////////////////////////////////////////////////
 int main( int argc, char ** argv )
@@ -54,7 +64,8 @@ int main( int argc, char ** argv )
     providers.f_malloc = &dz_malloc;
     providers.f_realloc = &dz_realloc;
     providers.f_free = &dz_free;
-    providers.f_randomize = &dz_randomize;
+    providers.f_cosf = &dz_cosf;
+    providers.f_sinf = &dz_sinf;
 
     dz_service_t * kernel;
     if( dz_service_create( &kernel, &providers, &msz ) == DZ_FAILURE )
