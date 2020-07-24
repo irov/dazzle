@@ -55,44 +55,29 @@ void dz_timeline_interpolate_destroy( dz_service_t * _service, dz_timeline_inter
 
 typedef struct dz_affector_data_t dz_affector_data_t;
 
+typedef enum dz_affector_data_timeline_type_e
+{
+    DZ_AFFECTOR_DATA_TIMELINE_LIFE,
+    DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE,
+    DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE,
+    DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED,
+    DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE,
+    DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED,
+    DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE,
+    DZ_AFFECTOR_DATA_TIMELINE_SIZE,
+    DZ_AFFECTOR_DATA_TIMELINE_TRANSPARENT,
+    DZ_AFFECTOR_DATA_TIMELINE_COLOR_R,
+    DZ_AFFECTOR_DATA_TIMELINE_COLOR_G,
+    DZ_AFFECTOR_DATA_TIMELINE_COLOR_B,
+
+    __DZ_AFFECTOR_DATA_TIMELINE_MAX__
+} dz_affector_data_timeline_type_e;
+
 dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data );
 void dz_affector_data_destory( dz_service_t * _service, dz_affector_data_t * _affector_data );
 
-void dz_affector_data_set_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_life( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_chance_extra_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_chance_extra_life( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_extra_life( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_extra_life( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_move_speed( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_move_speed( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_move_accelerate( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_move_accelerate( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_rotate_speed( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_rotate_speed( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_rotate_accelerate( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_rotate_accelerate( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_size( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_size( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_transparent( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_transparent( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_color_r( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_color_r( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_color_g( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_color_g( const dz_affector_data_t * _affector_data );
-
-void dz_affector_data_set_color_b( dz_affector_data_t * _affector_data, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_color_b( const dz_affector_data_t * _affector_data );
+void dz_affector_data_set_timeline( dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_data_get_timeline( const dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type );
 
 typedef struct dz_emitter_data_t dz_emitter_data_t;
 
