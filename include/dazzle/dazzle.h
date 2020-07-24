@@ -34,7 +34,7 @@ typedef enum dz_timeline_key_type_e
 typedef struct dz_timeline_key_t dz_timeline_key_t;
 
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _time, dz_timeline_key_type_e _type, dz_userdata_t _ud );
-void dz_timeline_key_destroy( dz_service_t * _service, dz_timeline_key_t * _key );
+void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key );
 
 dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _value );
 dz_result_t dz_timeline_key_const_get_value( const dz_timeline_key_t * _key, float * _value );
@@ -109,11 +109,11 @@ void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emit
 void dz_emitter_data_set_life( dz_emitter_data_t * _emitter_data, float _life );
 float dz_emitter_data_get_life( const dz_emitter_data_t * _emitter_data );
 
-void dz_emitter_data_set_timeline_key_spawn_delay( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline );
-dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_delay( const dz_emitter_data_t * _emitter_data );
+void dz_emitter_data_set_timeline_key_spawn_delay( dz_emitter_data_t * _emitter_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_delay( const dz_emitter_data_t * _emitter_data );
 
-void dz_emitter_data_set_timeline_key_spawn_count( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline );
-dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_count( const dz_emitter_data_t * _emitter_data );
+void dz_emitter_data_set_timeline_key_spawn_count( dz_emitter_data_t * _emitter_data, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_count( const dz_emitter_data_t * _emitter_data );
 
 typedef struct dz_emitter_t dz_emitter_t;
 

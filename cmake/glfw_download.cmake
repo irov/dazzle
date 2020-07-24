@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 include(ExternalProject)
 
 ExternalProject_Add(glfw_download PREFIX glfw

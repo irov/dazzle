@@ -35,7 +35,7 @@ typedef struct dz_timeline_interpolate_t
 {
     dz_timeline_interpolate_type_e type;
 
-    struct dz_timeline_key_t * key;
+    const struct dz_timeline_key_t * key;
 
     dz_userdata_t ud;
 } dz_timeline_interpolate_t;
@@ -150,7 +150,7 @@ dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t *
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_destroy( dz_service_t * _service, dz_timeline_key_t * _key )
+void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key )
 {
     if( _key->interpolate != DZ_NULLPTR )
     {
@@ -168,6 +168,7 @@ dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _va
 
     return DZ_SUCCESSFUL;
 }
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_key_const_get_value( const dz_timeline_key_t * _key, float * _value )
 {
     const dz_timeline_key_const_t * key_const = (const dz_timeline_key_const_t *)_key;
@@ -234,15 +235,15 @@ dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t
 //////////////////////////////////////////////////////////////////////////
 void dz_affector_data_destory( dz_service_t * _service, dz_affector_data_t * _affector_data )
 {
-    DZ_FREE( _service, _affector_data->timeline_life );
-    DZ_FREE( _service, _affector_data->timeline_chance_extra_life );
-    DZ_FREE( _service, _affector_data->timeline_extra_life );
-    DZ_FREE( _service, _affector_data->timeline_move_speed );
-    DZ_FREE( _service, _affector_data->timeline_move_accelerate );
-    DZ_FREE( _service, _affector_data->timeline_rotate_speed );
-    DZ_FREE( _service, _affector_data->timeline_rotate_accelerate );
-    DZ_FREE( _service, _affector_data->timeline_size );
-    DZ_FREE( _service, _affector_data->timeline_transparent );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_life );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_chance_extra_life );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_extra_life );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_move_speed );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_move_accelerate );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_rotate_speed );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_rotate_accelerate );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_size );
+    dz_timeline_key_destroy( _service, _affector_data->timeline_transparent );
 
     DZ_FREE( _service, _affector_data );
 }
@@ -373,8 +374,8 @@ typedef struct dz_emitter_data_t
 
     float life;
 
-    dz_timeline_key_t * spawn_delay;
-    dz_timeline_key_t * spawn_count;
+    const dz_timeline_key_t * spawn_delay;
+    const dz_timeline_key_t * spawn_count;
 
     dz_userdata_t ud;
 } dz_emitter_data_t;
@@ -383,29 +384,24 @@ typedef struct dz_emitter_data_point_t
 {
     dz_emitter_data_t base;
 
-    dz_timeline_key_t * x;
-    dz_timeline_key_t * y;
 } dz_emitter_data_point_t;
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_emitter_data_circle_t
 {
     dz_emitter_data_t base;
 
-    dz_timeline_key_t * x;
-    dz_timeline_key_t * y;
-
-    dz_timeline_key_t * r;
+    const dz_timeline_key_t * radius;
 } dz_emitter_data_circle_t;
 //////////////////////////////////////////////////////////////////////////
 typedef struct dz_emitter_data_line_t
 {
     dz_emitter_data_t base;
 
-    dz_timeline_key_t * bx;
-    dz_timeline_key_t * by;
+    const dz_timeline_key_t * bx;
+    const dz_timeline_key_t * by;
 
-    dz_timeline_key_t * ex;
-    dz_timeline_key_t * ey;
+    const dz_timeline_key_t * ex;
+    const dz_timeline_key_t * ey;
 } dz_emitter_data_line_t;
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t ** _emitter_data, dz_emitter_shape_type_e _type, dz_userdata_t _ud )
@@ -444,6 +440,9 @@ dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t *
 //////////////////////////////////////////////////////////////////////////
 void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emitter_data )
 {
+    dz_timeline_key_destroy( _service, _emitter_data->spawn_delay );
+    dz_timeline_key_destroy( _service, _emitter_data->spawn_count );
+
     DZ_FREE( _service, _emitter_data );
 }
 //////////////////////////////////////////////////////////////////////////
@@ -457,22 +456,22 @@ float dz_emitter_data_get_life( const dz_emitter_data_t * _emitter_data )
     return _emitter_data->life;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_data_set_timeline_key_spawn_delay( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline )
+void dz_emitter_data_set_timeline_key_spawn_delay( dz_emitter_data_t * _emitter_data, const dz_timeline_key_t * _timeline )
 {
     _emitter_data->spawn_delay = _timeline;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_delay( const dz_emitter_data_t * _emitter_data )
+const dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_delay( const dz_emitter_data_t * _emitter_data )
 {
     return _emitter_data->spawn_delay;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_data_set_timeline_key_spawn_count( dz_emitter_data_t * _emitter_data, dz_timeline_key_t * _timeline )
+void dz_emitter_data_set_timeline_key_spawn_count( dz_emitter_data_t * _emitter_data, const dz_timeline_key_t * _timeline )
 {
     _emitter_data->spawn_count = _timeline;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_count( const dz_emitter_data_t * _emitter_data )
+const dz_timeline_key_t * dz_emitter_data_get_timeline_key_spawn_count( const dz_emitter_data_t * _emitter_data )
 {
     return _emitter_data->spawn_count;
 }
@@ -498,7 +497,7 @@ static dz_timeline_value_t * __new_timeline_value( dz_service_t * _service, cons
 //////////////////////////////////////////////////////////////////////////
 static uint16_t __get_rand0( uint32_t _seed )
 {
-    uint32_t value = ((_seed * 1103515245U) + 12345U);
+    uint32_t value = (_seed * 1103515245U) + 12345U;
 
     return value & 0xffff;
 }
@@ -516,7 +515,7 @@ static float __get_randf0( uint32_t _seed )
 //////////////////////////////////////////////////////////////////////////
 static uint16_t __get_rand( uint32_t * _seed )
 {
-    uint32_t value = __get_rand0( *_seed );
+    uint32_t value = (*_seed * 1103515245U) + 12345U;
     *_seed = value;
 
     return value & 0xffff;
