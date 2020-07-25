@@ -367,13 +367,6 @@ static dz_timeline_value_t * __new_timeline_value( dz_service_t * _service, cons
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static uint16_t __get_rand0( uint32_t _seed )
-{
-    uint32_t value = (_seed * 1103515245U) + 12345U;
-
-    return value & 0xffff;
-}
-//////////////////////////////////////////////////////////////////////////
 static uint16_t __get_rand( uint32_t * _seed )
 {
     uint32_t value = (*_seed * 1103515245U) + 12345U;
