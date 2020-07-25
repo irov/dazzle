@@ -374,17 +374,6 @@ static uint16_t __get_rand0( uint32_t _seed )
     return value & 0xffff;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_randf0( uint32_t _seed )
-{
-    uint16_t value = __get_rand0( _seed );
-
-    const float inv_65535 = 1.f / 65535.f;
-
-    float valuef = (float)value * inv_65535;
-
-    return valuef;
-}
-//////////////////////////////////////////////////////////////////////////
 static uint16_t __get_rand( uint32_t * _seed )
 {
     uint32_t value = (*_seed * 1103515245U) + 12345U;
