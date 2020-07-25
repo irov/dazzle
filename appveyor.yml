@@ -1,0 +1,31 @@
+version: '{build}'
+
+branches:
+  only:
+  - master
+
+image:
+- Visual Studio 2019
+
+configuration:
+- Debug
+- Release
+
+environment:
+  matrix:
+  - env_cmake_generator: "Visual Studio 16 2019"
+    env_cmake_architecture: Win32
+  - env_cmake_generator: "Visual Studio 16 2019"
+    env_cmake_architecture: x64
+
+build_script:
+  - mkdir build_cmake
+  - cd build_cmake
+  - cmake -G "%env_cmake_generator%" -A %env_cmake_architecture% -S ".." -DCMAKE_BUILD_TYPE:STRING=%configuration% -DCMAKE_CONFIGURATION_TYPES:STRING=%configuration% -DDAZZLE_EDITOR_BUILD:BOOL=OFF -DDAZZLE_EXAMPLE_BUILD:BOOL=OFF -DDAZZLE_TESTS:BOOL=ON
+  - cmake --build . --config %configuration%
+  - cd ..
+  
+test_script:
+  - cd build_cmake
+  - ctest -C %configuration% --output-on-failure
+  - cd ..

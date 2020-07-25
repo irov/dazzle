@@ -217,7 +217,7 @@ dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_data_destory( dz_service_t * _service, dz_affector_data_t * _affector_data )
+void dz_affector_data_destroy( dz_service_t * _service, dz_affector_data_t * _affector_data )
 {
     for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
     {
@@ -481,6 +481,9 @@ typedef enum dz_particle_seed_e
     DZ_PARTICLE_SEED_ROTATE_SPEED,
     DZ_PARTICLE_SEED_ROTATE_ACCELERATE,
 
+    DZ_PARTICLE_SEED_SPIN_SPEED,
+    DZ_PARTICLE_SEED_SPIN_ACCELERATE,
+
     DZ_PARTICLE_SEED_SIZE,
 
     DZ_PARTICLE_SEED_TRANSPARENT,
@@ -502,9 +505,10 @@ typedef struct dz_particle_t
     float y;
 
     float angle;
+    float spin;
 
-    float dx;
-    float dy;
+    float sx;
+    float sy;
 
     float move_speed;
     float move_accelerate;
@@ -513,6 +517,10 @@ typedef struct dz_particle_t
     float rotate_speed;
     float rotate_accelerate;
     float rotate_accelerate_aux;
+
+    float spin_speed;
+    float spin_accelerate;
+    float spin_accelerate_aux;
 
     float size;
 
@@ -570,7 +578,7 @@ dz_result_t dz_emitter_create( dz_service_t * _service, const dz_emitter_data_t 
 
     *_emitter = emitter;
 
-    return DZ_FAILURE;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter )
@@ -586,6 +594,9 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->rotate_speed = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_ROTATE_SPEED], _emitter->affector_values[DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED], _time );
     _p->rotate_accelerate = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_MOVE_ACCELERATE], _emitter->affector_values[DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE], _time );
 
+    _p->spin_speed = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_SPIN_SPEED], _emitter->affector_values[DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED], _time );
+    _p->spin_accelerate = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_SPIN_ACCELERATE], _emitter->affector_values[DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE], _time );
+
     _p->size = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_SIZE], _emitter->affector_values[DZ_AFFECTOR_DATA_TIMELINE_SIZE], _time );
 
     _p->transparent = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_TRANSPARENT], _emitter->affector_values[DZ_AFFECTOR_DATA_TIMELINE_TRANSPARENT], _time );
@@ -597,6 +608,8 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
 
     _p->angle += _p->rotate_speed + _p->rotate_accelerate_aux;
 
+    _p->spin_accelerate_aux += _p->spin_accelerate * _time;
+
     float dx = _service->providers.f_cosf( _p->angle, _service->ud );
     float dy = _service->providers.f_sinf( _p->angle, _service->ud );
 
@@ -605,8 +618,11 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->x += dx * (_p->move_speed + _p->move_accelerate_aux);
     _p->y += dy * (_p->move_speed + _p->move_accelerate_aux);
 
-    _p->dx = dx;
-    _p->dy = dy;
+    float sx = _service->providers.f_cosf( _p->angle + _p->spin, _service->ud );
+    float sy = _service->providers.f_sinf( _p->angle + _p->spin, _service->ud );
+
+    _p->sx = sx;
+    _p->sy = sy;
 }
 //////////////////////////////////////////////////////////////////////////
 static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, float _life, float _time )
@@ -622,7 +638,7 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
             _emitter->partices_capacity >>= 1;
         }
 
-        DZ_REALLOCN( _service, _emitter->partices, dz_particle_t, _emitter->partices_capacity );
+        _emitter->partices = DZ_REALLOCN( _service, _emitter->partices, dz_particle_t, _emitter->partices_capacity );
     }
 
     dz_particle_t * p = _emitter->partices + _emitter->partices_count++;
@@ -639,9 +655,10 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
     p->y = 0.f;
 
     p->angle = 0.f;
+    p->spin = 0.f;
 
-    p->dx = 1.f;
-    p->dy = 0.f;
+    p->sx = 1.f;
+    p->sy = 0.f;
 
     p->move_accelerate_aux = 0.f;
     p->rotate_accelerate_aux = 0.f;
@@ -664,7 +681,7 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
     {
         float delay = __get_timeline_value_seed( &_emitter->seed, _emitter->spawn_delay, _emitter->emitter_time );
 
-        if( _emitter->emitter_time + delay < _emitter->time )
+        if( _emitter->time - _emitter->emitter_time < delay )
         {
             break;
         }
@@ -703,11 +720,11 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
 {
     const float hs = _p->size * 0.5f;
 
-    const float ux = _p->dx * hs;
-    const float uy = _p->dy * hs;
+    const float ux = _p->sx * hs;
+    const float uy = _p->sy * hs;
 
-    const float vx = -_p->dy * hs;
-    const float vy = _p->dx * hs;
+    const float vx = -_p->sy * hs;
+    const float vy = _p->sx * hs;
 
     float * p0 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_stride * (_iterator * 4 + 0));
 
@@ -732,10 +749,10 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _iterator, dz_emitter_mesh_t * _mesh )
 {
-    const uint8_t r8 = (uint8_t)(_p->color_r * 255.5f);
-    const uint8_t g8 = (uint8_t)(_p->color_g * 255.5f);
-    const uint8_t b8 = (uint8_t)(_p->color_b * 255.5f);
-    const uint8_t a8 = (uint8_t)(_p->transparent * 255.5f);
+    const uint8_t r8 = (uint8_t)(_mesh->r * _p->color_r * 255.5f);
+    const uint8_t g8 = (uint8_t)(_mesh->g * _p->color_g * 255.5f);
+    const uint8_t b8 = (uint8_t)(_mesh->b * _p->color_b * 255.5f);
+    const uint8_t a8 = (uint8_t)(_mesh->transparent * _p->transparent * 255.5f);
 
     const uint32_t color = (a8 << 24) | (r8 << 16) | (g8 << 8) | (b8 << 0);
 

@@ -64,6 +64,8 @@ typedef enum dz_affector_data_timeline_type_e
     DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE,
     DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED,
     DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE,
+    DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED,
+    DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE,
     DZ_AFFECTOR_DATA_TIMELINE_SIZE,
     DZ_AFFECTOR_DATA_TIMELINE_TRANSPARENT,
     DZ_AFFECTOR_DATA_TIMELINE_COLOR_R,
@@ -74,7 +76,7 @@ typedef enum dz_affector_data_timeline_type_e
 } dz_affector_data_timeline_type_e;
 
 dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data );
-void dz_affector_data_destory( dz_service_t * _service, dz_affector_data_t * _affector_data );
+void dz_affector_data_destroy( dz_service_t * _service, dz_affector_data_t * _affector_data );
 
 void dz_affector_data_set_timeline( dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_affector_data_get_timeline( const dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type );
@@ -138,7 +140,7 @@ typedef struct dz_emitter_mesh_t
     float r;
     float g;
     float b;
-    float a;
+    float transparent;
 
     float m[16];
 } dz_emitter_mesh_t;
