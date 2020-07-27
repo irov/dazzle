@@ -18,7 +18,7 @@ macro(ADD_DAZZLE_TEST testname)
         FOLDER tests
     )
 
-    ADD_TEST(NAME ${testname} COMMAND ${ROOT_DIR}/bin/${CMAKE_GENERATOR}/test_${testname} ${ROOT_DIR}/bin/${CMAKE_GENERATOR})
+    ADD_TEST(NAME ${testname} COMMAND ${DAZZLE_ROOT_DIR}/bin/${CMAKE_GENERATOR}/test_${testname} ${DAZZLE_ROOT_DIR}/bin/${CMAKE_GENERATOR})
 endmacro()
 
 ADD_DAZZLE_TEST(memory_leak)

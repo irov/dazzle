@@ -1,0 +1,59 @@
+dist: trusty
+sudo: required 
+
+language: c
+
+branches:
+  only:
+  - master
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - cmake
+      - gcc-9
+      - g++-9
+
+os:
+    - linux
+    - osx
+    
+osx_image:
+    - xcode11.3
+
+compiler:
+    - gcc
+    - clang
+    
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install xorg-dev libglu1-mesa-dev; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install xorg-dev libglu1-mesa-dev; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install build-essential libgtk-3-dev; fi
+
+env:
+    - BUILD_CONFIGURATION=Debug
+    - BUILD_CONFIGURATION=Release
+
+matrix:
+    exclude:
+        - os:       osx
+          compiler: gcc
+
+        - os:  osx
+          env: BUILD_CONFIGURATION=Debug
+
+        - os:  osx
+          env: BUILD_CONFIGURATION=Release
+
+script:
+    # Export CC and CXX to tell cmake which compiler to use
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=/usr/bin/gcc-9 && export CXX=/usr/bin/g++-9 && gcc -v && g++ -v && cmake --version; fi
+    # run
+    - mkdir build_cmake
+    - pushd build_cmake
+    - cmake -S ".." -DCMAKE_BUILD_TYPE:STRING=$BUILD_CONFIGURATION -DCMAKE_CONFIGURATION_TYPES:STRING=$BUILD_CONFIGURATION -DDAZZLE_EDITOR_BUILD:BOOL=OFF -DDAZZLE_EXAMPLE_BUILD:BOOL=OFF -DDAZZLE_TESTS:BOOL=ON
+    - cmake --build . --config $BUILD_CONFIGURATION
+    - ctest -C $BUILD_CONFIGURATION --output-on-failure
+    - popd
