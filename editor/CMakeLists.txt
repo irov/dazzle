@@ -1,7 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 
 set(DAZZLE_EDITOR_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(DAZZLE_EDITOR_DEPENDENCIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 set(DAZZLE_EDITOR_CONTENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/content)
 
 project(dazzle_editor)
@@ -19,7 +18,7 @@ elseif(UNIX)
 endif()
 
 include_directories(${DAZZLE_EDITOR_SOURCE_DIR})
-include_directories(${DAZZLE_EDITOR_DEPENDENCIES_DIR})
+include_directories(${DAZZLE_DEPENDENCIES_DIR})
 include_directories(${GLFW_INCLUDE_DIR})
 include_directories(${GLAD_INCLUDE_DIR})
 include_directories(${IMGUI_INCLUDE_DIR})

@@ -126,12 +126,15 @@ typedef struct dz_emitter_mesh_chunk_t
 typedef struct dz_emitter_mesh_t
 {
     void * position_buffer;
+    dz_size_t position_offset;
     dz_size_t position_stride;
 
     void * color_buffer;
+    dz_size_t color_offset;
     dz_size_t color_stride;
 
     void * uv_buffer;
+    dz_size_t uv_offset;
     dz_size_t uv_stride;
 
     void * index_buffer;

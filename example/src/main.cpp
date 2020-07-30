@@ -1,5 +1,7 @@
 #include "dazzle/dazzle.hpp"
 
+#include "opengl.h"
+
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
@@ -258,26 +260,47 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
+    uint32_t max_vertex_count = 8196 * 2;
+    uint32_t max_index_count = 32768;
+
+    example_opengl_handle_t * opengl_handle;
+    if( initialize_opengl( &opengl_handle, (float)window_width, (float)window_height, max_vertex_count, max_index_count ) == false )
+    {
+        return EXIT_FAILURE;
+    }
+
     while( glfwWindowShouldClose( fwWindow ) == 0 )
     {
         glfwPollEvents();
 
         dz_emitter_update( service, emitter, 0.01f );
 
-        float positions[1024 * 2];
-        uint32_t colors[1024];
-        float uvs[1024 * 2];
-        uint16_t indices[1024];
+        glClearColor( 255, 0, 0, 255 );
+        glClear( GL_COLOR_BUFFER_BIT );
+
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture( GL_TEXTURE_2D, opengl_handle->textureId );
+
+        opengl_use_texture_program( opengl_handle );
+                
+        glBindBuffer( GL_ARRAY_BUFFER, opengl_handle->VBO );
+        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, opengl_handle->IBO );
+
+        void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
+        void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
 
         dz_emitter_mesh_t mesh;
-        mesh.position_buffer = positions;
-        mesh.position_stride = sizeof( float ) * 2;
+        mesh.position_buffer = vertices;
+        mesh.position_offset = offsetof( gl_vertex_t, x );
+        mesh.position_stride = sizeof( gl_vertex_t );
 
-        mesh.color_buffer = colors;
-        mesh.color_stride = sizeof( uint32_t );
+        mesh.color_buffer = vertices;
+        mesh.color_offset = offsetof( gl_vertex_t, c );
+        mesh.color_stride = sizeof( gl_vertex_t );
 
-        mesh.uv_buffer = uvs;
-        mesh.uv_stride = sizeof( float ) * 2;
+        mesh.uv_buffer = vertices;
+        mesh.uv_offset = offsetof( gl_vertex_t, u );
+        mesh.uv_stride = sizeof( gl_vertex_t );
 
         mesh.index_buffer = indices;
 
@@ -292,9 +315,15 @@ int main( int argc, char ** argv )
 
         dz_emitter_compute_mesh( emitter, &mesh, chunks, 16, &chunk_count );
 
-        glClearColor(255, 0, 0, 255);
+        glUnmapBuffer( GL_ARRAY_BUFFER );
+        glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 
-        glClear( GL_COLOR_BUFFER_BIT );
+        for( uint32_t index = 0; index != chunk_count; ++index )
+        {
+            dz_emitter_mesh_chunk_t * chunk = chunks + index;
+
+            glDrawElements( GL_TRIANGLES, chunk->size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
+        }
 
         glfwSwapBuffers( fwWindow );
     }
