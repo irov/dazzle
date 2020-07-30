@@ -82,7 +82,7 @@ dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_destroy( dz_service_t * _service, dz_timeline_interpolate_t * _interpolate )
+void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate )
 {
     if( _interpolate->key != DZ_NULLPTR )
     {
@@ -99,7 +99,7 @@ typedef struct dz_timeline_key_t
 
     dz_timeline_key_type_e type;
 
-    dz_timeline_interpolate_t * interpolate;
+    const dz_timeline_interpolate_t * interpolate;
 
     dz_userdata_t ud;
 } dz_timeline_key_t;
@@ -158,6 +158,26 @@ void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t *
     }
 
     DZ_FREE( _service, _key );
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate )
+{
+    const dz_timeline_key_t * key = _interpolate->key;
+
+    return key;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key )
+{
+    const dz_timeline_interpolate_t * interpolate = _key->interpolate;
+
+    return interpolate;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_timeline_key_set_interpolate( dz_timeline_key_t * _key0, dz_timeline_interpolate_t * _interpolate, dz_timeline_key_t * _key1 )
+{
+    _key0->interpolate = _interpolate;
+    _interpolate->key = _key1;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _value )

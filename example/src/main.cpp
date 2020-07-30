@@ -47,7 +47,7 @@ static float dz_sinf( float _a, dz_userdata_t _ud )
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _value )
+static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -61,6 +61,43 @@ static dz_result_t __set_affector_timeline( dz_service_t * _service, dz_affector
     }
 
     dz_affector_data_set_timeline( _affector_data, _type, timeline );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __set_affector_timeline_linear( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _time, float _value0, float _value1 )
+{
+    dz_timeline_key_t * key0;
+    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_timeline_interpolate_t * interpolate;
+    if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_timeline_key_t * key1;
+    if( dz_timeline_key_create( _service, &key1, _time, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_timeline_key_set_interpolate( key0, interpolate, key1 );
+
+    dz_affector_data_set_timeline( _affector_data, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
@@ -144,7 +181,7 @@ int main( int argc, char ** argv )
     {
         timeline_data_t data = timeline_datas[index];
 
-        if( __set_affector_timeline( service, affector_data, data.type, data.value ) == DZ_FAILURE )
+        if( __set_affector_timeline_const( service, affector_data, data.type, data.value ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
