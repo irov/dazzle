@@ -1,5 +1,10 @@
 #include "dazzle/dazzle.hpp"
 
+#include "opengl.h"
+
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
+
 #include <stdlib.h>
 #include <math.h>
 
@@ -65,10 +70,109 @@ static dz_result_t __set_affector_timeline( dz_service_t * _service, dz_affector
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+float camera_scale = 1.f;
+float camera_scale_min = 0.125f;
+float camera_scale_max = 16.f;
+float camera_scale_step = 0.125f;
+float camera_offset_x = 0.f;
+float camera_offset_y = 0.f;
+//////////////////////////////////////////////////////////////////////////
+float mouse_pos_x = 0.f;
+float mouse_pos_y = 0.f;
+//////////////////////////////////////////////////////////////////////////
+static void glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int _height )
+{
+    DZ_UNUSED( _window );
+
+    glViewport( 0, 0, _width, _height );
+}
+//////////////////////////////////////////////////////////////////////////
+static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
+{
+    camera_offset_x -= mouse_pos_x / camera_scale;
+    camera_offset_y -= mouse_pos_y / camera_scale;
+
+    float scroll = (float)_y * camera_scale_step;
+
+    if( camera_scale + scroll > camera_scale_max )
+    {
+        camera_scale = camera_scale_max;
+    }
+    else if( camera_scale + scroll < camera_scale_min )
+    {
+        camera_scale = camera_scale_min;
+    }
+    else
+    {
+        camera_scale += scroll;
+    }
+
+    camera_offset_x += mouse_pos_x / camera_scale;
+    camera_offset_y += mouse_pos_y / camera_scale;
+}
+//////////////////////////////////////////////////////////////////////////
+static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
+{
+    if( glfwGetKey( _window, GLFW_KEY_SPACE ) == GLFW_PRESS &&
+        glfwGetMouseButton( _window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS )
+    {
+        const float dx = (float)_x - mouse_pos_x;
+        const float dy = (float)_y - mouse_pos_y;
+
+        camera_offset_x += dx / camera_scale;
+        camera_offset_y += dy / camera_scale;
+    }
+
+    mouse_pos_x = (float)_x;
+    mouse_pos_y = (float)_y;
+}
+//////////////////////////////////////////////////////////////////////////
 int main( int argc, char ** argv )
 {
     DZ_UNUSED( argc );
     DZ_UNUSED( argv );
+
+    if( glfwInit() == 0 )
+    {
+        return EXIT_FAILURE;
+    }
+
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
+    glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE );
+    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
+    glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
+
+    int window_width = 1024;
+    int window_height = 768;
+
+    GLFWwindow * fwWindow = glfwCreateWindow( window_width, window_height, "graphics", 0, 0 );
+
+    if( fwWindow == 0 )
+    {
+        glfwTerminate();
+
+        return EXIT_FAILURE;
+    }
+
+    glfwMakeContextCurrent( fwWindow );
+    glfwSetFramebufferSizeCallback( fwWindow, &glfw_framebufferSizeCallback );
+    glfwSetScrollCallback( fwWindow, &glfw_scrollCallback );
+    glfwSetCursorPosCallback( fwWindow, &glfw_cursorPosCallback );
+
+    double cursorPosX;
+    double cursorPosY;
+    glfwGetCursorPos( fwWindow, &cursorPosX, &cursorPosY );
+
+    mouse_pos_x = (float)cursorPosX;
+    mouse_pos_y = (float)cursorPosY;
+
+    if( gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress ) == 0 )
+    {
+        return EXIT_FAILURE;
+    }
+
+    glfwSwapInterval( 1 );
 
     dz_service_providers_t providers;
     providers.f_malloc = &dz_malloc;
@@ -156,35 +260,73 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
-    dz_emitter_update( service, emitter, 0.1f );
+    uint32_t max_vertex_count = 8196 * 2;
+    uint32_t max_index_count = 32768;
 
-    float positions[1024 * 2];
-    uint32_t colors[1024];
-    float uvs[1024 * 2];
-    uint16_t indices[1024];
+    example_opengl_handle_t * opengl_handle;
+    if( initialize_opengl( &opengl_handle, (float)window_width, (float)window_height, max_vertex_count, max_index_count ) == false )
+    {
+        return EXIT_FAILURE;
+    }
 
-    dz_emitter_mesh_t mesh;
-    mesh.position_buffer = positions;
-    mesh.position_stride = sizeof( float ) * 2;
+    while( glfwWindowShouldClose( fwWindow ) == 0 )
+    {
+        glfwPollEvents();
 
-    mesh.color_buffer = colors;
-    mesh.color_stride = sizeof( uint32_t );
+        dz_emitter_update( service, emitter, 0.01f );
 
-    mesh.uv_buffer = uvs;
-    mesh.uv_stride = sizeof( float ) * 2;
+        glClearColor( 255, 0, 0, 255 );
+        glClear( GL_COLOR_BUFFER_BIT );
 
-    mesh.index_buffer = indices;
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture( GL_TEXTURE_2D, opengl_handle->textureId );
 
-    mesh.flags = DZ_EMITTER_MESH_FLAG_NONE;
-    mesh.r = 1.f;
-    mesh.g = 1.f;
-    mesh.b = 1.f;
-    mesh.transparent = 1.f;
+        opengl_use_texture_program( opengl_handle );
+                
+        glBindBuffer( GL_ARRAY_BUFFER, opengl_handle->VBO );
+        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, opengl_handle->IBO );
 
-    dz_emitter_mesh_chunk_t chunks[16];
-    uint32_t chunk_count;
+        void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
+        void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
 
-    dz_emitter_compute_mesh( emitter, &mesh, chunks, 16, &chunk_count );
+        dz_emitter_mesh_t mesh;
+        mesh.position_buffer = vertices;
+        mesh.position_offset = offsetof( gl_vertex_t, x );
+        mesh.position_stride = sizeof( gl_vertex_t );
+
+        mesh.color_buffer = vertices;
+        mesh.color_offset = offsetof( gl_vertex_t, c );
+        mesh.color_stride = sizeof( gl_vertex_t );
+
+        mesh.uv_buffer = vertices;
+        mesh.uv_offset = offsetof( gl_vertex_t, u );
+        mesh.uv_stride = sizeof( gl_vertex_t );
+
+        mesh.index_buffer = indices;
+
+        mesh.flags = DZ_EMITTER_MESH_FLAG_NONE;
+        mesh.r = 1.f;
+        mesh.g = 1.f;
+        mesh.b = 1.f;
+        mesh.transparent = 1.f;
+
+        dz_emitter_mesh_chunk_t chunks[16];
+        uint32_t chunk_count;
+
+        dz_emitter_compute_mesh( emitter, &mesh, chunks, 16, &chunk_count );
+
+        glUnmapBuffer( GL_ARRAY_BUFFER );
+        glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+
+        for( uint32_t index = 0; index != chunk_count; ++index )
+        {
+            dz_emitter_mesh_chunk_t * chunk = chunks + index;
+
+            glDrawElements( GL_TRIANGLES, chunk->size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
+        }
+
+        glfwSwapBuffers( fwWindow );
+    }
 
     dz_emitter_destroy( service, emitter );
     dz_emitter_data_destroy( service, emitter_data );
