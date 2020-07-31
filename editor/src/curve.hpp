@@ -1,12 +1,6 @@
 // [src] https://github.com/ocornut/imgui/issues/123
 // [src] https://github.com/ocornut/imgui/issues/55
 
-// v1.22 - flip button; cosmetic fixes
-// v1.21 - oops :)
-// v1.20 - add iq's interpolation code
-// v1.10 - easing and colors        
-// v1.00 - jari komppa's original
-
 #pragma once
 
 #include "imgui.h"
@@ -237,7 +231,7 @@ namespace ImGui
             str = buf;
         }
 
-        RenderTextClipped(ImVec2(bb.Min.x, bb.Min.y + style.FramePadding.y), bb.Max, str, NULL, NULL, ImVec2( 0.5f, 0.f ) );
+        RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, str, NULL, NULL );
 
         return modified;
     }
