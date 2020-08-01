@@ -64,8 +64,17 @@ SET(DAZZLE_INCLUDE_DIR ${DAZZLE_ROOT_DIR}/include)
 SET(DAZZLE_DEPENDENCIES_DIR ${DAZZLE_ROOT_DIR}/dependencies)
 
 set(DAZZLE_SOURCES
-    ${DAZZLE_SOURCE_DIR}/dazzle.c
+    ${DAZZLE_SOURCE_DIR}/affector_data.h
     ${DAZZLE_SOURCE_DIR}/alloc.h
+    ${DAZZLE_SOURCE_DIR}/dazzle.c
+    ${DAZZLE_SOURCE_DIR}/emitter.h
+    ${DAZZLE_SOURCE_DIR}/emitter_data.h
+    ${DAZZLE_SOURCE_DIR}/particle.h
+    ${DAZZLE_SOURCE_DIR}/service.h
+    ${DAZZLE_SOURCE_DIR}/shape_data.h
+    ${DAZZLE_SOURCE_DIR}/timeline_interpolate.h
+    ${DAZZLE_SOURCE_DIR}/timeline_key.h
+    ${DAZZLE_SOURCE_DIR}/timeline_value.h
 )
 
 set(DAZZLE_HEADERS
