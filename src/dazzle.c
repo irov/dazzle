@@ -728,22 +728,22 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
     const float vx = -_p->sy * hs;
     const float vy = _p->sx * hs;
 
-    float * p0 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_stride * (_iterator * 4 + 0));
+    float * p0 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 0));
 
     p0[0] = _p->x - ux + vx;
     p0[1] = _p->y - uy + vy;
 
-    float * p1 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_stride * (_iterator * 4 + 1));
+    float * p1 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 1));
 
     p1[0] = _p->x + ux + vx;
     p1[1] = _p->y + uy + vy;
 
-    float * p2 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_stride * (_iterator * 4 + 2));
+    float * p2 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 2));
 
     p2[0] = _p->x + ux - vx;
     p2[1] = _p->y + uy - vy;
 
-    float * p3 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_stride * (_iterator * 4 + 3));
+    float * p3 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 3));
 
     p3[0] = _p->x - ux - vx;
     p3[1] = _p->y - uy - vy;
@@ -758,19 +758,19 @@ static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _itera
 
     const uint32_t color = (a8 << 24) | (r8 << 16) | (g8 << 8) | (b8 << 0);
 
-    uint32_t * c0 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_stride * (_iterator * 4 + 0));
+    uint32_t * c0 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 0));
 
     c0[0] = color;
 
-    uint32_t * c1 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_stride * (_iterator * 4 + 1));
+    uint32_t * c1 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 1));
 
     c1[0] = color;
 
-    uint32_t * c2 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_stride * (_iterator * 4 + 2));
+    uint32_t * c2 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 2));
 
     c2[0] = color;
 
-    uint32_t * c3 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_stride * (_iterator * 4 + 3));
+    uint32_t * c3 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 3));
 
     c3[0] = color;
 }
@@ -779,22 +779,22 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
 {
     DZ_UNUSED( _p );
 
-    float * uv0 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_stride * (_iterator * 4 + 0));
+    float * uv0 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 0));
 
     uv0[0] = 0.f;
     uv0[1] = 0.f;
 
-    float * uv1 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_stride * (_iterator * 4 + 1));
+    float * uv1 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 1));
 
     uv1[0] = 1.f;
     uv1[1] = 0.f;
 
-    float * uv2 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_stride * (_iterator * 4 + 2));
+    float * uv2 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 2));
 
     uv2[0] = 1.f;
     uv2[1] = 1.f;
 
-    float * uv3 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_stride * (_iterator * 4 + 3));
+    float * uv3 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 3));
 
     uv3[0] = 0.f;
     uv3[1] = 1.f;
