@@ -111,6 +111,8 @@ typedef struct dz_emitter_t dz_emitter_t;
 dz_result_t dz_emitter_create( dz_service_t * _service, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, dz_emitter_t ** _emitter );
 void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter );
 
+uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter );
+
 void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float _time );
 
 typedef enum dz_emitter_mesh_flags_e
@@ -124,7 +126,8 @@ typedef enum dz_emitter_mesh_flags_e
 typedef struct dz_emitter_mesh_chunk_t
 {
     uint16_t offset;
-    uint16_t size;
+    uint16_t vertex_size;
+    uint16_t index_size;
 } dz_emitter_mesh_chunk_t;
 
 typedef struct dz_emitter_mesh_t

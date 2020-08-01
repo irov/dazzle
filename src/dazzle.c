@@ -537,6 +537,7 @@ typedef struct dz_emitter_t
     const dz_emitter_data_t * emitter_data;
     const dz_affector_data_t * affector_data;
 
+    uint32_t init_seed;
     uint32_t seed;
 
     dz_particle_t * partices;
@@ -559,6 +560,7 @@ dz_result_t dz_emitter_create( dz_service_t * _service, const dz_emitter_data_t 
     emitter->emitter_data = _emitter_data;
     emitter->affector_data = _affector_data;
 
+    emitter->init_seed = _seed;
     emitter->seed = _seed;
 
     emitter->partices = DZ_NULLPTR;
@@ -588,6 +590,11 @@ void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter )
     DZ_FREE( _service, _emitter );
 }
 //////////////////////////////////////////////////////////////////////////
+uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter )
+{
+    return _emitter->init_seed;
+}
+//////////////////////////////////////////////////////////////////////////
 static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter, dz_particle_t * _p, float _time )
 {
     _p->move_speed = __get_timeline_value( _p->rands[DZ_PARTICLE_SEED_MOVE_SPEED], _emitter->affector_values[DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED], _time );
@@ -611,6 +618,8 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->angle += _p->rotate_speed + _p->rotate_accelerate_aux;
 
     _p->spin_accelerate_aux += _p->spin_accelerate * _time;
+
+    _p->spin += _p->spin_speed + _p->spin_accelerate_aux;
 
     float dx = _service->providers.f_cosf( _p->angle, _service->ud );
     float dy = _service->providers.f_sinf( _p->angle, _service->ud );
@@ -637,7 +646,7 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
         }
         else
         {
-            _emitter->partices_capacity >>= 1;
+            _emitter->partices_capacity *= 2;
         }
 
         _emitter->partices = DZ_REALLOCN( _service, _emitter->partices, dz_particle_t, _emitter->partices_capacity );
@@ -653,17 +662,39 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
     p->life = _life;
     p->time = _time;
 
-    p->x = 0.f;
-    p->y = 0.f;
-
-    p->angle = 0.f;
-    p->spin = 0.f;
-
-    p->sx = 1.f;
-    p->sy = 0.f;
-
     p->move_accelerate_aux = 0.f;
     p->rotate_accelerate_aux = 0.f;
+    p->spin_accelerate_aux = 0.f;
+
+    dz_emitter_shape_type_e shape_type = _emitter->emitter_data->shape_type;
+
+    switch( shape_type )
+    {
+    case DZ_EMITTER_SHAPE_POINT:
+        {
+            p->x = 0.f;
+            p->y = 0.f;
+
+            p->angle = __get_randf( &_emitter->seed ) * DZ_PI2;
+            p->spin = __get_randf( &_emitter->seed ) * DZ_PI2;
+
+            float sx = _service->providers.f_cosf( p->spin, _service->ud );
+            float sy = _service->providers.f_sinf( p->spin, _service->ud );
+
+            p->sx = sx;
+            p->sy = sy;
+        }break;
+    case DZ_EMITTER_SHAPE_CIRCLE:
+        {
+            //ToDo
+        }break;
+    case DZ_EMITTER_SHAPE_LINE:
+        {
+            //ToDo
+        }break;
+    default:
+        break;
+    }
 
     __particle_update( _service, _emitter, p, _time );
 }
@@ -803,12 +834,12 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
 static void __particle_compute_index( uint16_t _iterator, dz_emitter_mesh_t * _mesh )
 {
     uint16_t * index_buffer = (uint16_t *)(_mesh->index_buffer) + _iterator * 6;
-    index_buffer[0] = _iterator + 0;
-    index_buffer[1] = _iterator + 1;
-    index_buffer[2] = _iterator + 3;
-    index_buffer[3] = _iterator + 3;
-    index_buffer[4] = _iterator + 1;
-    index_buffer[5] = _iterator + 2;
+    index_buffer[0] = _iterator * 4 + 0;
+    index_buffer[1] = _iterator * 4 + 1;
+    index_buffer[2] = _iterator * 4 + 3;
+    index_buffer[3] = _iterator * 4 + 3;
+    index_buffer[4] = _iterator * 4 + 1;
+    index_buffer[5] = _iterator * 4 + 2;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_emitter_compute_mesh( const dz_emitter_t * _emitter, dz_emitter_mesh_t * _mesh, dz_emitter_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count )
@@ -829,9 +860,17 @@ void dz_emitter_compute_mesh( const dz_emitter_t * _emitter, dz_emitter_mesh_t *
         ++particle_iterator;
     }
 
+    if( particle_iterator == 0 )
+    {
+        *_count = 0;
+
+        return;
+    }
+
     dz_emitter_mesh_chunk_t * chunk = _chunks + 0;
     chunk->offset = 0;
-    chunk->size = particle_iterator * 6;
+    chunk->vertex_size = particle_iterator * 4;
+    chunk->index_size = particle_iterator * 6;
 
     *_count = 1;
 }

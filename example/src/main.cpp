@@ -248,7 +248,7 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
-    dz_timeline_key_const_set_value( emitter_spawn_count, 1.f );
+    dz_timeline_key_const_set_value( emitter_spawn_count, 5.f );
 
     dz_emitter_data_set_timeline_key_spawn_count( emitter_data, emitter_spawn_count );
 
@@ -270,11 +270,11 @@ int main( int argc, char ** argv )
         {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 200.f},
         {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f},
         {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 5.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.01f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.01f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.01f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.001f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 25.f},
         {DZ_AFFECTOR_DATA_TIMELINE_TRANSPARENT, 1.f},
         {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.75f},
         {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f},
@@ -310,9 +310,9 @@ int main( int argc, char ** argv )
     {
         glfwPollEvents();
 
-        dz_emitter_update( service, emitter, 0.01f );
+        dz_emitter_update( service, emitter, 0.001f );
 
-        glClearColor( 255, 0, 0, 255 );
+        glClearColor( 0, 0, 0, 255 );
         glClear( GL_COLOR_BUFFER_BIT );
 
         glActiveTexture( GL_TEXTURE0 );
@@ -359,7 +359,13 @@ int main( int argc, char ** argv )
         {
             dz_emitter_mesh_chunk_t * chunk = chunks + index;
 
-            glDrawElements( GL_TRIANGLES, chunk->size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
+            for( uint32_t index = 0; index != chunk->vertex_size; ++index )
+            {
+                v[index].x += 256.f;
+                v[index].y += 256.f;
+            }
+
+            glDrawElements( GL_TRIANGLES, chunk->index_size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
         }
 
         glfwSwapBuffers( fwWindow );
