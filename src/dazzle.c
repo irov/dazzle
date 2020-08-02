@@ -494,14 +494,16 @@ static float __get_affector_value_rands( dz_particle_t * _p, dz_emitter_t * _emi
 //////////////////////////////////////////////////////////////////////////
 static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter, dz_particle_t * _p, float _time )
 {
-    _p->move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, _time, 1.f );
-    _p->move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, _time, 0.f );
+    _p->time += _time;
 
-    _p->rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, _time, 0.f );
-    _p->rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, _time, 0.f );
+    float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, _time, 1.f );
+    float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, _time, 0.f );
 
-    _p->spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, _time, 0.f );
-    _p->spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, _time, 0.f );
+    float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, _time, 0.f );
+    float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, _time, 0.f );
+
+    float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, _time, 0.f );
+    float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, _time, 0.f );
 
     _p->size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SIZE, _time, 1.f );
 
@@ -510,19 +512,36 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->color_b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, _time, 1.f );
     _p->color_a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, _time, 1.f );
 
-    _p->rotate_accelerate_aux += _p->rotate_accelerate * _time;
-    _p->angle += _p->rotate_speed + _p->rotate_accelerate_aux;
+    _p->rotate_accelerate_aux += rotate_accelerate * _time * _time;
+    _p->angle += rotate_speed * _time + _p->rotate_accelerate_aux;
 
-    _p->spin_accelerate_aux += _p->spin_accelerate * _time;
-    _p->spin += _p->spin_speed + _p->spin_accelerate_aux;
+    _p->spin_accelerate_aux += spin_accelerate * _time * _time;
+    _p->spin += spin_speed * _time + _p->spin_accelerate_aux;
 
     float dx = _service->providers.f_cosf( _p->angle, _service->ud );
     float dy = _service->providers.f_sinf( _p->angle, _service->ud );
 
-    _p->move_accelerate_aux += _p->move_accelerate * _time;
+    _p->move_accelerate_aux += move_accelerate * _time * _time;
 
-    _p->x += dx * (_p->move_speed + _p->move_accelerate_aux);
-    _p->y += dy * (_p->move_speed + _p->move_accelerate_aux);
+    float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, _time, 0.f );
+
+    if( strafe_size != 0.f )
+    {
+        float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, _time, 0.f );
+        float strafe_shift = _p->rands[DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT];
+
+        float strafex = -dy * _service->providers.f_cosf( strafe_shift * DZ_PI + strafe_speed * _p->time, _service->ud ) * strafe_size * _time;
+        float strafey = dx * _service->providers.f_sinf( strafe_shift * DZ_PI + strafe_speed * _p->time, _service->ud ) * strafe_size * _time;
+
+        _p->x += strafex;
+        _p->y += strafey;
+    }
+
+    float movex = dx * (move_speed * _time + _p->move_accelerate_aux);
+    float movey = dy * (move_speed * _time + _p->move_accelerate_aux);
+
+    _p->x += movex;
+    _p->y += movey;
 
     float sx = _service->providers.f_cosf( _p->angle + _p->spin, _service->ud );
     float sy = _service->providers.f_sinf( _p->angle + _p->spin, _service->ud );
@@ -608,7 +627,7 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
     }
 
     p->life = _life;
-    p->time = time;
+    p->time = 0.f;
 
     p->move_accelerate_aux = 0.f;
     p->rotate_accelerate_aux = 0.f;

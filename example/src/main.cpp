@@ -280,8 +280,8 @@ int main( int argc, char ** argv )
 
     dz_emitter_data_set_life( emitter_data, 1000.f );
 
-    __set_emitter_timeline_const( service, emitter_data, DZ_EMITTER_DATA_SPAWN_DELAY, 0.05f );
-    __set_emitter_timeline_const( service, emitter_data, DZ_EMITTER_DATA_SPAWN_COUNT, 5.f );
+    __set_emitter_timeline_const( service, emitter_data, DZ_EMITTER_DATA_SPAWN_DELAY, 0.1f );
+    __set_emitter_timeline_const( service, emitter_data, DZ_EMITTER_DATA_SPAWN_COUNT, 3.f );
 
     dz_affector_data_t * affector_data;
     if( dz_affector_data_create( service, &affector_data ) == DZ_FAILURE )
@@ -299,12 +299,15 @@ int main( int argc, char ** argv )
         {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 300.f},
         {DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 0.05f},
         {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 200.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 100.f},
         {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.01f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.01f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.0f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.0f},
         {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.01f},
         {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.001f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 20.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 0.f},
         {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 25.f},
         {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.75f},
         {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f},
@@ -341,7 +344,7 @@ int main( int argc, char ** argv )
     {
         glfwPollEvents();
 
-        dz_emitter_update( service, emitter, 0.001f );
+        dz_emitter_update( service, emitter, 0.01f );
 
         opengl_set_camera( opengl_handle, camera_offset_x, camera_offset_y, camera_scale );
 

@@ -19,16 +19,8 @@ typedef struct dz_particle_t
     float sx;
     float sy;
 
-    float move_speed;
-    float move_accelerate;
     float move_accelerate_aux;
-
-    float rotate_speed;
-    float rotate_accelerate;
     float rotate_accelerate_aux;
-
-    float spin_speed;
-    float spin_accelerate;
     float spin_accelerate_aux;
 
     float size;
