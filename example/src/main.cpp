@@ -296,9 +296,9 @@ int main( int argc, char ** argv )
     } timeline_data_t;
 
     timeline_data_t timeline_datas[] = {
-        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 300.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 3.f},
         {DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 0.05f},
-        {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 200.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 2.f},
         {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 100.f},
         {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.1f},
         {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.0f},

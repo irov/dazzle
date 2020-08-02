@@ -691,9 +691,18 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
 
     dz_particle_t * p = _emitter->partices;
     dz_particle_t * p_end = _emitter->partices + _emitter->partices_count;
-    for( ; p != p_end; ++p )
+    while( p != p_end )
     {
-        __particle_update( _service, _emitter, p, _time );
+        if( p->time + _time < p->life )
+        {
+            __particle_update( _service, _emitter, p, _time );
+            ++p;
+        }
+        else
+        {
+            *p = *(--p_end);
+            --_emitter->partices_count;
+        }        
     }
 
     for( ;;)
