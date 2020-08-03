@@ -441,6 +441,15 @@ int editor::run()
             if( ImGui::Curve( ss.str().c_str(), size, MAX_POINTS, data.param ) )
             {
                 // curve changed
+
+                dz_emitter_destroy( service, emitter );
+
+                emitter = DZ_NULLPTR;
+
+                if( dz_emitter_create( service, shape_data, emitter_data, affector_data, 0, &emitter ) == DZ_FAILURE )
+                {
+                    return EXIT_FAILURE;
+                }
             }
         }
 
