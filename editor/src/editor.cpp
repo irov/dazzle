@@ -16,9 +16,13 @@
 
 #include "curve.hpp"
 
+#include <sstream>
+
+//////////////////////////////////////////////////////////////////////////
+typedef std::stringstream Stringstream;
 //////////////////////////////////////////////////////////////////////////
 static constexpr uint32_t MAX_POINTS = 100;
-static constexpr float HEIGHT_TO_WIDTH_RATIO = 0.4;;
+static constexpr float HEIGHT_TO_WIDTH_RATIO = 0.4f;
 //////////////////////////////////////////////////////////////////////////
 namespace ImGui
 {
@@ -352,37 +356,46 @@ int editor::run()
         float time;
         float value0;
         float value1;
+        ImVec2 param[MAX_POINTS];
     } timeline_data_t;
 
     timeline_data_t timeline_datas[] = {
         { DZ_AFFECTOR_DATA_TIMELINE_LIFE, 1.f, 3.f, 5.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 1.f, 0.05f, 0.2f },
-    { DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 1.f, 2.f, 3.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 1.f, 0.05f, 0.2f },
+        { DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 1.f, 2.f, 3.f },
 
-    { DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f, 100.f, 300.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 1.f, 0.1f, 0.5f },
-    { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 1.f, 0.0f, 0.1f },
-    { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 1.f, 0.0f, 0.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 1.f, 0.01f, 0.1f },
-    { DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 1.f, 0.001f, 0.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f, 5.f, 20.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 1.f, 50.f, 100.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 1.f, 0.f, 0.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 25.f, 75.f },
-    { DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f, 0.75f, 0.25f },
-    { DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f, 0.5f, 0.1f },
-    { DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f, 0.25f, 0.9f },
-    { DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 1.f, 1.f, 0.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f, 100.f, 300.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 1.f, 0.1f, 0.5f },
+        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 1.f, 0.0f, 0.1f },
+        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 1.f, 0.0f, 0.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 1.f, 0.01f, 0.1f },
+        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 1.f, 0.001f, 0.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f, 5.f, 20.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 1.f, 50.f, 100.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 1.f, 0.f, 0.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 25.f, 75.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f, 0.75f, 0.25f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f, 0.5f, 0.1f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f, 0.25f, 0.9f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 1.f, 1.f, 0.f },
     };
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
     {
-        timeline_data_t data = timeline_datas[index];
+        timeline_data_t & data = timeline_datas[index];
 
         if( __set_affector_timeline_linear( service, affector_data, data.type, data.time, data.value0, data.value1 ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
+
+        // setup start points for param
+        data.param[0].x = 0.f;
+        data.param[0].y = 0.25f;
+        data.param[2].x = 1.f;
+        data.param[2].y = 0.25f;
+
+        data.param[3].x = -1.f; // init data so editor knows to take it from here
     }
 
     dz_emitter_t * emitter;
@@ -400,26 +413,6 @@ int editor::run()
         return EXIT_FAILURE;
     }
 
-    ImVec2 param_1[MAX_POINTS];
-
-    param_1[0].x = 0.f;
-    param_1[0].y = 0.25f;
-    param_1[2].x = 1.f;
-    param_1[2].y = 0.25f;
-
-    param_1[3].x = -1.f; // init data so editor knows to take it from here
-
-    ImVec2 param_2[MAX_POINTS];
-
-    param_2[0].x = 0;
-    param_2[0].y = 0;
-    param_2[1].x = 0.5f;
-    param_2[1].y = 0.8f;
-    param_2[2].x = 1;
-    param_2[2].y = 1;
-
-    param_2[3].x = -1; // init data so editor knows to take it from here
-
     while( glfwWindowShouldClose( fwWindow ) == 0 )
     {
         glfwPollEvents();
@@ -436,15 +429,19 @@ int editor::run()
 
         float width = ImGui::GetWindowContentRegionWidth();
         ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
-    
-        if( ImGui::Curve( "Param 1", size, MAX_POINTS, param_1 ) )
-        {
-            // curve changed
-        }
 
-        if( ImGui::Curve( "Param 2", size, MAX_POINTS, param_2 ) )
+        for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
         {
-            // curve changed
+            timeline_data_t & data = timeline_datas[index];
+
+            Stringstream ss;
+
+            ss << "Param " << index;
+
+            if( ImGui::Curve( ss.str().c_str(), size, MAX_POINTS, data.param ) )
+            {
+                // curve changed
+            }
         }
 
         ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate );
