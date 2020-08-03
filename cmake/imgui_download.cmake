@@ -4,7 +4,7 @@ include(ExternalProject)
 
 ExternalProject_Add(imgui_download PREFIX imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-		GIT_TAG "v1.75"
+		GIT_TAG "v1.77"
 		GIT_PROGRESS TRUE
             
         UPDATE_COMMAND ${CMAKE_COMMAND} -E copy 
@@ -21,6 +21,7 @@ ExternalProject_Add_StepDependencies(imgui_download build glfw_download glad_dow
 
 ExternalProject_Get_Property(imgui_download INSTALL_DIR)
 set(IMGUI_INCLUDE_DIR ${INSTALL_DIR}/include)
+set(IMGUI_INCLUDE_INTERNAL_DIR ${INSTALL_DIR}/src)
 set(IMGUI_LIBRARY_DIR ${INSTALL_DIR}/lib)
 
 add_library(imgui STATIC IMPORTED)

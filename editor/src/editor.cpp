@@ -11,6 +11,18 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "curve.hpp"
+
+//////////////////////////////////////////////////////////////////////////
+static constexpr uint32_t MAX_POINTS = 100;
+static constexpr float HEIGHT_TO_WIDTH_RATIO = 0.4;;
+//////////////////////////////////////////////////////////////////////////
+namespace ImGui
+{
+    int Curve( const char * label, const ImVec2 & size, int maxpoints, ImVec2 * points );
+    float CurveValue( float p, int maxpoints, const ImVec2 * points );
+};
 //////////////////////////////////////////////////////////////////////////
 float camera_scale = 1.f;
 float camera_scale_min = 0.125f;
@@ -153,10 +165,31 @@ int editor::run()
         return EXIT_FAILURE;
     }
 
+    ImVec2 param_1[MAX_POINTS];
+
+    param_1[0].x = 0.f;
+    param_1[0].y = 0.25f;
+    param_1[2].x = 1.f;
+    param_1[2].y = 0.25f;
+
+    param_1[3].x = -1.f; // init data so editor knows to take it from here
+
+    ImVec2 param_2[MAX_POINTS];
+
+    param_2[0].x = 0;
+    param_2[0].y = 0;
+    param_2[1].x = 0.5f;
+    param_2[1].y = 0.8f;
+    param_2[2].x = 1;
+    param_2[2].y = 1;
+
+    param_2[3].x = -1; // init data so editor knows to take it from here
+
     while( glfwWindowShouldClose( fwWindow ) == 0 )
     {
         glfwPollEvents();
 
+        // setup imgui
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
 
@@ -164,28 +197,20 @@ int editor::run()
 
         ImGui::Begin( "Properties" );
 
-        static bool wireframe = false;
-        static bool texture = false;
+        ImGui::Text( "Timeline:" );
 
-        ImGui::Text( "Content scale:" );
-        ImGui::SliderFloat( "##ContentScale", &camera_scale, camera_scale_min, camera_scale_max );
-
-        if( ImGui::Button( "Reset scale" ) )
+        float width = ImGui::GetWindowContentRegionWidth();
+        ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
+        
+        if( ImGui::Curve( "Param 1", size, MAX_POINTS, param_1 ) )
         {
-            camera_scale = 1.f;
-            camera_offset_x = 0.f;
-            camera_offset_y = 0.f;
+            // curve changed
         }
 
-        ImGui::Checkbox( "wireframe", &wireframe );
-        ImGui::Checkbox( "texture", &texture );
-
-        static bool fill = false;
-
-        ImGui::Checkbox( "fill", &fill );
-
-        static bool Custom = false;
-        ImGui::Checkbox( "Custom", &Custom );
+        if( ImGui::Curve( "Param 2", size, MAX_POINTS, param_2 ) )
+        {
+            // curve changed
+        }
 
         ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate );
 
@@ -193,14 +218,15 @@ int editor::run()
 
         ImGui::EndFrame();
 
-        // 1. render imgui
         ImGui::Render();
 
-        // 2. render editor
+        // render editor stuff
         int display_w, display_h;
         glfwGetFramebufferSize( fwWindow, &display_w, &display_h );
         glViewport( 0, 0, display_w, display_h );
         glClearColor( clear_color.x, clear_color.y, clear_color.z, clear_color.w );
+
+        // render imgui
         glClear( GL_COLOR_BUFFER_BIT );
         ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 

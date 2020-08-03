@@ -9,7 +9,7 @@ add_library(${PROJECT_NAME} STATIC
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/imgui.h ${CMAKE_CURRENT_SOURCE_DIR}/imgui_internal.h ${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h DESTINATION include)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/imgui.h ${CMAKE_CURRENT_SOURCE_DIR}/imgui_internal.h ${CMAKE_CURRENT_SOURCE_DIR}/imstb_textedit.h ${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h DESTINATION include)
 
 project(imgui_glfw)
 

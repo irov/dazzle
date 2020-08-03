@@ -31,6 +31,7 @@ set(DAZZLE_EDITOR_SOURCES
     ${DAZZLE_EDITOR_SOURCE_DIR}/main.cpp
     ${DAZZLE_EDITOR_SOURCE_DIR}/editor.cpp
     ${DAZZLE_EDITOR_SOURCE_DIR}/editor.h
+    ${DAZZLE_EDITOR_SOURCE_DIR}/curve.hpp
 )
 
 add_executable(${PROJECT_NAME} ${DAZZLE_EDITOR_SOURCES})
