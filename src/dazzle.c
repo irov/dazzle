@@ -3,7 +3,6 @@
 #include "service.h"
 #include "timeline_key.h"
 #include "timeline_interpolate.h"
-#include "timeline_value.h"
 #include "affector_data.h"
 #include "emitter_data.h"
 #include "particle.h"
@@ -312,17 +311,6 @@ const dz_timeline_key_t * dz_emitter_data_get_timeline( const dz_emitter_data_t 
     return timeline;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_timeline_value_t * __new_timeline_value( dz_service_t * _service, const dz_timeline_key_t * _key )
-{
-    dz_timeline_value_t * value = DZ_NEW( _service, dz_timeline_value_t );
-
-    value->begin = _key;
-    value->current = _key;
-    value->time = 0.f;
-
-    return value;
-}
-//////////////////////////////////////////////////////////////////////////
 static uint16_t __get_rand( uint32_t * _seed )
 {
     uint32_t value = (*_seed * 1103515245U) + 12345U;
@@ -370,37 +358,26 @@ static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key 
     return 0.f;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value( float _t, dz_timeline_value_t * _value, float _time )
+static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, float _time )
 {
-    for( const dz_timeline_key_t * current = _value->current; current != DZ_NULLPTR && current->interpolate != DZ_NULLPTR; current = current->interpolate->key )
+    for( ; _key->interpolate != DZ_NULLPTR && _key->interpolate->key->time < _time; _key = _key->interpolate->key );
+
+    float current_value = __get_timeline_key_value( _t, _key );
+
+    if( _key->interpolate == DZ_NULLPTR )
     {
-        float dt = _time - _value->time;
-
-        if( current->time < dt )
-        {
-            float current_value = __get_timeline_key_value( _t, current );
-
-            const dz_timeline_key_t * next = current->interpolate->key;
-
-            float next_value = __get_timeline_key_value( _t, next );
-
-            float t = (_time - _value->time) / (next->time - current->time);
-
-            float value = current_value + (next_value - current_value) * t;
-
-            return value;
-        }
-
-        _value->time += current->time;
-
-        _value->current = _value->current->interpolate->key;
+        return current_value;
     }
 
-    const dz_timeline_key_t * last = _value->current;
+    const dz_timeline_key_t * next = _key->interpolate->key;
 
-    float last_value = __get_timeline_key_value( _t, last );
+    float next_value = __get_timeline_key_value( _t, next );
 
-    return last_value;
+    float t = (_time - _key->time) / (next->time - _key->time);
+
+    float value = current_value + (next_value - current_value) * t;
+
+    return value;    
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, dz_emitter_t ** _emitter )
@@ -421,48 +398,6 @@ dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * 
     emitter->time = 0.f;
     emitter->emitter_time = 0.f;
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_DATA_TIMELINE_MAX__; ++index )
-    {
-        const dz_timeline_key_t * timeline = emitter->shape_data->timelines[index];
-
-        if( timeline == DZ_NULLPTR )
-        {
-            emitter->shape_values[index] = DZ_NULLPTR;
-
-            continue;
-        }
-
-        emitter->shape_values[index] = __new_timeline_value( _service, timeline );
-    }
-
-    for( uint32_t index = 0; index != __DZ_EMITTER_DATA_TIMELINE_MAX__; ++index )
-    {
-        const dz_timeline_key_t * timeline = emitter->emitter_data->timelines[index];
-
-        if( timeline == DZ_NULLPTR )
-        {
-            emitter->emitter_values[index] = DZ_NULLPTR;
-
-            continue;
-        }
-
-        emitter->emitter_values[index] = __new_timeline_value( _service, timeline );
-    }
-
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
-    {
-        const dz_timeline_key_t * timeline = emitter->affector_data->timelines[index];
-
-        if( timeline == DZ_NULLPTR )
-        {
-            emitter->affector_values[index] = DZ_NULLPTR;
-
-            continue;
-        }
-
-        emitter->affector_values[index] = __new_timeline_value( _service, timeline );
-    }
-
     *_emitter = emitter;
 
     return DZ_SUCCESSFUL;
@@ -478,16 +413,18 @@ uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter )
     return _emitter->init_seed;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_rands( dz_particle_t * _p, dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _time, float _default )
+static float __get_affector_value_rands( dz_particle_t * _p, dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _default )
 {
-    dz_timeline_value_t * timeline_value = _emitter->affector_values[_type];
+    const dz_timeline_key_t * timeline_key = _emitter->affector_data->timelines[_type];
 
-    if( timeline_value == DZ_NULLPTR )
+    if( timeline_key == DZ_NULLPTR )
     {
         return _default;
     }
 
-    float value = __get_timeline_value( _p->rands[_type], timeline_value, _time );
+    float time = _p->time;
+
+    float value = __get_timeline_value( _p->rands[_type], timeline_key, time );
 
     return value;
 }
@@ -496,21 +433,21 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
 {
     _p->time += _time;
 
-    float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, _time, 1.f );
-    float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, _time, 0.f );
+    float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f );
+    float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.f );
 
-    float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, _time, 0.f );
-    float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, _time, 0.f );
+    float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.f );
+    float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.f );
 
-    float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, _time, 0.f );
-    float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, _time, 0.f );
+    float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.f );
+    float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.f );
 
-    _p->size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SIZE, _time, 1.f );
+    _p->size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f );
 
-    _p->color_r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, _time, 1.f );
-    _p->color_g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, _time, 1.f );
-    _p->color_b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, _time, 1.f );
-    _p->color_a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, _time, 1.f );
+    _p->color_r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f );
+    _p->color_g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f );
+    _p->color_b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f );
+    _p->color_a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 1.f );
 
     _p->rotate_accelerate_aux += rotate_accelerate * _time * _time;
     _p->angle += rotate_speed * _time + _p->rotate_accelerate_aux;
@@ -523,11 +460,11 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
 
     _p->move_accelerate_aux += move_accelerate * _time * _time;
 
-    float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, _time, 0.f );
+    float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 0.f );
 
     if( strafe_size != 0.f )
     {
-        float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, _time, 0.f );
+        float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 0.f );
         float strafe_shift = _p->rands[DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT];
 
         float strafex = -dy * _service->providers.f_cosf( strafe_shift * DZ_PI + strafe_speed * _p->time, _service->ud ) * strafe_size * _time;
@@ -550,53 +487,53 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->sy = sy;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value_seed( uint32_t * _seed, dz_timeline_value_t * _value, float _time )
+static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _time )
 {
     float t = __get_randf( _seed );
 
-    float value = __get_timeline_value( t, _value, _time );
+    float value = __get_timeline_value( t, _timeline, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_shape_value_seed( dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _time, float _default )
 {
-    dz_timeline_value_t * timeline_value = _emitter->shape_values[_type];
+    const dz_timeline_key_t * timeline_key = _emitter->shape_data->timelines[_type];
 
-    if( timeline_value == DZ_NULLPTR )
+    if( timeline_key == DZ_NULLPTR )
     {
         return _default;
     }
 
-    float value = __get_timeline_value_seed( &_emitter->seed, timeline_value, _time );
+    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_emitter_value_seed( dz_emitter_t * _emitter, dz_emitter_data_timeline_type_e _type, float _time, float _default )
 {
-    dz_timeline_value_t * timeline_value = _emitter->emitter_values[_type];
+    const dz_timeline_key_t * timeline_key = _emitter->emitter_data->timelines[_type];
 
-    if( timeline_value == DZ_NULLPTR )
+    if( timeline_key == DZ_NULLPTR )
     {
         return _default;
     }
 
-    float value = __get_timeline_value_seed( &_emitter->seed, timeline_value, _time );
+    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_affector_value_seed( dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _time, float _default )
 {
-    dz_timeline_value_t * timeline_value = _emitter->affector_values[_type];
+    const dz_timeline_key_t * timeline_key = _emitter->affector_data->timelines[_type];
 
-    if( timeline_value == DZ_NULLPTR )
+    if( timeline_key == DZ_NULLPTR )
     {
         return _default;
     }
 
-    float value = __get_timeline_value_seed( &_emitter->seed, timeline_value, _time );
+    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _time );
 
     return value;
 }

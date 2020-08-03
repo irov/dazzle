@@ -347,7 +347,7 @@ int main( int argc, char ** argv )
     {
         glfwPollEvents();
 
-        dz_emitter_update( service, emitter, 0.01f );
+        dz_emitter_update( service, emitter, 0.005f );
 
         opengl_set_camera( opengl_handle, camera_offset_x, camera_offset_y, camera_scale );
 

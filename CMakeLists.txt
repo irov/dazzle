@@ -74,7 +74,6 @@ set(DAZZLE_SOURCES
     ${DAZZLE_SOURCE_DIR}/shape_data.h
     ${DAZZLE_SOURCE_DIR}/timeline_interpolate.h
     ${DAZZLE_SOURCE_DIR}/timeline_key.h
-    ${DAZZLE_SOURCE_DIR}/timeline_value.h
 )
 
 set(DAZZLE_HEADERS
