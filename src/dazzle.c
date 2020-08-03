@@ -55,6 +55,7 @@ dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline
     }
 
     interpolate->type = _type;
+    interpolate->key = DZ_NULLPTR;
     interpolate->ud = _ud;
 
     *_interpolate = interpolate;
@@ -93,7 +94,6 @@ dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t *
     }
 
     key->time = _time;
-    key->inv_time = 1.f / _time;
     key->type = _type;
     key->interpolate = DZ_NULLPTR;
     key->ud = _ud;
@@ -384,7 +384,7 @@ static float __get_timeline_value( float _t, dz_timeline_value_t * _value, float
 
             float next_value = __get_timeline_key_value( _t, next );
 
-            float t = (_time - _value->time) * current->inv_time;
+            float t = (_time - _value->time) / (next->time - current->time);
 
             float value = current_value + (next_value - current_value) * t;
 

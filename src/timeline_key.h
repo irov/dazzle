@@ -8,7 +8,6 @@
 typedef struct dz_timeline_key_t
 {
     float time;
-    float inv_time;
 
     dz_timeline_key_type_e type;
 

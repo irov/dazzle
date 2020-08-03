@@ -292,34 +292,37 @@ int main( int argc, char ** argv )
     typedef struct
     {
         dz_affector_data_timeline_type_e type;
-        float value;
+        float time;
+        float value0;
+        float value1;
     } timeline_data_t;
 
     timeline_data_t timeline_datas[] = {
-        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 3.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 0.05f},
-        {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 2.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 100.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.0f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.0f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.01f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.001f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 20.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 25.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.75f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 0.25f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 1.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 1.f, 3.f, 5.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 1.f, 0.05f, 0.2f},
+        {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 1.f, 2.f, 3.f},
+
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f, 100.f, 300.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 1.f, 0.1f, 0.5f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 1.f, 0.0f, 0.1f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 1.f, 0.0f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 1.f, 0.01f, 0.1f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 1.f, 0.001f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f, 5.f, 20.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 1.f, 50.f, 100.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 1.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 25.f, 75.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f, 0.75f, 0.25f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f, 0.5f, 0.1f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f, 0.25f, 0.9f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 1.f, 1.f, 0.f},
     };
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
     {
         timeline_data_t data = timeline_datas[index];
 
-        if( __set_affector_timeline_const( service, affector_data, data.type, data.value ) == DZ_FAILURE )
+        if( __set_affector_timeline_linear( service, affector_data, data.type, data.time, data.value0, data.value1 ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
