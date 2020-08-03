@@ -8,17 +8,21 @@ PROJECT(dazzle C)
 
 OPTION(DAZZLE_EXTERNAL_BUILD "DAZZLE_EXTERNAL_BUILD" OFF)
 OPTION(DAZZLE_EDITOR_BUILD "DAZZLE_EDITOR_BUILD" ON)
+OPTION(DAZZLE_EXAMPLE_BUILD "DAZZLE_EXAMPLE_BUILD" ON)
 OPTION(DAZZLE_INSTALL "DAZZLE_INSTALL" OFF)
 OPTION(DAZZLE_TESTS "DAZZLE_TESTS" OFF)
 OPTION(DAZZLE_TESTS_IN_SOLUTIONS "DAZZLE_TESTS_IN_SOLUTIONS" ON)
 
 MESSAGE("DAZZLE_EXTERNAL_BUILD: ${DAZZLE_EXTERNAL_BUILD}")
 MESSAGE("DAZZLE_EDITOR_BUILD: ${DAZZLE_EDITOR_BUILD}")
+MESSAGE("DAZZLE_EXAMPLE_BUILD: ${DAZZLE_EXAMPLE_BUILD}")
 MESSAGE("DAZZLE_INSTALL: ${DAZZLE_INSTALL}")
 MESSAGE("DAZZLE_TESTS: ${DAZZLE_TESTS}")
 MESSAGE("DAZZLE_TESTS_IN_SOLUTIONS: ${DAZZLE_TESTS_IN_SOLUTIONS}")
 
 IF(NOT DAZZLE_EXTERNAL_BUILD)
+    set(CMAKE_C_STANDARD 11)
+    
     if(${CMAKE_C_COMPILER_ID} STREQUAL Clang)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
     elseif(${CMAKE_C_COMPILER_ID} STREQUAL AppleClang)
@@ -41,6 +45,13 @@ IF(NOT DAZZLE_EXTERNAL_BUILD)
     SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${CMAKE_GENERATOR})
     
     if(MSVC)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS")
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /D_DEBUG /ZI /Ob0 /Od /RTC1")
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /DNDEBUG /O2 /Oi /Ot /GL")
+        
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+    
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
     endif()
 ENDIF()
@@ -50,10 +61,20 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 SET(DAZZLE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(DAZZLE_SOURCE_DIR ${DAZZLE_ROOT_DIR}/src)
 SET(DAZZLE_INCLUDE_DIR ${DAZZLE_ROOT_DIR}/include)
+SET(DAZZLE_DEPENDENCIES_DIR ${DAZZLE_ROOT_DIR}/dependencies)
 
 set(DAZZLE_SOURCES
-    ${DAZZLE_SOURCE_DIR}/dazzle.c
+    ${DAZZLE_SOURCE_DIR}/affector_data.h
     ${DAZZLE_SOURCE_DIR}/alloc.h
+    ${DAZZLE_SOURCE_DIR}/dazzle.c
+    ${DAZZLE_SOURCE_DIR}/emitter.h
+    ${DAZZLE_SOURCE_DIR}/emitter_data.h
+    ${DAZZLE_SOURCE_DIR}/particle.h
+    ${DAZZLE_SOURCE_DIR}/service.h
+    ${DAZZLE_SOURCE_DIR}/shape_data.h
+    ${DAZZLE_SOURCE_DIR}/timeline_interpolate.h
+    ${DAZZLE_SOURCE_DIR}/timeline_key.h
+    ${DAZZLE_SOURCE_DIR}/timeline_value.h
 )
 
 set(DAZZLE_HEADERS
@@ -75,16 +96,31 @@ if(DAZZLE_INSTALL)
             ARCHIVE DESTINATION lib)
 endif()
 
-if(DAZZLE_EDITOR_BUILD)
-    add_subdirectory(editor)
-endif()
-
 if(DAZZLE_TESTS)
     include(CTest)
     enable_testing()
     
     add_subdirectory(tests)
 else()
+    if(DAZZLE_EDITOR_BUILD)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/macro.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glad_download.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glfw_download.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/stb_libs_download.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/imgui_download.cmake)
+    
+        add_subdirectory(editor)
+    endif()
+
+    if(DAZZLE_EXAMPLE_BUILD)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/macro.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glad_download.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glfw_download.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/stb_libs_download.cmake)
+        
+        add_subdirectory(example)
+    endif()
+
     if(DAZZLE_TESTS_IN_SOLUTIONS)
         add_subdirectory(tests)
     endif()

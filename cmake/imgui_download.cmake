@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 include(ExternalProject)
 
 ExternalProject_Add(imgui_download PREFIX imgui
@@ -6,7 +8,7 @@ ExternalProject_Add(imgui_download PREFIX imgui
 		GIT_PROGRESS TRUE
             
         UPDATE_COMMAND ${CMAKE_COMMAND} -E copy 
-			${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeLists_imgui.txt
+			${DAZZLE_ROOT_DIR}/cmake/CMakeLists_imgui.txt
 			${CMAKE_CURRENT_BINARY_DIR}/imgui/src/imgui_download/CMakeLists.txt
       
         CMAKE_ARGS 
