@@ -24,6 +24,9 @@ typedef uint32_t dz_uint32_t;
 typedef size_t dz_size_t;
 typedef void * dz_userdata_t;
 
+#define DZ_PI (3.1415926535897932384626433832795f)
+#define DZ_PI2 (6.283185307179586476925286766559f)
+
 #ifndef NDEBUG
 #define DZ_DEBUG
 #endif
