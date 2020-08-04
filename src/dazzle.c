@@ -594,7 +594,6 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
             p->y = 0.f;
 
             p->angle = __get_randf( &_emitter->seed ) * DZ_PI2;
-            p->spin = (__get_randf( &_emitter->seed ) * 2.f - 1.f) * spin;
         }break;
     case DZ_SHAPE_DATA_SEGMENT:
         {
@@ -605,7 +604,6 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
             float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, _spawn_time, DZ_PI * 0.25f );
 
             p->angle = __get_randf2( &_emitter->seed, angle_min, angle_max );
-            p->spin = (__get_randf( &_emitter->seed ) * 2.f - 1.f) * spin;
         }break;
     case DZ_SHAPE_DATA_CIRCLE:
         {
@@ -625,15 +623,28 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
             float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, _spawn_time, DZ_PI * 0.05f );
 
             p->angle = angle + __get_randf2( &_emitter->seed, angle_min, angle_max );
-            p->spin = (__get_randf( &_emitter->seed ) * 2.f - 1.f) * spin;
         }break;
     case DZ_SHAPE_DATA_LINE:
         {
-            //ToDo
+            float angle = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_LINE_ANGLE, _spawn_time, 0.f );
+
+            float dx = DZ_COSF( _service, angle );
+            float dy = DZ_SINF( _service, angle );
+
+            float size = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_LINE_SIZE, _spawn_time, 0.f );
+
+            float l = (__get_randf( &_emitter->seed ) - 0.5f) * size;
+
+            p->x = -dy * l;
+            p->y = dx * l;
+
+            p->angle = angle;
         }break;
     default:
         break;
     }
+
+    p->spin = (__get_randf( &_emitter->seed ) * 2.f - 1.f) * spin;
 
     float sx = DZ_COSF( _service, p->spin );
     float sy = DZ_SINF( _service, p->spin );

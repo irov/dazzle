@@ -293,15 +293,13 @@ int main( int argc, char ** argv )
     }
 
     dz_shape_data_t * shape_data;
-    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_CIRCLE, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_LINE, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, 50.f );
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, 100.f );
-    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, -3.14159f * 0.25f );
-    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, 3.14159f * 0.25f );
+    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_LINE_ANGLE, 0.f );
+    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_LINE_SIZE, 200.f );
 
     dz_emitter_data_t * emitter_data;
     if( dz_emitter_data_create( service, &emitter_data, DZ_NULLPTR ) == DZ_FAILURE )
