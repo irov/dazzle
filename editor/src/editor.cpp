@@ -253,7 +253,7 @@ int editor::run()
     camera_offset_x = window_width * 0.5f;
     camera_offset_y = window_height * 0.5f;
 
-    GLFWwindow * fwWindow = glfwCreateWindow( window_width, window_height, "graphics", 0, 0 );
+    GLFWwindow * fwWindow = glfwCreateWindow( window_width, window_height, "dazzle particle editor", 0, 0 );
 
     if( fwWindow == 0 )
     {
@@ -462,7 +462,7 @@ int editor::run()
         ImGui::Render();
 
         // render editor stuff (dazzle example)
-        dz_emitter_update( service, emitter, 0.01f );
+        dz_emitter_update( service, emitter, 0.005f );
 
         opengl_set_camera( opengl_handle, camera_offset_x, camera_offset_y, camera_scale );
 
