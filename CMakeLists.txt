@@ -69,12 +69,12 @@ set(DAZZLE_SOURCES
     ${DAZZLE_SOURCE_DIR}/dazzle.c
     ${DAZZLE_SOURCE_DIR}/emitter.h
     ${DAZZLE_SOURCE_DIR}/emitter_data.h
+    ${DAZZLE_SOURCE_DIR}/math.h
     ${DAZZLE_SOURCE_DIR}/particle.h
     ${DAZZLE_SOURCE_DIR}/service.h
     ${DAZZLE_SOURCE_DIR}/shape_data.h
     ${DAZZLE_SOURCE_DIR}/timeline_interpolate.h
     ${DAZZLE_SOURCE_DIR}/timeline_key.h
-    ${DAZZLE_SOURCE_DIR}/timeline_value.h
 )
 
 set(DAZZLE_HEADERS

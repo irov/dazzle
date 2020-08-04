@@ -7,7 +7,6 @@
 #include "emitter_data.h"
 #include "affector_data.h"
 #include "particle.h"
-#include "timeline_value.h"
 
 typedef struct dz_emitter_t
 {
@@ -24,10 +23,6 @@ typedef struct dz_emitter_t
 
     float time;
     float emitter_time;
-
-    dz_timeline_value_t * shape_values[__DZ_EMITTER_DATA_TIMELINE_MAX__];
-    dz_timeline_value_t * emitter_values[__DZ_EMITTER_DATA_TIMELINE_MAX__];
-    dz_timeline_value_t * affector_values[__DZ_AFFECTOR_DATA_TIMELINE_MAX__];
 } dz_emitter_t;
 
 #endif
