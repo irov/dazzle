@@ -21,6 +21,8 @@ typedef struct dz_emitter_t
     dz_size_t partices_count;
     dz_size_t partices_capacity;
 
+    float life;
+
     float time;
     float emitter_time;
 } dz_emitter_t;

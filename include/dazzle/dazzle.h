@@ -30,7 +30,9 @@ void dz_service_get_providers( dz_service_t * _service, dz_service_providers_t *
 typedef enum dz_timeline_key_type_e
 {
     DZ_TIMELINE_KEY_CONST,
-    DZ_TIMELINE_KEY_RANDOMIZE
+    DZ_TIMELINE_KEY_RANDOMIZE,
+
+    __DZ_TIMELINE_KEY_MAX__
 } dz_timeline_key_type_e;
 
 typedef struct dz_timeline_key_t dz_timeline_key_t;
@@ -47,7 +49,9 @@ dz_result_t dz_timeline_key_randomize_get_min_max( const dz_timeline_key_t * _ke
 typedef enum dz_timeline_interpolate_type_e
 {
     DZ_TIMELINE_INTERPOLATE_LINEAR,
-    DZ_TIMELINE_INTERPOLATE_BEZIER2
+    DZ_TIMELINE_INTERPOLATE_BEZIER2,
+
+    __DZ_TIMELINE_INTERPOLATE_MAX__
 } dz_timeline_interpolate_type_e;
 
 typedef struct dz_timeline_interpolate_t dz_timeline_interpolate_t;
@@ -96,7 +100,10 @@ typedef enum dz_shape_data_type_e
     DZ_SHAPE_DATA_POINT,
     DZ_SHAPE_DATA_SEGMENT,
     DZ_SHAPE_DATA_CIRCLE,
-    DZ_SHAPE_DATA_LINE
+    DZ_SHAPE_DATA_LINE,
+    DZ_SHAPE_DATA_RECT,
+
+    __DZ_SHAPE_DATA_MAX__
 } dz_shape_data_type_e;
 
 typedef struct dz_shape_data_t dz_shape_data_t;
@@ -114,6 +121,10 @@ typedef enum dz_shape_data_timeline_type_e
     DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX,
     DZ_SHAPE_DATA_LINE_ANGLE,
     DZ_SHAPE_DATA_LINE_SIZE,
+    DZ_SHAPE_DATA_RECT_WIDTH_MIN,
+    DZ_SHAPE_DATA_RECT_WIDTH_MAX,
+    DZ_SHAPE_DATA_RECT_HEIGHT_MIN,
+    DZ_SHAPE_DATA_RECT_HEIGHT_MAX,
 
     __DZ_SHAPE_DATA_TIMELINE_MAX__
 } dz_shape_data_timeline_type_e;
@@ -143,7 +154,7 @@ const dz_timeline_key_t * dz_emitter_data_get_timeline( const dz_emitter_data_t 
 
 typedef struct dz_emitter_t dz_emitter_t;
 
-dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, dz_emitter_t ** _emitter );
+dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, float _life, dz_emitter_t ** _emitter );
 void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter );
 
 uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter );
