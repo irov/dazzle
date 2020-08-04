@@ -35,6 +35,15 @@ static void dz_free( const void * _ptr, dz_userdata_t _ud )
     free( (void *)p );
 }
 //////////////////////////////////////////////////////////////////////////
+static float dz_sqrtf( float _a, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    float value = sqrtf( _a );
+
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
 static float dz_cosf( float _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
@@ -64,6 +73,7 @@ int main( int argc, char ** argv )
     providers.f_malloc = &dz_malloc;
     providers.f_realloc = &dz_realloc;
     providers.f_free = &dz_free;
+    providers.f_sqrtf = &dz_sqrtf;
     providers.f_cosf = &dz_cosf;
     providers.f_sinf = &dz_sinf;
 

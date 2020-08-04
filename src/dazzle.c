@@ -9,6 +9,7 @@
 #include "emitter.h"
 
 #include "alloc.h"
+#include "math.h"
 
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_service_create( dz_service_t ** _service, const dz_service_providers_t * _providers, dz_userdata_t _ud )
@@ -331,6 +332,17 @@ static float __get_randf( uint32_t * _seed )
     return valuef;
 }
 //////////////////////////////////////////////////////////////////////////
+static float __get_randf2( uint32_t * _seed, float _min, float _max )
+{
+    uint16_t value = __get_rand( _seed );
+
+    const float inv_65535 = 1.f / 65535.f;
+
+    float valuef = (float)value * inv_65535;
+
+    return _min + (_max - _min) * valuef;
+}
+//////////////////////////////////////////////////////////////////////////
 static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key )
 {
     switch( _key->type )
@@ -455,8 +467,8 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->spin_accelerate_aux += spin_accelerate * _time * _time;
     _p->spin += spin_speed * _time + _p->spin_accelerate_aux;
 
-    float dx = _service->providers.f_cosf( _p->angle, _service->ud );
-    float dy = _service->providers.f_sinf( _p->angle, _service->ud );
+    float dx = DZ_COSF( _service, _p->angle );
+    float dy = DZ_SINF( _service, _p->angle );
 
     _p->move_accelerate_aux += move_accelerate * _time * _time;
 
@@ -467,8 +479,8 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
         float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 0.f );
         float strafe_shift = _p->rands[DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT];
 
-        float strafex = -dy * _service->providers.f_cosf( strafe_shift * DZ_PI + strafe_speed * _p->time, _service->ud ) * strafe_size * _time;
-        float strafey = dx * _service->providers.f_sinf( strafe_shift * DZ_PI + strafe_speed * _p->time, _service->ud ) * strafe_size * _time;
+        float strafex = -dy * DZ_COSF( _service, strafe_shift * DZ_PI + strafe_speed * _p->time ) * strafe_size * _time;
+        float strafey = dx * DZ_SINF( _service, strafe_shift * DZ_PI + strafe_speed * _p->time ) * strafe_size * _time;
 
         _p->x += strafex;
         _p->y += strafey;
@@ -480,8 +492,8 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->x += movex;
     _p->y += movey;
 
-    float sx = _service->providers.f_cosf( _p->angle + _p->spin, _service->ud );
-    float sy = _service->providers.f_sinf( _p->angle + _p->spin, _service->ud );
+    float sx = DZ_COSF( _service, _p->angle + _p->spin );
+    float sy = DZ_SINF( _service, _p->angle + _p->spin );
 
     _p->sx = sx;
     _p->sy = sy;
@@ -583,12 +595,6 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
 
             p->angle = __get_randf( &_emitter->seed ) * DZ_PI2;
             p->spin = (__get_randf( &_emitter->seed ) * 2.f - 1.f) * spin;
-
-            float sx = _service->providers.f_cosf( p->spin, _service->ud );
-            float sy = _service->providers.f_sinf( p->spin, _service->ud );
-
-            p->sx = sx;
-            p->sy = sy;
         }break;
     case DZ_SHAPE_DATA_SEGMENT:
         {
@@ -598,18 +604,28 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
             float angle_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN, _spawn_time, -DZ_PI * 0.25f );
             float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, _spawn_time, DZ_PI * 0.25f );
 
-            p->angle = angle_min + (angle_max - angle_min) * __get_randf( &_emitter->seed );
+            p->angle = __get_randf2( &_emitter->seed, angle_min, angle_max );
             p->spin = (__get_randf( &_emitter->seed ) * 2.f - 1.f) * spin;
-
-            float sx = _service->providers.f_cosf( p->spin, _service->ud );
-            float sy = _service->providers.f_sinf( p->spin, _service->ud );
-
-            p->sx = sx;
-            p->sy = sy;
         }break;
     case DZ_SHAPE_DATA_CIRCLE:
         {
-            //ToDo
+            float radius_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, _spawn_time, 1.f );
+            float radius_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, _spawn_time, 1.f );
+
+            float angle = __get_randf( &_emitter->seed ) * DZ_PI2;
+            float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_emitter->seed ) ) * (radius_max - radius_min);
+
+            float rx = radius * DZ_COSF( _service, angle );
+            float ry = radius * DZ_SINF( _service, angle );
+
+            p->x = rx;
+            p->y = ry;
+
+            float angle_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, _spawn_time, -DZ_PI * 0.05f );
+            float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, _spawn_time, DZ_PI * 0.05f );
+
+            p->angle = angle + __get_randf2( &_emitter->seed, angle_min, angle_max );
+            p->spin = (__get_randf( &_emitter->seed ) * 2.f - 1.f) * spin;
         }break;
     case DZ_SHAPE_DATA_LINE:
         {
@@ -618,6 +634,12 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
     default:
         break;
     }
+
+    float sx = DZ_COSF( _service, p->spin );
+    float sy = DZ_SINF( _service, p->spin );
+
+    p->sx = sx;
+    p->sy = sy;
 
     __particle_update( _service, _emitter, p, time );
 }

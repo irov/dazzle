@@ -8,6 +8,7 @@ typedef struct dz_service_t dz_service_t;
 typedef void * (*dz_malloc_t)(dz_size_t _size, dz_userdata_t _ud);
 typedef void * (*dz_realloc_t)(void * _ptr, dz_size_t _size, dz_userdata_t _ud);
 typedef void (*dz_free_t)(const void * _ptr, dz_userdata_t _ud);
+typedef float (*dz_sqrtf_t)(float _a, dz_userdata_t _ud);
 typedef float (*dz_cosf_t)(float _a, dz_userdata_t _ud);
 typedef float (*dz_sinf_t)(float _a, dz_userdata_t _ud);
 
@@ -16,6 +17,7 @@ typedef struct dz_service_providers_t
     dz_malloc_t f_malloc;
     dz_realloc_t f_realloc;
     dz_free_t f_free;
+    dz_sqrtf_t f_sqrtf;
     dz_cosf_t f_cosf;
     dz_sinf_t f_sinf;
 } dz_service_providers_t;
@@ -106,7 +108,10 @@ typedef enum dz_shape_data_timeline_type_e
 {
     DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN,
     DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX,
-    DZ_SHAPE_DATA_CIRCLE_RADIUS,
+    DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN,
+    DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX,
+    DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN,
+    DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX,
     DZ_SHAPE_DATA_LINE_ANGLE,
     DZ_SHAPE_DATA_LINE_SIZE,
 

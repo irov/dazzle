@@ -69,6 +69,7 @@ set(DAZZLE_SOURCES
     ${DAZZLE_SOURCE_DIR}/dazzle.c
     ${DAZZLE_SOURCE_DIR}/emitter.h
     ${DAZZLE_SOURCE_DIR}/emitter_data.h
+    ${DAZZLE_SOURCE_DIR}/math.h
     ${DAZZLE_SOURCE_DIR}/particle.h
     ${DAZZLE_SOURCE_DIR}/service.h
     ${DAZZLE_SOURCE_DIR}/shape_data.h

@@ -34,6 +34,15 @@ static void dz_free( const void * _ptr, dz_userdata_t _ud )
     free( (void *)_ptr );
 }
 //////////////////////////////////////////////////////////////////////////
+static float dz_sqrtf( float _a, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    float value = sqrtf( _a );
+
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
 static float dz_cosf( float _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
@@ -106,7 +115,7 @@ static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_af
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_linear( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _time, float _value0, float _value1 )
+static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
 {
     dz_timeline_key_t * key0;
     if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -119,14 +128,14 @@ static dz_result_t __set_affector_timeline_linear( dz_service_t * _service, dz_a
         return DZ_FAILURE;
     }
 
-    dz_timeline_interpolate_t * interpolate;
-    if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_timeline_interpolate_t * interpolate0;
+    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
 
     dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _time, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -136,7 +145,26 @@ static dz_result_t __set_affector_timeline_linear( dz_service_t * _service, dz_a
         return DZ_FAILURE;
     }
 
-    dz_timeline_key_set_interpolate( key0, interpolate, key1 );
+    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
+
+    dz_timeline_interpolate_t * interpolate1;
+    if( dz_timeline_interpolate_create( _service, &interpolate1, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_timeline_key_t * key2;
+    if( dz_timeline_key_create( _service, &key2, _time1, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( dz_timeline_key_const_set_value( key2, _value2 ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_timeline_key_set_interpolate( key1, interpolate1, key2 );
 
     dz_affector_data_set_timeline( _affector_data, _type, key0 );
 
@@ -254,6 +282,7 @@ int main( int argc, char ** argv )
     providers.f_malloc = &dz_malloc;
     providers.f_realloc = &dz_realloc;
     providers.f_free = &dz_free;
+    providers.f_sqrtf = &dz_sqrtf;
     providers.f_cosf = &dz_cosf;
     providers.f_sinf = &dz_sinf;
 
@@ -264,13 +293,15 @@ int main( int argc, char ** argv )
     }
 
     dz_shape_data_t * shape_data;
-    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_SEGMENT, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_CIRCLE, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN, -3.14159f * 0.25f );
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, 3.14159f * 0.25f );
+    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, 50.f );
+    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, 100.f );
+    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, -3.14159f * 0.25f );
+    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, 3.14159f * 0.25f );
 
     dz_emitter_data_t * emitter_data;
     if( dz_emitter_data_create( service, &emitter_data, DZ_NULLPTR ) == DZ_FAILURE )
@@ -292,37 +323,39 @@ int main( int argc, char ** argv )
     typedef struct
     {
         dz_affector_data_timeline_type_e type;
-        float time;
+        float time0;
+        float time1;
         float value0;
         float value1;
+        float value2;
     } timeline_data_t;
 
     timeline_data_t timeline_datas[] = {
-        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 1.f, 3.f, 5.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 1.f, 0.05f, 0.2f},
-        {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 1.f, 2.f, 3.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 1.f, 2.f, 3.f, 5.f, 2.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 1.f, 2.f, 0.05f, 0.2f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 1.f, 2.f, 2.f, 3.f, 0.f},
 
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f, 100.f, 300.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 1.f, 0.1f, 0.5f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 1.f, 0.0f, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 1.f, 0.0f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 1.f, 0.01f, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 1.f, 0.001f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f, 5.f, 20.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 1.f, 50.f, 100.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 1.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 25.f, 75.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f, 0.75f, 0.25f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f, 0.5f, 0.1f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f, 0.25f, 0.9f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 1.f, 1.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f, 2.f, 100.f, 50.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 1.f, 2.f, 0.1f, 0.5f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 1.f, 2.f, 0.0f, 0.1f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 1.f, 2.f, 0.0f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 1.f, 2.f, 0.01f, 0.1f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 1.f, 2.f, 0.001f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f, 2.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 1.f, 2.f, 50.f, 100.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 1.f, 2.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 2.f, 25.f, 75.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f, 2.f, 0.75f, 0.25f, 0.4f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f, 2.f, 0.5f, 0.1f, 0.4f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f, 2.f, 0.25f, 0.9f, 0.4f },
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 0.1f, 2.f, 0.f, 1.f, 0.f},
     };
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
     {
         timeline_data_t data = timeline_datas[index];
 
-        if( __set_affector_timeline_linear( service, affector_data, data.type, data.time, data.value0, data.value1 ) == DZ_FAILURE )
+        if( __set_affector_timeline_linear2( service, affector_data, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
