@@ -10,6 +10,7 @@
 
 typedef struct dz_emitter_t
 {
+    const dz_material_t * material;
     const dz_shape_data_t * shape_data;
     const dz_emitter_data_t * emitter_data;
     const dz_affector_data_t * affector_data;
@@ -25,6 +26,8 @@ typedef struct dz_emitter_t
 
     float time;
     float emitter_time;
+
+    dz_userdata_t ud;
 } dz_emitter_t;
 
 #endif

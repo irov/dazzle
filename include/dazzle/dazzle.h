@@ -27,6 +27,42 @@ void dz_service_destroy( dz_service_t * _service );
 
 void dz_service_get_providers( dz_service_t * _service, dz_service_providers_t * _providers );
 
+typedef enum dz_blend_type_e
+{
+    DZ_BLEND_NORNAL,
+    DZ_BLEND_ADD,
+    DZ_BLEND_MULTIPLY,
+    DZ_BLEND_SCREEN,
+
+    __DZ_BLEND_MAX__
+} dz_blend_type_e;
+
+typedef struct dz_texture_t dz_texture_t;
+
+dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud );
+void dz_texture_destroy( dz_service_t * _service, const dz_texture_t * _texture );
+
+dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture );
+
+void dz_texture_set_uv( dz_texture_t * _texture, const float * _u, const float * _v );
+void dz_texture_get_uv( const dz_texture_t * _texture, float * _u, float * _v );
+
+typedef struct dz_material_t dz_material_t;
+
+dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud );
+void dz_material_destroy( dz_service_t * _service, const dz_material_t * _material );
+
+dz_userdata_t dz_material_get_ud( const dz_material_t * _material );
+
+void dz_material_set_blend( dz_material_t * _material, dz_blend_type_e _blend );
+dz_blend_type_e dz_material_get_blend( const dz_material_t * _material );
+
+void dz_material_set_color( dz_material_t * _material, float _r, float _g, float _b, float _a );
+void dz_material_get_color( const dz_material_t * _material, float * _r, float * _g, float * _b, float * _a );
+
+void dz_material_set_texture( dz_material_t * _material, const dz_texture_t * _texture );
+const dz_texture_t * dz_material_get_texture( dz_material_t * _material );
+
 typedef enum dz_timeline_key_type_e
 {
     DZ_TIMELINE_KEY_CONST,
@@ -39,6 +75,8 @@ typedef struct dz_timeline_key_t dz_timeline_key_t;
 
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
 void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key );
+
+dz_userdata_t dz_timeline_key_get_ud( const dz_timeline_key_t * _key );
 
 float dz_timeline_key_get_p( const dz_timeline_key_t * _key );
 
@@ -61,14 +99,18 @@ typedef struct dz_timeline_interpolate_t dz_timeline_interpolate_t;
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud );
 void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate );
 
+dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _key );
+
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate );
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );
 void dz_timeline_key_set_interpolate( dz_timeline_key_t * _key0, dz_timeline_interpolate_t * _interpolate, dz_timeline_key_t * _key1 );
 
 typedef struct dz_affector_data_t dz_affector_data_t;
 
-dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data );
-void dz_affector_data_destroy( dz_service_t * _service, dz_affector_data_t * _affector_data );
+dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data, dz_userdata_t _ud );
+void dz_affector_data_destroy( dz_service_t * _service, const dz_affector_data_t * _affector_data );
+
+dz_userdata_t dz_affector_data_get_ud( const dz_affector_data_t * _affector_data );
 
 typedef enum dz_affector_data_timeline_type_e
 {
@@ -112,7 +154,9 @@ typedef enum dz_shape_data_type_e
 typedef struct dz_shape_data_t dz_shape_data_t;
 
 dz_result_t dz_shape_data_create( dz_service_t * _service, dz_shape_data_t ** _shape_data, dz_shape_data_type_e _type, dz_userdata_t _ud );
-void dz_shape_data_destroy( dz_service_t * _service, dz_shape_data_t * _shape_data );
+void dz_shape_data_destroy( dz_service_t * _service, const dz_shape_data_t * _shape_data );
+
+dz_userdata_t dz_shape_data_get_ud( const dz_shape_data_t * _shape_data );
 
 typedef enum dz_shape_data_timeline_type_e
 {
@@ -150,7 +194,9 @@ uint32_t dz_shape_data_get_mask_threshold( const dz_shape_data_t * _shape );
 typedef struct dz_emitter_data_t dz_emitter_data_t;
 
 dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t ** _data, dz_userdata_t _ud );
-void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emitter_data );
+void dz_emitter_data_destroy( dz_service_t * _service, const dz_emitter_data_t * _emitter_data );
+
+dz_userdata_t dz_emitter_data_get_ud( const dz_emitter_data_t * _emitter_data );
 
 void dz_emitter_data_set_life( dz_emitter_data_t * _emitter_data, float _life );
 float dz_emitter_data_get_life( const dz_emitter_data_t * _emitter_data );
@@ -169,12 +215,23 @@ const dz_timeline_key_t * dz_emitter_data_get_timeline( const dz_emitter_data_t 
 
 typedef struct dz_emitter_t dz_emitter_t;
 
-dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, float _life, dz_emitter_t ** _emitter );
-void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter );
+dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter, const dz_material_t * _material, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, float _life, dz_userdata_t _ud );
+void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter );
+
+dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter );
 
 uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter );
 
 void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float _time );
+
+typedef enum dz_emitter_state_e
+{
+    DZ_EMITTER_PROCESS = 0x00000000,
+    DZ_EMITTER_EMIT_COMPLETE = 0x00000001,
+    DZ_EMITTER_PARTICLE_COMPLETE = 0x00000002,
+} dz_emitter_state_e;
+
+dz_emitter_state_e dz_emitter_get_state( const dz_emitter_t * _emitter );
 
 typedef enum dz_emitter_mesh_flags_e
 {
@@ -189,6 +246,10 @@ typedef struct dz_emitter_mesh_chunk_t
     uint16_t offset;
     uint16_t vertex_size;
     uint16_t index_size;
+
+    dz_blend_type_e blend_type;
+
+    const dz_texture_t * texture;
 } dz_emitter_mesh_chunk_t;
 
 typedef struct dz_emitter_mesh_t
