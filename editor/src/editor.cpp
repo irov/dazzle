@@ -198,7 +198,7 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_affector_timeline_linear2( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, PointsArray _points, float _x_multiplier, float _y_multiplier )
+static dz_result_t __reset_affector_timeline_linear2( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
     // _points
     // x0=0.f(const)
@@ -206,7 +206,7 @@ static dz_result_t __reset_affector_timeline_linear2( dz_service_t * _service, d
     // { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 2.f, 25.f, 75.f, 0.f },
 
     dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -223,7 +223,7 @@ static dz_result_t __reset_affector_timeline_linear2( dz_service_t * _service, d
     }
 
     dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _points[1].x * _x_multiplier, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_timeline_key_create( _service, &key1, _points[1].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -242,7 +242,7 @@ static dz_result_t __reset_affector_timeline_linear2( dz_service_t * _service, d
     }
 
     dz_timeline_key_t * key2;
-    if( dz_timeline_key_create( _service, &key2, _points[2].x * _x_multiplier, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_timeline_key_create( _service, &key2, _points[2].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -483,38 +483,33 @@ int editor::run()
         float value0;
         float value1;
         float value2;
-        
-        float duration;
+
         float maxValue;
 
         PointsArray param;
     } timeline_data_t;
 
     timeline_data_t timeline_datas[] = {
-        { DZ_AFFECTOR_DATA_TIMELINE_LIFE, 1.f, 2.f, 3.f, 5.f, 2.f, 2.f, 10.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 1.f, 2.f, 0.05f, 0.2f, 0.f, 2.f, 0.5f },
-        { DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 1.f, 2.f, 2.f, 3.f, 0.f, 2.f, 10.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f, 10.f },
 
-        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f, 2.f, 100.f, 50.f, 0.f, 2.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 1.f, 2.f, 0.1f, 0.5f, 0.f, 2.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 1.f, 2.f, 0.0f, 0.1f, 0.f, 2.f, 0.5f },
-        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 1.f, 2.f, 0.0f, 0.f, 0.f, 2.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 1.f, 2.f, 0.01f, 0.1f, 0.f, 2.f, 0.5f },
-        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 1.f, 2.f, 0.001f, 0.f, 0.f, 2.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f, 2.f, 0.f, 0.f, 0.f, 2.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 1.f, 2.f, 50.f, 100.f, 0.f, 2.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 1.f, 2.f, 0.f, 0.f, 0.f, 2.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 2.f, 25.f, 75.f, 0.f, 2.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f, 2.f, 0.75f, 0.25f, 0.4f, 2.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f, 2.f, 0.5f, 0.1f, 0.4f, 2.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f, 2.f, 0.25f, 0.9f, 0.4f, 2.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 0.1f, 2.f, 0.f, 1.f, 0.f, 2.f, 2.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 100.f, 50.f, 0.f, 200.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.1f, 0.5f, 0.f, 1.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.0f, 0.1f, 0.f, 0.5f },
+        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.0f, 0.f, 0.f, 1.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.5f, 1.f, 0.01f, 0.1f, 0.f, 0.5f },
+        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.5f, 1.f, 0.001f, 0.f, 0.f, 1.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 200.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f, 2.f },
     };
 
     const char * paramNames[] = {
         "DZ_AFFECTOR_DATA_TIMELINE_LIFE",
-        "DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE",
-        "DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE",
 
         "DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED",
         "DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE",
@@ -543,9 +538,9 @@ int editor::run()
 
         data.param[0].x = 0.f;
         data.param[0].y = data.value0 / data.maxValue;
-        data.param[1].x = data.time0 / data.duration;
+        data.param[1].x = data.time0;
         data.param[1].y = data.value1 / data.maxValue;
-        data.param[2].x = data.time1 / data.duration;
+        data.param[2].x = data.time1;
         data.param[2].y = data.value2 / data.maxValue;
 
         data.param[3].x = -1.f; // init data so editor knows to take it from here
@@ -620,7 +615,7 @@ int editor::run()
             if( ImGui::Curve( paramNames[index], size, MAX_POINTS, data.param ) != 0 )
             {
                 // curve changed
-                if( __reset_affector_timeline_linear2( service, affector_data, data.type, data.param, data.duration, data.maxValue ) == DZ_FAILURE )
+                if( __reset_affector_timeline_linear2( service, affector_data, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                 {
                     return EXIT_FAILURE;
                 }
