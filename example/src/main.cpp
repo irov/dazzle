@@ -293,13 +293,28 @@ int main( int argc, char ** argv )
     }
 
     dz_shape_data_t * shape_data;
-    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_RECT, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_MASK, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_WIDTH_MAX, 300.f );
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_HEIGHT_MAX, 200.f );
+    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_WIDTH_MAX, 300.f );
+    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_HEIGHT_MAX, 200.f );
+
+    //float triangles[] = {-100.f, -100.f, 100.f, 0.f, 100.f, 100.f, 300.f, 200.f, 400.f, 200.f, 400.f, 500.f};
+    //dz_shape_data_set_polygon( shape_data, triangles, 2 );
+
+    uint8_t mask[] = {
+        0, 0, 0, 0, 0,
+        0, 1, 1, 1, 0,
+        1, 0, 0, 0, 1,
+        0, 1, 1, 1, 0,
+        0, 0, 0, 0, 0
+    };
+
+    dz_shape_data_set_mask( shape_data, mask, 1, 5, 5, 5 );
+
+    dz_shape_data_set_mask_scale( shape_data, 50.f );
 
     dz_emitter_data_t * emitter_data;
     if( dz_emitter_data_create( service, &emitter_data, DZ_NULLPTR ) == DZ_FAILURE )
@@ -331,16 +346,17 @@ int main( int argc, char ** argv )
     timeline_data_t timeline_datas[] = {
         {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f},
 
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 100.f, 50.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.1f, 0.5f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.0f, 0.1f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.0f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.f, 0.1f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
         {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.5f, 1.f, 0.01f, 0.1f, 0.f},
         {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.5f, 1.f, 0.001f, 0.f, 0.f},
         {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE, 0.5f, 1.f, 0.f, 0.f, 0.f},
         {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f},
         {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 0.5f, 1.f, 25.f, 75.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 0.5f, 1.f, 5.f, 15.f, 0.f},
         {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
         {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
         {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },
