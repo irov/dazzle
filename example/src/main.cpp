@@ -329,24 +329,22 @@ int main( int argc, char ** argv )
     } timeline_data_t;
 
     timeline_data_t timeline_datas[] = {
-        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 1.f, 2.f, 3.f, 5.f, 2.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, 1.f, 2.f, 0.05f, 0.2f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, 1.f, 2.f, 2.f, 3.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f},
 
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 1.f, 2.f, 100.f, 50.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 1.f, 2.f, 0.1f, 0.5f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 1.f, 2.f, 0.0f, 0.1f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 1.f, 2.f, 0.0f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 1.f, 2.f, 0.01f, 0.1f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 1.f, 2.f, 0.001f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 1.f, 2.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 1.f, 2.f, 50.f, 100.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 1.f, 2.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 2.f, 25.f, 75.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 1.f, 2.f, 0.75f, 0.25f, 0.4f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 1.f, 2.f, 0.5f, 0.1f, 0.4f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 1.f, 2.f, 0.25f, 0.9f, 0.4f },
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 0.1f, 2.f, 0.f, 1.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 100.f, 50.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.1f, 0.5f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.0f, 0.1f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.0f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.5f, 1.f, 0.01f, 0.1f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.5f, 1.f, 0.001f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 0.5f, 1.f, 25.f, 75.f, 0.f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },
+        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f},
     };
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )

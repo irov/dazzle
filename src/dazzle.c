@@ -74,8 +74,15 @@ void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline
     DZ_FREE( _service, _interpolate );
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _time, dz_timeline_key_type_e _type, dz_userdata_t _ud )
+dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
 {
+#ifdef DZ_DEBUG
+    if( _p < 0.f || _p > 1.f )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
     dz_timeline_key_t * key;
 
     switch( _type )
@@ -95,7 +102,7 @@ dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t *
         }break;
     }
 
-    key->time = _time;
+    key->p = _p;
     key->type = _type;
     key->interpolate = DZ_NULLPTR;
     key->ud = _ud;
@@ -133,6 +140,13 @@ void dz_timeline_key_set_interpolate( dz_timeline_key_t * _key0, dz_timeline_int
 {
     _key0->interpolate = _interpolate;
     _interpolate->key = _key1;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_timeline_key_get_p( const dz_timeline_key_t * _key )
+{
+    float p = _key->p;
+
+    return p;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _value )
@@ -373,9 +387,9 @@ static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key 
     return 0.f;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, float _time )
+static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, float _life, float _time )
 {
-    for( ; _key->interpolate != DZ_NULLPTR && _key->interpolate->key->time < _time; _key = _key->interpolate->key );
+    for( ; _key->interpolate != DZ_NULLPTR && _key->interpolate->key->p * _life < _time; _key = _key->interpolate->key );
 
     float current_value = __get_timeline_key_value( _t, _key );
 
@@ -388,7 +402,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
 
     float next_value = __get_timeline_key_value( _t, next );
 
-    float t = (_time - _key->time) / (next->time - _key->time);
+    float t = (_time - _key->p * _life) / (next->p * _life - _key->p * _life);
 
     float value = current_value + (next_value - current_value) * t;
 
@@ -441,7 +455,7 @@ static float __get_affector_value_rands( dz_particle_t * _p, dz_emitter_t * _emi
 
     float time = _p->time;
 
-    float value = __get_timeline_value( _p->rands[_type], timeline_key, time );
+    float value = __get_timeline_value( _p->rands[_type], timeline_key, _p->life, time );
 
     return value;
 }
@@ -504,16 +518,16 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     _p->sy = sy;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _time )
+static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _life, float _time )
 {
     float t = __get_randf( _seed );
 
-    float value = __get_timeline_value( t, _timeline, _time );
+    float value = __get_timeline_value( t, _timeline, _life, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_shape_value_seed( dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _time, float _default )
+static float __get_shape_value_seed( dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _life, float _time, float _default )
 {
     const dz_timeline_key_t * timeline_key = _emitter->shape_data->timelines[_type];
 
@@ -522,12 +536,12 @@ static float __get_shape_value_seed( dz_emitter_t * _emitter, dz_affector_data_t
         return _default;
     }
 
-    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _time );
+    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _life, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_emitter_value_seed( dz_emitter_t * _emitter, dz_emitter_data_timeline_type_e _type, float _time, float _default )
+static float __get_emitter_value_seed( dz_emitter_t * _emitter, dz_emitter_data_timeline_type_e _type, float _life, float _time, float _default )
 {
     const dz_timeline_key_t * timeline_key = _emitter->emitter_data->timelines[_type];
 
@@ -536,12 +550,12 @@ static float __get_emitter_value_seed( dz_emitter_t * _emitter, dz_emitter_data_
         return _default;
     }
 
-    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _time );
+    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _life, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_seed( dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _time, float _default )
+static float __get_affector_value_seed( dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _life, float _time, float _default )
 {
     const dz_timeline_key_t * timeline_key = _emitter->affector_data->timelines[_type];
 
@@ -550,7 +564,7 @@ static float __get_affector_value_seed( dz_emitter_t * _emitter, dz_affector_dat
         return _default;
     }
 
-    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _time );
+    float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _life, _time );
 
     return value;
 }
@@ -587,7 +601,7 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
     p->rotate_accelerate_aux = 0.f;
     p->spin_accelerate_aux = 0.f;
 
-    float spin = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_SPIN, _spawn_time, 0.f );
+    float spin = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_SPIN, _life, _spawn_time, 0.f );
 
     dz_shape_data_type_e shape_type = _emitter->shape_data->type;
 
@@ -605,15 +619,15 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
             p->x = 0.f;
             p->y = 0.f;
 
-            float angle_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN, _spawn_time, -DZ_PI * 0.25f );
-            float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, _spawn_time, DZ_PI * 0.25f );
+            float angle_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN, _life, _spawn_time, -DZ_PI * 0.25f );
+            float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, _life, _spawn_time, DZ_PI * 0.25f );
 
             p->angle = __get_randf2( &_emitter->seed, angle_min, angle_max );
         }break;
     case DZ_SHAPE_DATA_CIRCLE:
         {
-            float radius_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, _spawn_time, 1.f );
-            float radius_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, _spawn_time, 1.f );
+            float radius_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, _life, _spawn_time, 1.f );
+            float radius_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, _life, _spawn_time, 1.f );
 
             float angle = __get_randf( &_emitter->seed ) * DZ_PI2;
             float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_emitter->seed ) ) * (radius_max - radius_min);
@@ -624,19 +638,19 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
             p->x = rx;
             p->y = ry;
 
-            float angle_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, _spawn_time, -DZ_PI * 0.05f );
-            float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, _spawn_time, DZ_PI * 0.05f );
+            float angle_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, _life, _spawn_time, -DZ_PI * 0.05f );
+            float angle_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, _life, _spawn_time, DZ_PI * 0.05f );
 
             p->angle = angle + __get_randf2( &_emitter->seed, angle_min, angle_max );
         }break;
     case DZ_SHAPE_DATA_LINE:
         {
-            float angle = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_LINE_ANGLE, _spawn_time, 0.f );
+            float angle = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_LINE_ANGLE, _life, _spawn_time, 0.f );
 
             float dx = DZ_COSF( _service, angle );
             float dy = DZ_SINF( _service, angle );
 
-            float size = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_LINE_SIZE, _spawn_time, 0.f );
+            float size = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_LINE_SIZE, _life, _spawn_time, 0.f );
 
             float l = (__get_randf( &_emitter->seed ) - 0.5f) * size;
 
@@ -648,9 +662,9 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
     case DZ_SHAPE_DATA_RECT:
         {
             //float width_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_WIDTH_MIN, _spawn_time, 0.f );
-            float width_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_WIDTH_MAX, _spawn_time, 1.f );
+            float width_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_WIDTH_MAX, _life, _spawn_time, 1.f );
             //float height_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_HEIGHT_MIN, _spawn_time, 0.f );
-            float height_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_HEIGHT_MAX, _spawn_time, 1.f );
+            float height_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_HEIGHT_MAX, _life, _spawn_time, 1.f );
 
             float x = (__get_randf( &_emitter->seed ) - 0.5f) * width_max;
             float y = (__get_randf( &_emitter->seed ) - 0.5f) * height_max;
@@ -705,7 +719,7 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
             break;
         }
 
-        float delay = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_DELAY, _emitter->emitter_time, 1.f );
+        float delay = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_DELAY, _emitter->life, _emitter->emitter_time, 1.f );
 
         if( _emitter->time - _emitter->emitter_time < delay )
         {
@@ -714,19 +728,11 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
 
         float spawn_time = _emitter->emitter_time + delay;
 
-        float count = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_COUNT, spawn_time, 1.f );
+        float count = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_COUNT, _emitter->life, spawn_time, 1.f );
 
         while( count > 0.f )
         {
-            float life = __get_affector_value_seed( _emitter, DZ_AFFECTOR_DATA_TIMELINE_LIFE, spawn_time, 1.f );
-            float chance_extra_life = __get_affector_value_seed( _emitter, DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE, spawn_time, 0.f );
-
-            if( __get_randf( &_emitter->seed ) < chance_extra_life )
-            {
-                float extra_life = __get_affector_value_seed( _emitter, DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE, spawn_time, 1.f );
-
-                life += extra_life;
-            }
+            float life = __get_affector_value_seed( _emitter, DZ_AFFECTOR_DATA_TIMELINE_LIFE, _emitter->life, spawn_time, 1.f );
 
             float ptime = _emitter->time - spawn_time;
 

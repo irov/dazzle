@@ -37,8 +37,10 @@ typedef enum dz_timeline_key_type_e
 
 typedef struct dz_timeline_key_t dz_timeline_key_t;
 
-dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _time, dz_timeline_key_type_e _type, dz_userdata_t _ud );
+dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
 void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key );
+
+float dz_timeline_key_get_p( const dz_timeline_key_t * _key );
 
 dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _value );
 dz_result_t dz_timeline_key_const_get_value( const dz_timeline_key_t * _key, float * _value );
@@ -71,8 +73,6 @@ void dz_affector_data_destroy( dz_service_t * _service, dz_affector_data_t * _af
 typedef enum dz_affector_data_timeline_type_e
 {
     DZ_AFFECTOR_DATA_TIMELINE_LIFE,
-    DZ_AFFECTOR_DATA_TIMELINE_CHANCE_EXTRA_LIFE,
-    DZ_AFFECTOR_DATA_TIMELINE_EXTRA_LIFE,
 
     DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED,
     DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE,
