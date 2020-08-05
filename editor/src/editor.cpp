@@ -521,15 +521,23 @@ int editor::update()
         float width = ImGui::GetWindowContentRegionWidth();
         ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
+        static bool headerFlags[__DZ_AFFECTOR_DATA_TIMELINE_MAX__] = { false };
+
         for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
         {
+            ImGui::PushID( index );
+
             timeline_data_t & data = m_timelineData[index];
 
-            if( ImGui::CollapsingHeader( data.name ) )
-            {
-                ImGui::Spacing();
+            ImGui::Spacing();
 
-                if( ImGui::Curve( data.name, size, MAX_POINTS, data.param ) != 0 )
+            ImGui::Text( data.name );
+            ImGui::SameLine( 200.f );
+            ImGui::Checkbox( "Edit", &headerFlags[index] );
+
+            if( headerFlags[index] == true )
+            {
+                if( ImGui::Curve( "Timeline", size, MAX_POINTS, data.param ) != 0 )
                 {
                     if( __reset_affector_timeline_linear_from_points( m_service, m_affectorData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                     {
@@ -537,7 +545,27 @@ int editor::update()
                     }
                 }
             }
+
+            ImGui::Separator();
+
+            ImGui::PopID();
         }
+
+        //for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
+        //{
+        //    ImGui::Spacing();
+        //    timeline_data_t & data = m_timelineData[index];
+        //    if( ImGui::CollapsingHeader( data.name ) )
+        //    {
+        //        if( ImGui::Curve( data.name, size, MAX_POINTS, data.param ) != 0 )
+        //        {
+        //            if( __reset_affector_timeline_linear_from_points( m_service, m_affectorData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+        //            {
+        //                return EXIT_FAILURE;
+        //            }
+        //        }
+        //    }
+        //}
 
         ImGui::End();
 
