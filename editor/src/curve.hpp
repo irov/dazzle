@@ -37,6 +37,7 @@ namespace ImGui
 
 namespace ImGui
 {
+    //////////////////////////////////////////////////////////////////////////
     float CurveValue(float p, int maxpoints, const ImVec2 *points)
     {
         if (maxpoints < 2 || points == 0)
@@ -54,7 +55,7 @@ namespace ImGui
 
         return points[left].y + (points[left + 1].y - points[left].y) * d;
     }
-
+    //////////////////////////////////////////////////////////////////////////
     int Curve(const char *label, const ImVec2& size, const int maxpoints, ImVec2 *points)
     {
         int modified = 0;
@@ -122,7 +123,7 @@ namespace ImGui
         if (hovered)
         {
             SetHoveredID(id);
-            if (g.IO.MouseDown[0])
+            if (g.IO.MouseDown[0] && g.IO.KeyCtrl)
             {
                 modified = 1;
                 ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
