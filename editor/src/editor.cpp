@@ -259,15 +259,11 @@ static dz_result_t __reset_affector_timeline_linear2( dz_service_t * _service, d
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, PointsArray _points, float _x_multiplier, float _y_multiplier )
+static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
-    // _points
-    // x0=0.f(const)
-    // x1=time0, x2=time1, y0=value0, y1=value1, y2=_value2
-    // { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 2.f, 25.f, 75.f, 0.f },
-
+    // first create new timeline
     dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -280,39 +276,37 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
     int32_t max = 0;
     while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
 
-    // lines
+    dz_timeline_key_t * prevKey = key0;
     for( int32_t i = 1; i < max; i++ )
     {
-        ImVec2 a = _points[i - 1];
-        ImVec2 b = _points[i];
-        //a.y = 1 - a.y;
-        //b.y = 1 - b.y;
-        //a = a * (bb.Max - bb.Min) + bb.Min;
-        //b = b * (bb.Max - bb.Min) + bb.Min;
-        //window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+        dz_timeline_interpolate_t * interpolate;
+        if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        dz_timeline_key_t * nextKey;
+        if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        if( dz_timeline_key_const_set_value( nextKey, _points[i].y * _y_multiplier ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
+
+        prevKey = nextKey;
     }
 
-    dz_timeline_interpolate_t * interpolate0;
-    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    // destroy old timeline
+    const dz_timeline_key_t * oldKey0 = dz_affector_data_get_timeline( _affector_data, _type );
 
-    dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _points[1].x * _x_multiplier, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_destroy( _service, oldKey0 );
 
-    if( dz_timeline_key_const_set_value( key1, _points[1].y * _y_multiplier ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-
-
-
+    // set new timeline to affector
     dz_affector_data_set_timeline( _affector_data, _type, key0 );
 
     return DZ_SUCCESSFUL;
@@ -502,29 +496,29 @@ int editor::run()
         { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f },
         { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f },
         { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 200.f },
+        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 1.f },
         { DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f },
         { DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f },
         { DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f, 2.f },
     };
 
     const char * paramNames[] = {
-        "DZ_AFFECTOR_DATA_TIMELINE_LIFE",
+        "TIMELINE_LIFE",
 
-        "DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED",
-        "DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE",
-        "DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED",
-        "DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE",
-        "DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED",
-        "DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE",
-        "DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED",
-        "DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE",
-        "DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT",
-        "DZ_AFFECTOR_DATA_TIMELINE_SIZE",
-        "DZ_AFFECTOR_DATA_TIMELINE_COLOR_R",
-        "DZ_AFFECTOR_DATA_TIMELINE_COLOR_G",
-        "DZ_AFFECTOR_DATA_TIMELINE_COLOR_B",
-        "DZ_AFFECTOR_DATA_TIMELINE_COLOR_A"
+        "TIMELINE_MOVE_SPEED",
+        "TIMELINE_MOVE_ACCELERATE",
+        "TIMELINE_ROTATE_SPEED",
+        "TIMELINE_ROTATE_ACCELERATE",
+        "TIMELINE_SPIN_SPEED",
+        "TIMELINE_SPIN_ACCELERATE",
+        "TIMELINE_STRAFE_SPEED",
+        "TIMELINE_STRAFE_SIZE",
+        "TIMELINE_STRAFE_SHIFT",
+        "TIMELINE_SIZE",
+        "TIMELINE_COLOR_R",
+        "TIMELINE_COLOR_G",
+        "TIMELINE_COLOR_B",
+        "TIMELINE_COLOR_A"
     };
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
@@ -601,9 +595,14 @@ int editor::run()
 
         ImGui::NewFrame();
 
+        // properties
         ImGui::Begin( "Properties" );
+        ImGui::Spacing();
+        ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate );
+        ImGui::End();
 
-        ImGui::Text( "Timeline:" );
+        // affector data
+        ImGui::Begin( "AFFECTOR_DATA" );
 
         float width = ImGui::GetWindowContentRegionWidth();
         ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
@@ -612,19 +611,25 @@ int editor::run()
         {
             timeline_data_t & data = timeline_datas[index];
 
-            if( ImGui::Curve( paramNames[index], size, MAX_POINTS, data.param ) != 0 )
+            if( ImGui::CollapsingHeader( paramNames[index] ) )
             {
-                // curve changed
-                if( __reset_affector_timeline_linear2( service, affector_data, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                ImGui::Spacing();
+
+                if( ImGui::Curve( paramNames[index], size, MAX_POINTS, data.param ) != 0 )
                 {
-                    return EXIT_FAILURE;
+                    // curve changed
+                    //if( __reset_affector_timeline_linear2( service, affector_data, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                    //{
+                    //    return EXIT_FAILURE;
+                    //}
+
+                    if( __reset_affector_timeline_linear_from_points( service, affector_data, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                    {
+                        return EXIT_FAILURE;
+                    }
                 }
-            }
-
-
+            }            
         }
-
-        ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate );
 
         ImGui::End();
 
