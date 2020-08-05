@@ -235,6 +235,18 @@ dz_result_t dz_shape_data_create( dz_service_t * _service, dz_shape_data_t ** _s
         shape->timelines[index] = DZ_NULLPTR;
     }
 
+    shape->triangles = DZ_NULLPTR;
+    shape->triangle_count = 0;
+
+    shape->mask_buffer = DZ_NULLPTR;
+    shape->mask_bites = 0;
+    shape->mask_pitch = 0;
+    shape->mask_width = 0;
+    shape->mask_height = 0;
+    shape->mask_threshold = 0;
+    shape->mask_scale = 1.f;
+
+
     shape->ud = _ud;
 
     *_shape_data = shape;
@@ -269,6 +281,67 @@ const dz_timeline_key_t * dz_shape_data_get_timeline( const dz_shape_data_t * _s
     const dz_timeline_key_t * timeline = _shape->timelines[_type];
 
     return timeline;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_shape_data_set_polygon( dz_shape_data_t * _shape, const float * _triangles, uint32_t _count )
+{
+    _shape->triangles = _triangles;
+    _shape->triangle_count = _count;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_data_get_polygon( const dz_shape_data_t * _shape, const float ** _triangles, uint32_t * _count )
+{
+    *_triangles = _shape->triangles;
+    *_count = _shape->triangle_count;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_shape_data_set_mask( dz_shape_data_t * _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height )
+{
+#ifdef DZ_DEBUG
+    if( _bites != 1 && _bites != 2 && _bites != 4 )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
+    _shape->mask_buffer = _buffer;
+    _shape->mask_bites = _bites;
+    _shape->mask_pitch = _pitch;
+    _shape->mask_width = _width;
+    _shape->mask_height = _height;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_data_get_mask( const dz_shape_data_t * _shape, const void ** _buffer, uint32_t * _bites, uint32_t * _pitch, uint32_t * _width, uint32_t * _height )
+{
+    *_buffer = _shape->mask_buffer;
+    *_bites = _shape->mask_bites;
+    *_pitch = _shape->mask_pitch;
+    *_width = _shape->mask_width;
+    *_height = _shape->mask_height;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_data_set_mask_scale( dz_shape_data_t * _shape, float _scale )
+{
+    _shape->mask_scale = _scale;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_shape_data_get_mask_scale( const dz_shape_data_t * _shape )
+{
+    return _shape->mask_scale;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_data_set_mask_threshold( dz_shape_data_t * _shape, uint32_t _threshold )
+{
+    _shape->mask_threshold = _threshold;
+}
+//////////////////////////////////////////////////////////////////////////
+uint32_t dz_shape_data_get_mask_threshold( const dz_shape_data_t * _shape )
+{
+    return _shape->mask_threshold;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t ** _emitter_data, dz_userdata_t _ud )
@@ -393,7 +466,8 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
 
     float current_value = __get_timeline_key_value( _t, _key );
 
-    if( _key->interpolate == DZ_NULLPTR )
+    if( _key->interpolate == DZ_NULLPTR ||
+        _key->p * _life > _time )
     {
         return current_value;
     }
@@ -496,10 +570,12 @@ static void __particle_update( dz_service_t * _service, dz_emitter_t * _emitter,
     if( strafe_size != 0.f )
     {
         float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 0.f );
+        float strafe_frenquence = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE, 0.f );
+
         float strafe_shift = _p->rands[DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT];
 
-        float strafex = -dy * DZ_COSF( _service, strafe_shift * DZ_PI + strafe_speed * _p->time ) * strafe_size * _time;
-        float strafey = dx * DZ_SINF( _service, strafe_shift * DZ_PI + strafe_speed * _p->time ) * strafe_size * _time;
+        float strafex = -dy * DZ_COSF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
+        float strafey = dx * DZ_SINF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
 
         _p->x += strafex;
         _p->y += strafey;
@@ -567,6 +643,120 @@ static float __get_affector_value_seed( dz_emitter_t * _emitter, dz_affector_dat
     float value = __get_timeline_value_seed( &_emitter->seed, timeline_key, _life, _time );
 
     return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static float __calc_triangle_area( float ax, float ay, float bx, float by, float cx, float cy )
+{
+    float area =  (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)) * 0.5f;
+
+    if( area < 0.f )
+    {
+        return -area;
+    }
+
+    return area;
+}
+//////////////////////////////////////////////////////////////////////////
+static uint32_t __calc_mask_threshold_value_count( const void * _buffer, uint32_t _pitch, uint32_t _bites, uint32_t _width, uint32_t _height, uint32_t _threshold )
+{
+    uint32_t threshold_value_count = 0;
+
+    const void * buffer_iterator = _buffer;
+
+    for( uint32_t h = 0; h != _height; ++h )
+    {
+        for( uint32_t w = 0; w != _width; ++w )
+        {
+            uint32_t value = 0;
+
+            switch( _bites )
+            {
+            case 1:
+                {
+                    const uint8_t * point = (const uint8_t *)buffer_iterator + w;
+
+                    value = (uint32_t)*point;
+                }break;
+            case 2:
+                {
+                    const uint16_t * point = (const uint16_t *)buffer_iterator + w;
+
+                    value = (uint32_t)*point;
+                }break;
+            case 4:
+                {
+                    const uint32_t * point = (const uint32_t *)buffer_iterator + w;
+
+                    value = (uint32_t)*point;
+                }break;
+            default:
+                break;
+            }
+
+            if( value <= _threshold )
+            {
+                continue;
+            }
+
+            ++threshold_value_count;
+        }
+
+        buffer_iterator = (const uint8_t *)buffer_iterator + _pitch;
+    }
+
+    return threshold_value_count;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __get_mask_threshold_value( const void * _buffer, uint32_t _pitch, uint32_t _bites, uint32_t _width, uint32_t _height, uint32_t _threshold, uint32_t _index, uint32_t * _x, uint32_t * _y )
+{
+    const void * buffer_iterator = _buffer;
+
+    for( uint32_t h = 0; h != _height; ++h )
+    {
+        for( uint32_t w = 0; w != _width; ++w )
+        {
+            uint32_t mask_value = 0;
+
+            switch( _bites )
+            {
+            case 1:
+                {
+                    const uint8_t * mask_point = (const uint8_t *)buffer_iterator + w;
+
+                    mask_value = (uint32_t)*mask_point;
+                }break;
+            case 2:
+                {
+                    const uint16_t * mask_point = (const uint16_t *)buffer_iterator + w;
+
+                    mask_value = (uint32_t)*mask_point;
+                }break;
+            case 4:
+                {
+                    const uint32_t * mask_point = (const uint32_t *)buffer_iterator + w;
+
+                    mask_value = (uint32_t)*mask_point;
+                }break;
+            default:
+                break;
+            }
+
+            if( mask_value <= _threshold )
+            {
+                continue;
+            }
+
+            if( _index-- == 0 )
+            {
+                *_x = w;
+                *_y = h;
+
+                return;
+            }
+        }
+
+        buffer_iterator = (const uint8_t *)buffer_iterator + _pitch;
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, float _life, float _spawn_time )
@@ -671,6 +861,99 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
 
             p->x = x;
             p->y = y;
+
+            float angle = __get_randf( &_emitter->seed ) * DZ_PI2;
+
+            p->angle = angle;
+        }break;
+    case DZ_SHAPE_DATA_POLYGON:
+        {
+            float total_area = 0.f;
+            float areas[1024];
+
+            const float * triangles = _emitter->shape_data->triangles;
+            uint32_t triangle_count = _emitter->shape_data->triangle_count;
+
+            for( uint32_t index = 0; index != triangle_count; ++index )
+            {
+                float ax = triangles[index * 6 + 0];
+                float ay = triangles[index * 6 + 1];
+                float bx = triangles[index * 6 + 2];
+                float by = triangles[index * 6 + 3];
+                float cx = triangles[index * 6 + 4];
+                float cy = triangles[index * 6 + 5];
+
+                float area = __calc_triangle_area( ax, ay, bx, by, cx, cy );
+
+                total_area += area;
+
+                areas[index] = total_area;
+            }
+
+            float triangle_rand = __get_randf( &_emitter->seed );
+
+            float triangle_find_area = triangle_rand * total_area;
+
+            uint32_t triangle_found_index = 0;
+
+            for( uint32_t index = 0; index != triangle_count; ++index )
+            {
+                float area = areas[index];
+
+                if( area < triangle_find_area )
+                {
+                    continue;
+                }
+
+                triangle_found_index = index;
+
+                break;
+            }
+
+            float rax = triangles[triangle_found_index * 6 + 0];
+            float ray = triangles[triangle_found_index * 6 + 1];
+            float rbx = triangles[triangle_found_index * 6 + 2];
+            float rby = triangles[triangle_found_index * 6 + 3];
+            float rcx = triangles[triangle_found_index * 6 + 4];
+            float rcy = triangles[triangle_found_index * 6 + 5];
+
+            float r1 = __get_randf( &_emitter->seed );
+            float r2 = __get_randf( &_emitter->seed );
+
+            float qr1 = DZ_SQRTF( _service, r1 );
+
+            float tx = (1.f - qr1) * rax + (qr1 * (1.f - r2)) * rbx + (qr1 * r2) * rcx;
+            float ty = (1.f - qr1) * ray + (qr1 * (1.f - r2)) * rby + (qr1 * r2) * rcy;
+
+            p->x = tx;
+            p->y = ty;
+
+            float angle = __get_randf( &_emitter->seed ) * DZ_PI2;
+
+            p->angle = angle;
+        }break;
+    case DZ_SHAPE_DATA_MASK:
+        {
+            const void * mask_buffer = _emitter->shape_data->mask_buffer;
+            uint32_t mask_bites = _emitter->shape_data->mask_bites;
+            uint32_t mask_pitch = _emitter->shape_data->mask_pitch;
+            uint32_t mask_width = _emitter->shape_data->mask_width;
+            uint32_t mask_height = _emitter->shape_data->mask_height;
+            uint32_t mask_threshold = _emitter->shape_data->mask_threshold;
+            float mask_scale = _emitter->shape_data->mask_scale;
+
+            uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
+
+            float r = __get_randf( &_emitter->seed );
+
+            uint32_t threshold_value_index = (uint32_t)(r * (threshold_value_count - 1) + 0.5f);
+
+            uint32_t w_found = 0;
+            uint32_t h_found = 0;
+            __get_mask_threshold_value( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold, threshold_value_index, &w_found, &h_found );
+
+            p->x = w_found * mask_scale;
+            p->y = h_found * mask_scale;
 
             float angle = __get_randf( &_emitter->seed ) * DZ_PI2;
 

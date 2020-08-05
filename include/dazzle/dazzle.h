@@ -81,6 +81,7 @@ typedef enum dz_affector_data_timeline_type_e
     DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED,
     DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE,
     DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED,
+    DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE,
     DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE,
     DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT,
     DZ_AFFECTOR_DATA_TIMELINE_SIZE,
@@ -102,6 +103,8 @@ typedef enum dz_shape_data_type_e
     DZ_SHAPE_DATA_CIRCLE,
     DZ_SHAPE_DATA_LINE,
     DZ_SHAPE_DATA_RECT,
+    DZ_SHAPE_DATA_POLYGON,
+    DZ_SHAPE_DATA_MASK,
 
     __DZ_SHAPE_DATA_MAX__
 } dz_shape_data_type_e;
@@ -131,6 +134,18 @@ typedef enum dz_shape_data_timeline_type_e
 
 void dz_shape_data_set_timeline( dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_shape_data_get_timeline( const dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type );
+
+dz_result_t dz_shape_data_set_polygon( dz_shape_data_t * _shape, const float * _triangles, uint32_t _count );
+void dz_shape_data_get_polygon( const dz_shape_data_t * _shape, const float ** _triangles, uint32_t * _count );
+
+dz_result_t dz_shape_data_set_mask( dz_shape_data_t * _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height );
+void dz_shape_data_get_mask( const dz_shape_data_t * _shape, const void ** _buffer, uint32_t * _bites, uint32_t * _pitch, uint32_t * _width, uint32_t * _height );
+
+void dz_shape_data_set_mask_scale( dz_shape_data_t * _shape, float _scale );
+float dz_shape_data_get_mask_scale( const dz_shape_data_t * _shape );
+
+void dz_shape_data_set_mask_threshold( dz_shape_data_t * _shape, uint32_t _threshold );
+uint32_t dz_shape_data_get_mask_threshold( const dz_shape_data_t * _shape );
 
 typedef struct dz_emitter_data_t dz_emitter_data_t;
 
