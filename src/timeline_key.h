@@ -7,7 +7,7 @@
 
 typedef struct dz_timeline_key_t
 {
-    float time;
+    float p;
 
     dz_timeline_key_type_e type;
 
