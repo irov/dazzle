@@ -48,6 +48,7 @@ dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline
         {
             interpolate = DZ_NEWV( _service, dz_timeline_interpolate_t, dz_timeline_interpolate_bezier2_t );
         }break;
+    case __DZ_TIMELINE_INTERPOLATE_MAX__:
     default:
         {
             return DZ_FAILURE;
@@ -87,6 +88,7 @@ dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t *
         {
             key = DZ_NEWV( _service, dz_timeline_key_t, dz_timeline_key_const_t );
         }break;
+    case __DZ_TIMELINE_KEY_MAX__:
     default:
         {
             return DZ_FAILURE;
@@ -363,6 +365,7 @@ static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key 
 
             return value;
         }break;
+    case __DZ_TIMELINE_KEY_MAX__:
     default:
         break;
     };
@@ -392,7 +395,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
     return value;    
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, dz_emitter_t ** _emitter )
+dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, float _life, dz_emitter_t ** _emitter )
 {
     dz_emitter_t * emitter = DZ_NEW( _service, dz_emitter_t );
 
@@ -406,6 +409,8 @@ dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * 
     emitter->partices = DZ_NULLPTR;
     emitter->partices_count = 0;
     emitter->partices_capacity = 0;
+
+    emitter->life = _life;
 
     emitter->time = 0.f;
     emitter->emitter_time = 0.f;
@@ -640,6 +645,24 @@ static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, f
 
             p->angle = angle;
         }break;
+    case DZ_SHAPE_DATA_RECT:
+        {
+            //float width_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_WIDTH_MIN, _spawn_time, 0.f );
+            float width_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_WIDTH_MAX, _spawn_time, 1.f );
+            //float height_min = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_HEIGHT_MIN, _spawn_time, 0.f );
+            float height_max = __get_shape_value_seed( _emitter, DZ_SHAPE_DATA_RECT_HEIGHT_MAX, _spawn_time, 1.f );
+
+            float x = (__get_randf( &_emitter->seed ) - 0.5f) * width_max;
+            float y = (__get_randf( &_emitter->seed ) - 0.5f) * height_max;
+
+            p->x = x;
+            p->y = y;
+
+            float angle = __get_randf( &_emitter->seed ) * DZ_PI2;
+
+            p->angle = angle;
+        }break;
+    case __DZ_SHAPE_DATA_MAX__:
     default:
         break;
     }
@@ -677,6 +700,11 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
 
     for( ;;)
     {
+        if( _emitter->life > 0.f && _emitter->emitter_time > _emitter->life )
+        {
+            break;
+        }
+
         float delay = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_DELAY, _emitter->emitter_time, 1.f );
 
         if( _emitter->time - _emitter->emitter_time < delay )

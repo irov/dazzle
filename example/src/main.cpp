@@ -293,13 +293,13 @@ int main( int argc, char ** argv )
     }
 
     dz_shape_data_t * shape_data;
-    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_LINE, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_RECT, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_LINE_ANGLE, 0.f );
-    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_LINE_SIZE, 200.f );
+    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_WIDTH_MAX, 300.f );
+    __set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_HEIGHT_MAX, 200.f );
 
     dz_emitter_data_t * emitter_data;
     if( dz_emitter_data_create( service, &emitter_data, DZ_NULLPTR ) == DZ_FAILURE )
@@ -360,7 +360,7 @@ int main( int argc, char ** argv )
     }
 
     dz_emitter_t * emitter;
-    if( dz_emitter_create( service, shape_data, emitter_data, affector_data, 0, &emitter ) == DZ_FAILURE )
+    if( dz_emitter_create( service, shape_data, emitter_data, affector_data, 0, 5.f, &emitter ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
