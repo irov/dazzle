@@ -516,7 +516,7 @@ int editor::update()
         ImGui::End();
 
         // affector data
-        ImGui::Begin( "AFFECTOR_DATA" );
+        ImGui::Begin( "Affector data" );
 
         float width = ImGui::GetWindowContentRegionWidth();
         ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
