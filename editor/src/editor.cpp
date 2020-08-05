@@ -259,6 +259,65 @@ static dz_result_t __reset_affector_timeline_linear2( dz_service_t * _service, d
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, PointsArray _points, float _x_multiplier, float _y_multiplier )
+{
+    // _points
+    // x0=0.f(const)
+    // x1=time0, x2=time1, y0=value0, y1=value1, y2=_value2
+    // { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 2.f, 25.f, 75.f, 0.f },
+
+    dz_timeline_key_t * key0;
+    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( dz_timeline_key_const_set_value( key0, _points[0].y * _y_multiplier ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    int32_t max = 0;
+    while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
+
+    // lines
+    for( int32_t i = 1; i < max; i++ )
+    {
+        ImVec2 a = _points[i - 1];
+        ImVec2 b = _points[i];
+        //a.y = 1 - a.y;
+        //b.y = 1 - b.y;
+        //a = a * (bb.Max - bb.Min) + bb.Min;
+        //b = b * (bb.Max - bb.Min) + bb.Min;
+        //window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+    }
+
+    dz_timeline_interpolate_t * interpolate0;
+    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_timeline_key_t * key1;
+    if( dz_timeline_key_create( _service, &key1, _points[1].x * _x_multiplier, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( dz_timeline_key_const_set_value( key1, _points[1].y * _y_multiplier ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
+
+
+
+    dz_affector_data_set_timeline( _affector_data, _type, key0 );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
 float camera_scale = 1.f;
 float camera_scale_min = 0.125f;
 float camera_scale_max = 16.f;
@@ -278,6 +337,11 @@ static void glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int 
 //////////////////////////////////////////////////////////////////////////
 static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 {
+    if( glfwGetKey( _window, GLFW_KEY_SPACE ) != GLFW_PRESS )
+    {
+        return;
+    }
+
     camera_offset_x -= mouse_pos_x / camera_scale;
     camera_offset_y -= mouse_pos_y / camera_scale;
 
@@ -477,14 +541,6 @@ int editor::run()
             return EXIT_FAILURE;
         }
 
-        //// setup start points for param
-        //data.param[0].x = 0.f;
-        //data.param[0].y = 0.25f;
-        //data.param[1].x = 1.f;
-        //data.param[1].y = 0.25f;
-
-        //data.param[2].x = -1.f; // init data so editor knows to take it from here
-
         data.param[0].x = 0.f;
         data.param[0].y = data.value0 / data.maxValue;
         data.param[1].x = data.time0 / data.duration;
@@ -494,27 +550,6 @@ int editor::run()
 
         data.param[3].x = -1.f; // init data so editor knows to take it from here
     }
-
-    // x0=0.f(const)
-    // x1=time0, x2=time1, y0=value0, y1=value1, y2=_value2
-    // { DZ_AFFECTOR_DATA_TIMELINE_SIZE, 1.f, 2.f, 25.f, 75.f, 0.f },
-
-    //ImVec2 speedParam[MAX_POINTS];
-
-    //timeline_data_t & data = timeline_datas[DZ_AFFECTOR_DATA_TIMELINE_SIZE];
-
-    //float duration = 2.f;
-    //float maxSize = 100.f;
-
-    //// setup start points for param
-    //speedParam[0].x = 0.f;
-    //speedParam[0].y = data.value0 / maxSize;
-    //speedParam[1].x = data.time0 / duration;
-    //speedParam[1].y = data.value1 / maxSize;
-    //speedParam[2].x = data.time1 / duration;
-    //speedParam[2].y = data.value2 / maxSize;
-
-    //speedParam[3].x = -1.f; // init data so editor knows to take it from here
 
     dz_emitter_t * emitter;
     if( dz_emitter_create( service, shape_data, emitter_data, affector_data, 0, 0.f, &emitter ) == DZ_FAILURE )
@@ -577,32 +612,14 @@ int editor::run()
 
         float width = ImGui::GetWindowContentRegionWidth();
         ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
-
-        //timeline_data_t & data = timeline_datas[DZ_AFFECTOR_DATA_TIMELINE_SIZE];
-
-        //if( ImGui::Curve( "DZ_AFFECTOR_DATA_TIMELINE_SIZE", size, MAX_POINTS, speedParam ) )
-        //{
-        //    // curve changed
-
-        //    if( __reset_affector_timeline_linear2( service, affector_data, data.type, speedParam, duration, maxSize ) == DZ_FAILURE )
-        //    {
-        //        return EXIT_FAILURE;
-        //    }
-
-        //}
-        
+       
         for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
         {
             timeline_data_t & data = timeline_datas[index];
 
-            //Stringstream ss;
-
-            //ss << "Param " << paramNames[index];
-
-            if( ImGui::Curve( paramNames[index], size, MAX_POINTS, data.param ) )
+            if( ImGui::Curve( paramNames[index], size, MAX_POINTS, data.param ) != 0 )
             {
                 // curve changed
-
                 if( __reset_affector_timeline_linear2( service, affector_data, data.type, data.param, data.duration, data.maxValue ) == DZ_FAILURE )
                 {
                     return EXIT_FAILURE;
