@@ -351,6 +351,39 @@ dz_userdata_t dz_affector_data_get_ud( const dz_affector_data_t * _affector_data
     return _affector_data->ud;
 }
 //////////////////////////////////////////////////////////////////////////
+typedef struct dz_timeline_limits_t
+{
+    float min_value;
+    float max_value;
+} dz_timeline_limits_t;
+//////////////////////////////////////////////////////////////////////////
+void get_timeline_limits( dz_affector_data_timeline_type_e _timeline, float * _min, float * _max )
+{
+    const dz_timeline_limits_t limits[__DZ_AFFECTOR_DATA_TIMELINE_MAX__] = {
+        {0.f, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_LIFE
+        {0.f, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE
+        {DZ_FLT_MIN, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE
+        {DZ_PI2N, DZ_PI2}, //DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT
+        {0.f, DZ_FLT_MAX}, //DZ_AFFECTOR_DATA_TIMELINE_SIZE
+        {0.f, 1.f}, //DZ_AFFECTOR_DATA_TIMELINE_COLOR_R
+        {0.f, 1.f}, //DZ_AFFECTOR_DATA_TIMELINE_COLOR_G
+        {0.f, 1.f}, //DZ_AFFECTOR_DATA_TIMELINE_COLOR_B
+        {0.f, 1.f}, //DZ_AFFECTOR_DATA_TIMELINE_COLOR_A
+    };
+
+    const dz_timeline_limits_t * limit = limits + _timeline;
+
+    *_min = limit->min_value;
+    *_max = limit->max_value;
+}
+//////////////////////////////////////////////////////////////////////////
 void dz_affector_data_set_timeline( dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, const dz_timeline_key_t * _timeline )
 {
     _affector_data->timelines[_type] = _timeline;
@@ -647,6 +680,7 @@ dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter
     emitter->partices = DZ_NULLPTR;
     emitter->partices_count = 0;
     emitter->partices_capacity = 0;
+    emitter->particle_limit = ~1U;
 
     emitter->life = _life;
 
@@ -673,6 +707,16 @@ dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter )
 uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter )
 {
     return _emitter->init_seed;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_emitter_set_particle_limit( dz_emitter_t * _emitter, uint32_t _limit )
+{
+    _emitter->particle_limit = _limit;
+}
+//////////////////////////////////////////////////////////////////////////
+uint32_t dz_emitter_get_particle_limit( const dz_emitter_t * _emitter )
+{
+    return _emitter->particle_limit;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_affector_value_rands( dz_particle_t * _p, dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _default )
@@ -916,7 +960,7 @@ static void __get_mask_threshold_value( const void * _buffer, uint32_t _pitch, u
     }
 }
 //////////////////////////////////////////////////////////////////////////
-static void __emitter_spawn( dz_service_t * _service, dz_emitter_t * _emitter, float _life, float _spawn_time )
+static void __emitter_spawn_particle( dz_service_t * _service, dz_emitter_t * _emitter, float _life, float _spawn_time )
 {
     float time = _emitter->time - _spawn_time;
 
@@ -1180,9 +1224,9 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
 
             float ptime = _emitter->time - spawn_time;
 
-            if( life > ptime )
+            if( life > ptime && _emitter->partices_count < _emitter->particle_limit )
             {
-                __emitter_spawn( _service, _emitter, life, spawn_time );
+                __emitter_spawn_particle( _service, _emitter, life, spawn_time );
             }
 
             count -= 1.f;

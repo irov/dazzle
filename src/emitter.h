@@ -19,8 +19,9 @@ typedef struct dz_emitter_t
     uint32_t seed;
 
     dz_particle_t * partices;
-    dz_size_t partices_count;
-    dz_size_t partices_capacity;
+    uint32_t partices_count;
+    uint32_t partices_capacity;
+    uint32_t particle_limit;
 
     float life;
 

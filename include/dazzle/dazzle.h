@@ -115,7 +115,6 @@ dz_userdata_t dz_affector_data_get_ud( const dz_affector_data_t * _affector_data
 typedef enum dz_affector_data_timeline_type_e
 {
     DZ_AFFECTOR_DATA_TIMELINE_LIFE,
-
     DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED,
     DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE,
     DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED,
@@ -134,6 +133,8 @@ typedef enum dz_affector_data_timeline_type_e
 
     __DZ_AFFECTOR_DATA_TIMELINE_MAX__
 } dz_affector_data_timeline_type_e;
+
+void get_timeline_limits( dz_affector_data_timeline_type_e _timeline, float * _min, float * _max );
 
 void dz_affector_data_set_timeline( dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_affector_data_get_timeline( const dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type );
@@ -221,6 +222,9 @@ void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter 
 dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter );
 
 uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter );
+
+void dz_emitter_set_particle_limit( dz_emitter_t * _emitter, uint32_t _limit );
+uint32_t dz_emitter_get_particle_limit( const dz_emitter_t * _emitter );
 
 void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float _time );
 
