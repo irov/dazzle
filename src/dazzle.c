@@ -6,6 +6,8 @@
 #include "affector_data.h"
 #include "emitter_data.h"
 #include "particle.h"
+#include "texture.h"
+#include "material.h"
 #include "emitter.h"
 
 #include "alloc.h"
@@ -32,6 +34,126 @@ void dz_service_destroy( dz_service_t * _service )
 void dz_service_get_providers( dz_service_t * _service, dz_service_providers_t * _providers )
 {
     *_providers = _service->providers;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud )
+{
+    dz_texture_t * texture = DZ_NEW( _service, dz_texture_t );
+
+    texture->u[0] = 0.f;
+    texture->v[0] = 0.f;
+    texture->u[1] = 1.f;
+    texture->v[1] = 0.f;
+    texture->u[2] = 1.f;
+    texture->v[2] = 1.f;
+    texture->u[3] = 1.f;
+    texture->v[3] = 0.f;
+
+    texture->ud = _ud;
+
+    *_texture = texture;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_destroy( dz_service_t * _service, const dz_texture_t * _texture )
+{
+    DZ_FREE( _service, _texture );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture )
+{
+    return _texture->ud;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_uv( dz_texture_t * _texture, const float * _u, const float * _v )
+{
+    _texture->u[0] = _u[0];
+    _texture->v[0] = _v[0];
+    _texture->u[1] = _u[1];
+    _texture->v[1] = _v[1];
+    _texture->u[2] = _u[2];
+    _texture->v[2] = _v[2];
+    _texture->u[3] = _u[3];
+    _texture->v[3] = _v[3];
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_get_uv( const dz_texture_t * _texture, float * _u, float * _v )
+{
+    _u[0] = _texture->u[0];
+    _v[0] = _texture->v[0];
+    _u[1] = _texture->u[1];
+    _v[1] = _texture->v[1];
+    _u[2] = _texture->u[2];
+    _v[2] = _texture->v[2];
+    _u[3] = _texture->u[3];
+    _v[3] = _texture->v[3];
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud )
+{
+    dz_material_t * material = DZ_NEW( _service, dz_material_t );
+
+    material->blend_type = DZ_BLEND_NORNAL;
+
+    material->r = 1.f;
+    material->g = 1.f;
+    material->b = 1.f;
+    material->a = 1.f;
+
+    material->texture = DZ_NULLPTR;
+
+    material->ud = _ud;
+
+    *_material = material;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_destroy( dz_service_t * _service, const dz_material_t * _material )
+{
+    DZ_FREE( _service, _material );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_material_get_ud( const dz_material_t * _material )
+{
+    return _material->ud;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_set_blend( dz_material_t * _material, dz_blend_type_e _blend )
+{
+    _material->blend_type = _blend;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_blend_type_e dz_material_get_blend( const dz_material_t * _material )
+{
+    return _material->blend_type;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_set_color( dz_material_t * _material, float _r, float _g, float _b, float _a )
+{
+    _material->r = _r;
+    _material->g = _g;
+    _material->b = _b;
+    _material->a = _a;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_get_color( const dz_material_t * _material, float * _r, float * _g, float * _b, float * _a )
+{
+    *_r = _material->r;
+    *_g = _material->g;
+    *_b = _material->b;
+    *_a = _material->a;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_set_texture( dz_material_t * _material, const dz_texture_t * _texture )
+{
+    _material->texture = _texture;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_texture_t * dz_material_get_texture( dz_material_t * _material )
+{
+    return _material->texture;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud )
@@ -72,6 +194,11 @@ void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline
     }
 
     DZ_FREE( _service, _interpolate );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _key )
+{
+    return _key->ud;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
@@ -120,6 +247,11 @@ void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t *
     }
 
     DZ_FREE( _service, _key );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_timeline_key_get_ud( const dz_timeline_key_t * _key )
+{
+    return _key->ud;
 }
 //////////////////////////////////////////////////////////////////////////
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate )
@@ -187,7 +319,7 @@ dz_result_t dz_timeline_key_randomize_get_min_max( const dz_timeline_key_t * _ke
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data )
+dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data, dz_userdata_t _ud )
 {
     dz_affector_data_t * affector_data = DZ_NEW( _service, dz_affector_data_t );
 
@@ -196,12 +328,14 @@ dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t
         affector_data->timelines[index] = DZ_NULLPTR;
     }
 
+    affector_data->ud = _ud;
+
     *_affector_data = affector_data;
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_data_destroy( dz_service_t * _service, dz_affector_data_t * _affector_data )
+void dz_affector_data_destroy( dz_service_t * _service, const dz_affector_data_t * _affector_data )
 {
     for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
     {
@@ -210,6 +344,11 @@ void dz_affector_data_destroy( dz_service_t * _service, dz_affector_data_t * _af
     }
 
     DZ_FREE( _service, _affector_data );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_affector_data_get_ud( const dz_affector_data_t * _affector_data )
+{
+    return _affector_data->ud;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_affector_data_set_timeline( dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, const dz_timeline_key_t * _timeline )
@@ -254,7 +393,7 @@ dz_result_t dz_shape_data_create( dz_service_t * _service, dz_shape_data_t ** _s
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_data_destroy( dz_service_t * _service, dz_shape_data_t * _shape_data )
+void dz_shape_data_destroy( dz_service_t * _service, const dz_shape_data_t * _shape_data )
 {
     for( uint32_t index = 0; index != __DZ_SHAPE_DATA_TIMELINE_MAX__; ++index )
     {
@@ -269,6 +408,11 @@ void dz_shape_data_destroy( dz_service_t * _service, dz_shape_data_t * _shape_da
     }
 
     DZ_FREE( _service, _shape_data );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_shape_data_get_ud( const dz_shape_data_t * _shape_data )
+{
+    return _shape_data->ud;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_shape_data_set_timeline( dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type, const dz_timeline_key_t * _timeline )
@@ -362,7 +506,7 @@ dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t *
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emitter_data )
+void dz_emitter_data_destroy( dz_service_t * _service, const dz_emitter_data_t * _emitter_data )
 {
     for( uint32_t index = 0; index != __DZ_EMITTER_DATA_TIMELINE_MAX__; ++index )
     {
@@ -377,6 +521,11 @@ void dz_emitter_data_destroy( dz_service_t * _service, dz_emitter_data_t * _emit
     }
 
     DZ_FREE( _service, _emitter_data );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_emitter_data_get_ud( const dz_emitter_data_t * _emitter_data )
+{
+    return _emitter_data->ud;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_emitter_data_set_life( dz_emitter_data_t * _emitter_data, float _life )
@@ -483,10 +632,11 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
     return value;    
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, float _life, dz_emitter_t ** _emitter )
+dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter, const dz_material_t * _material, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, float _life, dz_userdata_t _ud )
 {
     dz_emitter_t * emitter = DZ_NEW( _service, dz_emitter_t );
 
+    emitter->material = _material;
     emitter->shape_data = _shape_data;
     emitter->emitter_data = _emitter_data;
     emitter->affector_data = _affector_data;
@@ -503,14 +653,21 @@ dz_result_t dz_emitter_create( dz_service_t * _service, const dz_shape_data_t * 
     emitter->time = 0.f;
     emitter->emitter_time = 0.f;
 
+    emitter->ud = _ud;
+
     *_emitter = emitter;
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_destroy( dz_service_t * _service, dz_emitter_t * _emitter )
+void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter )
 {
     DZ_FREE( _service, _emitter );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter )
+{
+    return _emitter->ud;
 }
 //////////////////////////////////////////////////////////////////////////
 uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter )
@@ -1001,6 +1158,10 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
         {
             break;
         }
+        else if( _emitter->life < 0.f )
+        {
+            for( ; _emitter->emitter_time > _emitter->life; _emitter->emitter_time -= _emitter->life );
+        }
 
         float delay = __get_emitter_value_seed( _emitter, DZ_EMITTER_DATA_SPAWN_DELAY, _emitter->life, _emitter->emitter_time, 1.f );
 
@@ -1029,6 +1190,23 @@ void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float 
 
         _emitter->emitter_time += delay;
     }
+}
+//////////////////////////////////////////////////////////////////////////
+dz_emitter_state_e dz_emitter_get_state( const dz_emitter_t * _emitter )
+{
+    dz_emitter_state_e state = DZ_EMITTER_PROCESS;
+
+    if( _emitter->life > 0.f && _emitter->emitter_time > _emitter->life )
+    {
+        state |= DZ_EMITTER_EMIT_COMPLETE;
+    }
+
+    if( state & DZ_EMITTER_EMIT_COMPLETE && _emitter->partices_count == 0U )
+    {
+        state |= DZ_EMITTER_PARTICLE_COMPLETE;
+    }
+
+    return state;
 }
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_emitter_mesh_t * _mesh )
@@ -1156,6 +1334,9 @@ void dz_emitter_compute_mesh( const dz_emitter_t * _emitter, dz_emitter_mesh_t *
     chunk->offset = 0;
     chunk->vertex_size = particle_iterator * 4;
     chunk->index_size = particle_iterator * 6;
+
+    chunk->blend_type = DZ_BLEND_NORNAL;
+    chunk->texture = DZ_NULLPTR;
 
     *_count = 1;
 }

@@ -328,7 +328,7 @@ int main( int argc, char ** argv )
     __set_emitter_timeline_const( service, emitter_data, DZ_EMITTER_DATA_SPAWN_COUNT, 3.f );
 
     dz_affector_data_t * affector_data;
-    if( dz_affector_data_create( service, &affector_data ) == DZ_FAILURE )
+    if( dz_affector_data_create( service, &affector_data, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -374,7 +374,7 @@ int main( int argc, char ** argv )
     }
 
     dz_emitter_t * emitter;
-    if( dz_emitter_create( service, shape_data, emitter_data, affector_data, 0, 5.f, &emitter ) == DZ_FAILURE )
+    if( dz_emitter_create( service, &emitter, DZ_NULLPTR, shape_data, emitter_data, affector_data, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
