@@ -34,6 +34,9 @@ public:
     int run();
 
 protected:
+    int resetEmitter();
+
+protected:
     float m_windowWidth;
     float m_windowHeight;
 
@@ -50,6 +53,20 @@ protected:
 
     typedef struct
     {
+        dz_shape_data_timeline_type_e type;
+        const char * name;
+
+        float value0;
+
+        float maxValue;
+
+        PointsArray param;
+    } timeline_shape_data_t;
+
+    timeline_shape_data_t m_timelineShapeData[__DZ_SHAPE_DATA_TIMELINE_MAX__];
+
+    typedef struct
+    {
         dz_affector_data_timeline_type_e type;
         const char * name;
 
@@ -62,7 +79,23 @@ protected:
         float maxValue;
 
         PointsArray param;
-    } timeline_data_t;
+    } timeline_affector_data_t;
 
-    timeline_data_t m_timelineData[__DZ_AFFECTOR_DATA_TIMELINE_MAX__];
+    timeline_affector_data_t m_timelineAffectorData[__DZ_AFFECTOR_DATA_TIMELINE_MAX__];
+
+    typedef struct
+    {
+        dz_emitter_data_timeline_type_e type;
+        const char * name;
+
+        float value0;
+
+        float maxValue;
+
+        PointsArray param;
+    } timeline_emitter_data_t;
+
+    timeline_emitter_data_t m_timelineEmitterData[__DZ_EMITTER_DATA_TIMELINE_MAX__];
+
+    dz_shape_data_type_e m_shapeType;
 };
