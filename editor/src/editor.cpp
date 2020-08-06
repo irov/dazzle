@@ -69,7 +69,7 @@ static float dz_sinf( float _a, dz_userdata_t _ud )
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_data_t * _shape_data, dz_shape_data_timeline_type_e _type, float _value )
+static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -82,12 +82,12 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
         return DZ_FAILURE;
     }
 
-    dz_shape_data_set_timeline( _shape_data, _type, timeline );
+    dz_shape_set_timeline( _shape, _type, timeline );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_linear( dz_service_t * _service, dz_shape_data_t * _shape_data, dz_shape_data_timeline_type_e _type, float _time0, float _value0, float _value1 )
+static dz_result_t __set_shape_timeline_linear( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _time0, float _value0, float _value1 )
 {
     dz_timeline_key_t * key0;
     if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -119,12 +119,12 @@ static dz_result_t __set_shape_timeline_linear( dz_service_t * _service, dz_shap
 
     dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
 
-    dz_shape_data_set_timeline( _shape_data, _type, key0 );
+    dz_shape_set_timeline( _shape, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_data_t * _shape_data, dz_shape_data_timeline_type_e _type, PointsArray _points, float _y_multiplier )
+static dz_result_t __set_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
     // first create new timeline
     dz_timeline_key_t * key0;
@@ -167,12 +167,12 @@ static dz_result_t __set_shape_timeline_linear_from_points( dz_service_t * _serv
     }
 
     // set new timeline to affector
-    dz_shape_data_set_timeline( _shape_data, _type, key0 );
+    dz_shape_set_timeline( _shape, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_data_t * _shape_data, dz_shape_data_timeline_type_e _type, PointsArray _points, float _y_multiplier )
+static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
     // first create new timeline
     dz_timeline_key_t * key0;
@@ -215,17 +215,17 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
     }
 
     // destroy old timeline
-    const dz_timeline_key_t * oldKey0 = dz_shape_data_get_timeline( _shape_data, _type );
+    const dz_timeline_key_t * oldKey0 = dz_shape_get_timeline( _shape, _type );
 
     dz_timeline_key_destroy( _service, oldKey0 );
 
     // set new timeline to affector
-    dz_shape_data_set_timeline( _shape_data, _type, key0 );
+    dz_shape_set_timeline( _shape, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type, float _value )
+static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -238,12 +238,12 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
         return DZ_FAILURE;
     }
 
-    dz_emitter_data_set_timeline( _emitter_data, _type, timeline );
+    dz_emitter_set_timeline( _emitter, _type, timeline );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_linear( dz_service_t * _service, dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type, float _time0, float _value0, float _value1 )
+static dz_result_t __set_emitter_timeline_linear( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _time0, float _value0, float _value1 )
 {
     dz_timeline_key_t * key0;
     if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -275,12 +275,12 @@ static dz_result_t __set_emitter_timeline_linear( dz_service_t * _service, dz_em
 
     dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
 
-    dz_emitter_data_set_timeline( _emitter_data, _type, key0 );
+    dz_emitter_set_timeline( _emitter, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _service, dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type, PointsArray _points, float _y_multiplier )
+static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
     // first create new timeline
     dz_timeline_key_t * key0;
@@ -323,17 +323,17 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
     }
 
     // destroy old timeline
-    const dz_timeline_key_t * oldKey0 = dz_emitter_data_get_timeline( _emitter_data, _type );
+    const dz_timeline_key_t * oldKey0 = dz_emitter_get_timeline( _emitter, _type );
 
     dz_timeline_key_destroy( _service, oldKey0 );
 
     // set new timeline to affector
-    dz_emitter_data_set_timeline( _emitter_data, _type, key0 );
+    dz_emitter_set_timeline( _emitter, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _value )
+static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -346,12 +346,12 @@ static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_af
         return DZ_FAILURE;
     }
 
-    dz_affector_data_set_timeline( _affector_data, _type, timeline );
+    dz_affector_set_timeline( _affector, _type, timeline );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
+static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
 {
     dz_timeline_key_t * key0;
     if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -402,12 +402,12 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
 
     dz_timeline_key_set_interpolate( key1, interpolate1, key2 );
 
-    dz_affector_data_set_timeline( _affector_data, _type, key0 );
+    dz_affector_set_timeline( _affector, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, PointsArray _points, float _y_multiplier )
+static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
     // first create new timeline
     dz_timeline_key_t * key0;
@@ -450,12 +450,12 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
     }
 
     // destroy old timeline
-    const dz_timeline_key_t * oldKey0 = dz_affector_data_get_timeline( _affector_data, _type );
+    const dz_timeline_key_t * oldKey0 = dz_affector_get_timeline( _affector, _type );
 
     dz_timeline_key_destroy( _service, oldKey0 );
 
     // set new timeline to affector
-    dz_affector_data_set_timeline( _affector_data, _type, key0 );
+    dz_affector_set_timeline( _affector, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
@@ -538,48 +538,48 @@ editor::editor()
     , m_fwWindow( nullptr )
 
     , m_timelineShapeData{
-        {DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN, "Segment angle min", -DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, "Segment angle max", DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, "Circle radius min", 50.f, 200.f},
-        {DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, "Circle radius max", 100.f, 200.f},
-        {DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, "Circle angle min", -DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, "Circle angle max", DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_DATA_LINE_ANGLE, "Line angle", 0.f, 100.f},
-        {DZ_SHAPE_DATA_LINE_SIZE, "Line size", 200.f, 500.f},
-        {DZ_SHAPE_DATA_RECT_WIDTH_MIN, "Rect width min", 0.f, 500.f},
-        {DZ_SHAPE_DATA_RECT_WIDTH_MAX, "Rect width max", 300.f, 500.f},
-        {DZ_SHAPE_DATA_RECT_HEIGHT_MIN, "Rect height min", 0.f, 500.f},
-        {DZ_SHAPE_DATA_RECT_HEIGHT_MAX, "Rect height max", 200.f, 100.f},
+        {DZ_SHAPE_SEGMENT_ANGLE_MIN, "Segment angle min", -DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_SEGMENT_ANGLE_MAX, "Segment angle max", DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_CIRCLE_RADIUS_MIN, "Circle radius min", 50.f, 200.f},
+        {DZ_SHAPE_CIRCLE_RADIUS_MAX, "Circle radius max", 100.f, 200.f},
+        {DZ_SHAPE_CIRCLE_ANGLE_MIN, "Circle angle min", -DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_CIRCLE_ANGLE_MAX, "Circle angle max", DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_LINE_ANGLE, "Line angle", 0.f, 100.f},
+        {DZ_SHAPE_LINE_SIZE, "Line size", 200.f, 500.f},
+        {DZ_SHAPE_RECT_WIDTH_MIN, "Rect width min", 0.f, 500.f},
+        {DZ_SHAPE_RECT_WIDTH_MAX, "Rect width max", 300.f, 500.f},
+        {DZ_SHAPE_RECT_HEIGHT_MIN, "Rect height min", 0.f, 500.f},
+        {DZ_SHAPE_RECT_HEIGHT_MAX, "Rect height max", 200.f, 100.f},
 }
 
 , m_timelineAffectorData{
-    {DZ_AFFECTOR_DATA_TIMELINE_LIFE, "Life", 0.5f, 1.f, 3.f, 5.f, 2.f, 10.f},
+    {DZ_AFFECTOR_TIMELINE_LIFE, "Life", 0.5f, 1.f, 3.f, 5.f, 2.f, 10.f},
 
-    {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, "Speed", 0.5f, 1.f, 100.f, 50.f, 0.f, 200.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, "Accelerate", 0.5f, 1.f, 0.1f, 0.5f, 0.f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, "Rotate speed", 0.5f, 1.f, 0.0f, 0.1f, 0.f, 0.5f},
-    {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, "Rotate accelerate", 0.5f, 1.f, 0.0f, 0.f, 0.f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, "Spin speed", 0.5f, 1.f, 0.01f, 0.1f, 0.f, 0.5f},
-    {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, "Spin accelerate", 0.5f, 1.f, 0.001f, 0.f, 0.f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, "Strafe speed", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE, "Strafe frequence", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, "Strafe size", 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, "Strafe shift", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_SIZE, "Size", 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, "Color Red", 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, "Color Green", 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, "Color Blue", 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f},
-    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, "Color Alpha", 0.05f, 1.f, 0.f, 1.f, 0.f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_MOVE_SPEED, "Speed", 0.5f, 1.f, 100.f, 50.f, 0.f, 200.f},
+    {DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, "Accelerate", 0.5f, 1.f, 0.1f, 0.5f, 0.f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, "Rotate speed", 0.5f, 1.f, 0.0f, 0.1f, 0.f, 0.5f},
+    {DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, "Rotate accelerate", 0.5f, 1.f, 0.0f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_SPIN_SPEED, "Spin speed", 0.5f, 1.f, 0.01f, 0.1f, 0.f, 0.5f},
+    {DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, "Spin accelerate", 0.5f, 1.f, 0.001f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, "Strafe speed", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, "Strafe frequence", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, "Strafe size", 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f},
+    {DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, "Strafe shift", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_SIZE, "Size", 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f},
+    {DZ_AFFECTOR_TIMELINE_COLOR_R, "Color Red", 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_COLOR_G, "Color Green", 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_COLOR_B, "Color Blue", 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f},
+    {DZ_AFFECTOR_TIMELINE_COLOR_A, "Color Alpha", 0.05f, 1.f, 0.f, 1.f, 0.f, 1.f},
 }
 
 , m_timelineEmitterData{
-    {DZ_EMITTER_DATA_SPAWN_DELAY, "Spawn delay", 0.1f, 1.f},
-    {DZ_EMITTER_DATA_SPAWN_COUNT, "Spawn count", 1.f, 10.f},
-    {DZ_EMITTER_DATA_SPAWN_SPIN_MIN, "Spawn spin min", 0.f, 10.f},
-    {DZ_EMITTER_DATA_SPAWN_SPIN_MAX, "Spawn spin max", 0.f, 10.f},
+    {DZ_EMITTER_SPAWN_DELAY, "Spawn delay", 0.1f, 1.f},
+    {DZ_EMITTER_SPAWN_COUNT, "Spawn count", 1.f, 10.f},
+    {DZ_EMITTER_SPAWN_SPIN_MIN, "Spawn spin min", 0.f, 10.f},
+    {DZ_EMITTER_SPAWN_SPIN_MAX, "Spawn spin max", 0.f, 10.f},
 }
 
-, m_shapeType( DZ_SHAPE_DATA_RECT )
+, m_shapeType( DZ_SHAPE_RECT )
 {
 }
 //////////////////////////////////////////////////////////////////////////
@@ -654,14 +654,14 @@ int editor::init()
         }
 
         // shape data
-        if( dz_shape_data_create( m_service, &m_shapeData, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_shape_create( m_service, &m_shapeData, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
 
-        for( uint32_t index = 0; index != __DZ_SHAPE_DATA_TIMELINE_MAX__; ++index )
+        for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
         {
-            timeline_shape_data_t & data = m_timelineShapeData[index];
+            timeline_t & data = m_timelineShapeData[index];
 
             if( __set_shape_timeline_linear( m_service, m_shapeData, data.type, 1.f, data.value0, data.value0 ) == DZ_FAILURE )
             {
@@ -677,16 +677,16 @@ int editor::init()
         }
 
         // emitter data
-        if( dz_emitter_data_create( m_service, &m_emitterData, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_emitter_create( m_service, &m_emitterData, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
 
-        dz_emitter_data_set_life( m_emitterData, 1000.f );
+        dz_emitter_set_life( m_emitterData, 1000.f );
 
-        for( uint32_t index = 0; index != __DZ_EMITTER_DATA_TIMELINE_MAX__; ++index )
+        for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
         {
-            timeline_emitter_data_t & data = m_timelineEmitterData[index];
+            timeline_emitter_t & data = m_timelineEmitterData[index];
 
             if( __set_emitter_timeline_linear( m_service, m_emitterData, data.type, 1.f, data.value0, data.value0 ) == DZ_FAILURE )
             {
@@ -702,14 +702,14 @@ int editor::init()
         }
 
         // affector data
-        if( dz_affector_data_create( m_service, &m_affectorData, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_affector_create( m_service, &m_affectorData, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
 
-        for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
+        for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
         {
-            timeline_affector_data_t & data = m_timelineAffectorData[index];
+            timeline_affector_t & data = m_timelineAffectorData[index];
 
             if( __set_affector_timeline_linear2( m_service, m_affectorData, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
             {
@@ -727,7 +727,7 @@ int editor::init()
         }
 
         // emitter
-        if( dz_emitter_create( m_service, &m_emitter, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_effect_create( m_service, &m_emitter, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
@@ -802,16 +802,16 @@ int editor::update()
 
         // shape data
         {
-            dz_shape_data_type_e current_shape_type = dz_shape_data_get_type( m_shapeData );
+            dz_shape_type_e current_shape_type = dz_shape_get_type( m_shapeData );
 
             const char * shape_type_names[] = {
-                "DZ_SHAPE_DATA_POINT",
-                "DZ_SHAPE_DATA_SEGMENT",
-                "DZ_SHAPE_DATA_CIRCLE",
-                "DZ_SHAPE_DATA_LINE",
-                "DZ_SHAPE_DATA_RECT",
-                //"DZ_SHAPE_DATA_POLYGON",
-                //"DZ_SHAPE_DATA_MASK",
+                "DZ_SHAPE_POINT",
+                "DZ_SHAPE_SEGMENT",
+                "DZ_SHAPE_CIRCLE",
+                "DZ_SHAPE_LINE",
+                "DZ_SHAPE_RECT",
+                //"DZ_SHAPE_POLYGON",
+                //"DZ_SHAPE_MASK",
             };
             static int selected_type = current_shape_type;
 
@@ -821,7 +821,7 @@ int editor::update()
 
             if( selected_type != current_shape_type )
             {
-                m_shapeType = static_cast<dz_shape_data_type_e>(selected_type);
+                m_shapeType = static_cast<dz_shape_type_e>(selected_type);
 
                 this->resetEmitter();
             }
@@ -830,38 +830,38 @@ int editor::update()
             float width = ImGui::GetWindowContentRegionWidth();
             ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
-            static bool headerFlags[__DZ_SHAPE_DATA_TIMELINE_MAX__] = {false};
+            static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = {false};
 
             ImGui::Separator();
 
-            for( uint32_t index = 0; index != __DZ_SHAPE_DATA_TIMELINE_MAX__; ++index )
+            for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
             {
-                timeline_shape_data_t & data = m_timelineShapeData[index];
+                timeline_t & data = m_timelineShapeData[index];
 
                 bool show = false;
 
                 switch( m_shapeType )
                 {
-                case DZ_SHAPE_DATA_SEGMENT:
-                    if( data.type >= DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN && data.type <= DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX )
+                case DZ_SHAPE_SEGMENT:
+                    if( data.type >= DZ_SHAPE_SEGMENT_ANGLE_MIN && data.type <= DZ_SHAPE_SEGMENT_ANGLE_MAX )
                     {
                         show = true;
                     }
                     break;
-                case DZ_SHAPE_DATA_CIRCLE:
-                    if( data.type >= DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN && data.type <= DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX )
+                case DZ_SHAPE_CIRCLE:
+                    if( data.type >= DZ_SHAPE_CIRCLE_RADIUS_MIN && data.type <= DZ_SHAPE_CIRCLE_ANGLE_MAX )
                     {
                         show = true;
                     }
                     break;
-                case DZ_SHAPE_DATA_LINE:
-                    if( data.type >= DZ_SHAPE_DATA_LINE_ANGLE && data.type <= DZ_SHAPE_DATA_LINE_SIZE )
+                case DZ_SHAPE_LINE:
+                    if( data.type >= DZ_SHAPE_LINE_ANGLE && data.type <= DZ_SHAPE_LINE_SIZE )
                     {
                         show = true;
                     }
                     break;
-                case DZ_SHAPE_DATA_RECT:
-                    if( data.type >= DZ_SHAPE_DATA_RECT_WIDTH_MIN && data.type <= DZ_SHAPE_DATA_RECT_HEIGHT_MAX )
+                case DZ_SHAPE_RECT:
+                    if( data.type >= DZ_SHAPE_RECT_WIDTH_MIN && data.type <= DZ_SHAPE_RECT_HEIGHT_MAX )
                     {
                         show = true;
                     }
@@ -902,15 +902,15 @@ int editor::update()
             float width = ImGui::GetWindowContentRegionWidth();
             ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
-            static bool headerFlags[__DZ_AFFECTOR_DATA_TIMELINE_MAX__] = {false};
+            static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = {false};
 
             ImGui::Separator();
 
-            for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
+            for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
             {
                 ImGui::PushID( index );
 
-                timeline_affector_data_t & data = m_timelineAffectorData[index];
+                timeline_affector_t & data = m_timelineAffectorData[index];
 
                 ImGui::Checkbox( data.name, &headerFlags[index] );
 
@@ -938,8 +938,8 @@ int editor::update()
             ImGui::Begin( "Emitter data" );
 
             // time
-            float life = dz_emitter_get_life( m_emitter );
-            float time = dz_emitter_get_time( m_emitter );
+            float life = dz_effect_get_life( m_emitter );
+            float time = dz_effect_get_time( m_emitter );
 
             ImGui::Text( "Life: %.3f s | Time: %.3f s", life, time );
 
@@ -955,7 +955,7 @@ int editor::update()
             // emitter states
             if( ImGui::CollapsingHeader( "State" ) )
             {
-                dz_emitter_state_e emitter_state = dz_emitter_get_state( m_emitter );
+                dz_effect_state_e emitter_state = dz_emitter_get_state( m_emitter );
 
                 auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
                 {
@@ -969,8 +969,8 @@ int editor::update()
                     ImGui::Text( _msg );
                 };
 
-                lamdba_addBoolIndicator( emitter_state & DZ_EMITTER_EMIT_COMPLETE, "DZ_EMITTER_EMIT_COMPLETE" );
-                lamdba_addBoolIndicator( emitter_state & DZ_EMITTER_PARTICLE_COMPLETE, "DZ_EMITTER_PARTICLE_COMPLETE" );
+                lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "DZ_EMITTER_EMIT_COMPLETE" );
+                lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "DZ_EMITTER_PARTICLE_COMPLETE" );
 
                 ImGui::Separator();
             }
@@ -979,13 +979,13 @@ int editor::update()
             float width = ImGui::GetWindowContentRegionWidth();
             ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
-            static bool headerFlags[__DZ_EMITTER_DATA_TIMELINE_MAX__] = {false};
+            static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = {false};
 
             ImGui::Separator();
 
-            for( uint32_t index = 0; index != __DZ_EMITTER_DATA_TIMELINE_MAX__; ++index )
+            for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
             {
-                timeline_emitter_data_t & data = m_timelineEmitterData[index];
+                timeline_emitter_t & data = m_timelineEmitterData[index];
 
                 ImGui::PushID( index );
 
@@ -1016,7 +1016,7 @@ int editor::update()
     }
 
     // update and render dazzle
-    dz_emitter_update( m_service, m_emitter, 0.005f );
+    dz_effect_update( m_service, m_emitter, 0.005f );
 
     // update camera
     opengl_set_camera( m_openglHandle, camera_offset_x, camera_offset_y, camera_scale );
@@ -1045,7 +1045,7 @@ int editor::render()
         void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
         void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
 
-        dz_emitter_mesh_t mesh;
+        dz_effect_mesh_t mesh;
         mesh.position_buffer = vertices;
         mesh.position_offset = offsetof( gl_vertex_t, x );
         mesh.position_stride = sizeof( gl_vertex_t );
@@ -1060,23 +1060,23 @@ int editor::render()
 
         mesh.index_buffer = indices;
 
-        mesh.flags = DZ_EMITTER_MESH_FLAG_NONE;
+        mesh.flags = DZ_EFFECT_MESH_FLAG_NONE;
         mesh.r = 1.f;
         mesh.g = 1.f;
         mesh.b = 1.f;
         mesh.a = 1.f;
 
-        dz_emitter_mesh_chunk_t chunks[16];
+        dz_effect_mesh_chunk_t chunks[16];
         uint32_t chunk_count;
 
-        dz_emitter_compute_mesh( m_emitter, &mesh, chunks, 16, &chunk_count );
+        dz_effect_compute_mesh( m_emitter, &mesh, chunks, 16, &chunk_count );
 
         glUnmapBuffer( GL_ARRAY_BUFFER );
         glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 
         for( uint32_t index = 0; index != chunk_count; ++index )
         {
-            dz_emitter_mesh_chunk_t * chunk = chunks + index;
+            dz_effect_mesh_chunk_t * chunk = chunks + index;
 
             glDrawElements( GL_TRIANGLES, chunk->index_size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
         }
@@ -1118,18 +1118,18 @@ int editor::run()
 //////////////////////////////////////////////////////////////////////////
 int editor::resetEmitter()
 {
-    dz_emitter_destroy( m_service, m_emitter );
+    dz_effect_destroy( m_service, m_emitter );
 
-    dz_shape_data_destroy( m_service, m_shapeData );
+    dz_shape_destroy( m_service, m_shapeData );
 
-    if( dz_shape_data_create( m_service, &m_shapeData, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_shape_create( m_service, &m_shapeData, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_DATA_TIMELINE_MAX__; ++index )
+    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
-        timeline_shape_data_t & data = m_timelineShapeData[index];
+        timeline_t & data = m_timelineShapeData[index];
 
         if( __set_shape_timeline_linear_from_points( m_service, m_shapeData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
         {
@@ -1137,7 +1137,7 @@ int editor::resetEmitter()
         }
     }
 
-    if( dz_emitter_create( m_service, &m_emitter, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( m_service, &m_emitter, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -1149,10 +1149,10 @@ void editor::finalize()
 {
     // finalize emitter
     {
-        dz_emitter_destroy( m_service, m_emitter );
-        dz_emitter_data_destroy( m_service, m_emitterData );
-        dz_affector_data_destroy( m_service, m_affectorData );
-        dz_shape_data_destroy( m_service, m_shapeData );
+        dz_effect_destroy( m_service, m_emitter );
+        dz_emitter_destroy( m_service, m_emitterData );
+        dz_affector_destroy( m_service, m_affectorData );
+        dz_shape_destroy( m_service, m_shapeData );
         dz_service_destroy( m_service );
     }
 

@@ -5,7 +5,7 @@
 
 typedef struct dz_particle_t
 {
-    float rands[__DZ_AFFECTOR_DATA_TIMELINE_MAX__];
+    float rands[__DZ_AFFECTOR_TIMELINE_MAX__];
 
     float life;
     float time;
