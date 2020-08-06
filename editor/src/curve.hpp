@@ -38,48 +38,48 @@ namespace ImGui
 namespace ImGui
 {
     //////////////////////////////////////////////////////////////////////////
-    float CurveValue(float p, int maxpoints, const ImVec2 *points)
+    float CurveValue(float _p, int _maxpoints, const ImVec2 *_points)
     {
-        if (maxpoints < 2 || points == 0)
+        if (_maxpoints < 2 || _points == 0)
             return 0;
-        if (p < 0) return points[0].y;
+        if (_p < 0) return _points[0].y;
 
         int left = 0;
-        while (left < maxpoints && points[left].x < p && points[left].x != -1) left++;
+        while (left < _maxpoints && _points[left].x < _p && _points[left].x != -1) left++;
         if (left) left--;
 
-        if (left == maxpoints-1)
-            return points[maxpoints - 1].y;
+        if (left == _maxpoints-1)
+            return _points[_maxpoints - 1].y;
 
-        float d = (p - points[left].x) / (points[left + 1].x - points[left].x);
+        float d = (_p - _points[left].x) / (_points[left + 1].x - _points[left].x);
 
-        return points[left].y + (points[left + 1].y - points[left].y) * d;
+        return _points[left].y + (_points[left + 1].y - _points[left].y) * d;
     }
     //////////////////////////////////////////////////////////////////////////
-    int Curve(const char *label, const ImVec2& size, const int maxpoints, ImVec2 *points)
+    int Curve( const char * _label, const ImVec2 & _size, const int _maxpoints, ImVec2 * _points, float _x_min = 0.f, float _x_max = 1.f, float _y_min = 0.f, float _y_max = 1.f )
     {
         int modified = 0;
         int i;
-        if (maxpoints < 2 || points == 0)
+        if (_maxpoints < 2 || _points == 0)
             return 0;
 
-        if (points[0].x < 0)
+        if (_points[0].x < 0)
         {
-            points[0].x = 0;
-            points[0].y = 0;
-            points[1].x = 1;
-            points[1].y = 1;
-            points[2].x = -1;
+            _points[0].x = 0;
+            _points[0].y = 0;
+            _points[1].x = 1;
+            _points[1].y = 1;
+            _points[2].x = -1;
         }
 
         ImGuiWindow* window = GetCurrentWindow();
         ImGuiContext& g = *GImGui;
         const ImGuiStyle& style = g.Style;
-        const ImGuiID id = window->GetID(label);
+        const ImGuiID id = window->GetID(_label);
         if (window->SkipItems)
             return 0;
 
-        ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+        ImRect bb(window->DC.CursorPos, window->DC.CursorPos + _size);
         ItemSize(bb);
         if (!ItemAdd(bb, NULL))
             return 0;
@@ -87,7 +87,7 @@ namespace ImGui
         const bool hovered = ImGui::IsItemHovered();
 
         int max = 0;
-        while (max < maxpoints && points[max].x >= 0) max++;
+        while (max < _maxpoints && _points[max].x >= 0) max++;
 
         int kill = 0;
         do
@@ -97,16 +97,16 @@ namespace ImGui
                 modified = 1;
                 for (i = kill + 1; i < max; i++)
                 {
-                    points[i - 1] = points[i];
+                    _points[i - 1] = _points[i];
                 }
                 max--;
-                points[max].x = -1;
+                _points[max].x = -1;
                 kill = 0;
             }
 
             for (i = 1; i < max - 1; i++)
             {
-                if (abs(points[i].x - points[i - 1].x) < 1 / 128.0)
+                if (abs(_points[i].x - _points[i - 1].x) < 1 / 128.0)
                 {
                     kill = i;
                 }
@@ -130,12 +130,12 @@ namespace ImGui
                 pos.y = 1 - pos.y;              
 
                 int left = 0;
-                while (left < max && points[left].x < pos.x) left++;
+                while (left < max && _points[left].x < pos.x) left++;
                 if (left) left--;
 
-                ImVec2 p = points[left] - pos;
+                ImVec2 p = _points[left] - pos;
                 float p1d = sqrt(p.x*p.x + p.y*p.y);
-                p = points[left+1] - pos;
+                p = _points[left+1] - pos;
                 float p2d = sqrt(p.x*p.x + p.y*p.y);
                 int sel = -1;
                 if (p1d < (1 / 16.0)) sel = left;
@@ -143,30 +143,30 @@ namespace ImGui
 
                 if (sel != -1)
                 {
-                    points[sel] = pos;
+                    _points[sel] = pos;
                 }
                 else
                 {
-                    if (max < maxpoints)
+                    if (max < _maxpoints)
                     {
                         max++;
                         for (i = max; i > left; i--)
                         {
-                            points[i] = points[i - 1];
+                            _points[i] = _points[i - 1];
                         }
-                        points[left + 1] = pos;
+                        _points[left + 1] = pos;
                     }
-                    if (max < maxpoints)
-                        points[max].x = -1;
+                    if (max < _maxpoints)
+                        _points[max].x = -1;
                 }
 
                 // snap first/last to min/max
-                if( points[0].x < points[max - 1].x ) {
-                    points[0].x= 0;
-                    points[max - 1].x = 1;
+                if( _points[0].x < _points[max - 1].x ) {
+                    _points[0].x= 0;
+                    _points[max - 1].x = 1;
                 } else {
-                    points[0].x= 1;
-                    points[max - 1].x = 0;
+                    _points[0].x= 1;
+                    _points[max - 1].x = 0;
                 }
             }
         }
@@ -198,8 +198,8 @@ namespace ImGui
         // lines
         for( i = 1; i < max; i++ )
         {
-            ImVec2 a = points[i - 1];
-            ImVec2 b = points[i];
+            ImVec2 a = _points[i - 1];
+            ImVec2 b = _points[i];
             a.y = 1 - a.y;
             b.y = 1 - b.y;
             a = a * (bb.Max - bb.Min) + bb.Min;
@@ -212,7 +212,7 @@ namespace ImGui
             // control points
             for (i = 0; i < max; i++)
             {
-                ImVec2 p = points[i];
+                ImVec2 p = _points[i];
                 p.y = 1 - p.y;
                 p = p * (bb.Max - bb.Min) + bb.Min;
                 ImVec2 a = p - ImVec2(2, 2);
@@ -221,19 +221,45 @@ namespace ImGui
             }
         }
 
-        char buf[128];
-        const char *str = label;
+        {
+            char buf[128];
+            const char *str = _label;
 
-        if( hovered ) {
-            ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
-            pos.y = 1 - pos.y;              
+            if( hovered )
+            {
+                ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
+                pos.y = 1 - pos.y;
+                float x = _x_min + pos.x * (_x_max - _x_min);
+                float y = _y_min + pos.y * (_y_max - _y_min);
 
-            sprintf(buf, "%s (%f,%f)", label, pos.x, pos.y );
-            str = buf;
+                sprintf( buf, "(%.3f,%.3f)", x, y );
+                str = buf;
+            }
+
+            RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, str, NULL, NULL, ImVec2( 1.f, 0.f ) );
         }
 
-        RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, str, NULL, NULL );
+        {
+            char buf[32];
+            sprintf( buf, "%.2f", _y_min );
 
+            RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.f, 1.f ) );
+        }
+
+        {
+            char buf[32];
+            sprintf( buf, "%.2f", _y_max );
+
+            RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.f, 0.f ) );
+        }
+
+        {
+            char buf[32];
+            sprintf( buf, "%.2f", _x_max );
+
+            RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 1.f, 1.f ) );
+        }
+        
         return modified;
     }
 

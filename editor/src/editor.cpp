@@ -8,8 +8,8 @@
 //////////////////////////////////////////////////////////////////////////
 namespace ImGui
 {
-    int Curve( const char * label, const ImVec2 & size, int maxpoints, ImVec2 * points );
-    float CurveValue( float p, int maxpoints, const ImVec2 * points );
+    int Curve( const char * _label, const ImVec2 & _size, const int _maxpoints, ImVec2 * _points, float _x_min, float _x_max, float _y_min, float _y_max );
+    float CurveValue( float _p, int _maxpoints, const ImVec2 * _points );
 };
 //////////////////////////////////////////////////////////////////////////
 ImVec4 clear_color = ImVec4( 0.45f, 0.55f, 0.60f, 1.00f );
@@ -804,13 +804,13 @@ int editor::update()
             dz_shape_data_type_e current_shape_type = dz_shape_data_get_type( m_shapeData );
 
             const char * shape_type_names[] = {
-                "DZ_SHAPE_DATA_POINT",
-                "DZ_SHAPE_DATA_SEGMENT",
-                "DZ_SHAPE_DATA_CIRCLE",
-                "DZ_SHAPE_DATA_LINE",
-                "DZ_SHAPE_DATA_RECT",
-                //"DZ_SHAPE_DATA_POLYGON",
-                //"DZ_SHAPE_DATA_MASK",
+                "Point",
+                "Segment",
+                "Circle",
+                "Line",
+                "Rect",
+                //"Polygon",
+                //"Mask",
             };
             static int selected_type = current_shape_type;
 
@@ -875,7 +875,8 @@ int editor::update()
 
                     if( headerFlags[index] == true )
                     {
-                        if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param ) != 0 )
+                        float life = dz_emitter_get_life( m_emitter );
+                        if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
                         {
                             if( __reset_shape_timeline_linear_from_points( m_service, m_shapeData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                             {
@@ -915,7 +916,8 @@ int editor::update()
 
                 if( headerFlags[index] == true )
                 {
-                    if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param ) != 0 )
+                    float life = dz_emitter_get_life( m_emitter );
+                    if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
                     {
                         if( __reset_affector_timeline_linear_from_points( m_service, m_affectorData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                         {
@@ -992,7 +994,8 @@ int editor::update()
 
                 if( headerFlags[index] == true )
                 {
-                    if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param ) != 0 )
+                    float life = dz_emitter_get_life( m_emitter );
+                    if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
                     {
                         if( __reset_emitter_timeline_linear_from_points( m_service, m_emitterData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                         {
