@@ -157,6 +157,7 @@ dz_result_t dz_shape_data_create( dz_service_t * _service, dz_shape_data_t ** _s
 void dz_shape_data_destroy( dz_service_t * _service, const dz_shape_data_t * _shape_data );
 
 dz_userdata_t dz_shape_data_get_ud( const dz_shape_data_t * _shape_data );
+dz_shape_data_type_e dz_shape_data_get_type( const dz_shape_data_t * _shape_data );
 
 typedef enum dz_shape_data_timeline_type_e
 {
@@ -219,6 +220,10 @@ dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter
 void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter );
 
 dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter );
+
+float dz_emitter_get_life( const dz_emitter_t * _emitter );
+float dz_emitter_get_time( const dz_emitter_t * _emitter );
+float dz_emitter_get_emitter_time( const dz_emitter_t * _emitter );
 
 uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter );
 

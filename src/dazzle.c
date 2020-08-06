@@ -415,6 +415,11 @@ dz_userdata_t dz_shape_data_get_ud( const dz_shape_data_t * _shape_data )
     return _shape_data->ud;
 }
 //////////////////////////////////////////////////////////////////////////
+dz_shape_data_type_e dz_shape_data_get_type( const dz_shape_data_t * _shape_data )
+{
+    return _shape_data->type;
+}
+//////////////////////////////////////////////////////////////////////////
 void dz_shape_data_set_timeline( dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type, const dz_timeline_key_t * _timeline )
 {
     _shape->timelines[_type] = _timeline;
@@ -673,6 +678,21 @@ dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter )
 uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter )
 {
     return _emitter->init_seed;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_emitter_get_life( const dz_emitter_t * _emitter )
+{
+    return _emitter->life;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_emitter_get_time( const dz_emitter_t * _emitter )
+{
+    return _emitter->time;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_emitter_get_emitter_time( const dz_emitter_t * _emitter )
+{
+    return _emitter->emitter_time;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_affector_value_rands( dz_particle_t * _p, dz_emitter_t * _emitter, dz_affector_data_timeline_type_e _type, float _default )
