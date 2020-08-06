@@ -61,7 +61,7 @@ static float dz_sinf( float _a, dz_userdata_t _ud )
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_data_t * _shape_data, dz_shape_data_timeline_type_e _type, float _value )
+static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -74,12 +74,12 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
         return DZ_FAILURE;
     }
 
-    dz_shape_data_set_timeline( _shape_data, _type, timeline );
+    dz_shape_set_timeline( _shape, _type, timeline );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type, float _value )
+static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -92,12 +92,12 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
         return DZ_FAILURE;
     }
 
-    dz_emitter_data_set_timeline( _emitter_data, _type, timeline );
+    dz_emitter_set_timeline( _emitter, _type, timeline );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _value )
+static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -110,12 +110,12 @@ static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_af
         return DZ_FAILURE;
     }
 
-    dz_affector_data_set_timeline( _affector_data, _type, timeline );
+    dz_affector_set_timeline( _affector, _type, timeline );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
+static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
 {
     dz_timeline_key_t * key0;
     if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -166,7 +166,7 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
 
     dz_timeline_key_set_interpolate( key1, interpolate1, key2 );
 
-    dz_affector_data_set_timeline( _affector_data, _type, key0 );
+    dz_affector_set_timeline( _affector, _type, key0 );
 
     return DZ_SUCCESSFUL;
 }
@@ -292,17 +292,17 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
-    dz_shape_data_t * shape_data;
-    if( dz_shape_data_create( service, &shape_data, DZ_SHAPE_DATA_MASK, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_shape_t * shape;
+    if( dz_shape_create( service, &shape, DZ_SHAPE_MASK, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_WIDTH_MAX, 300.f );
-    //__set_shape_timeline_const( service, shape_data, DZ_SHAPE_DATA_RECT_HEIGHT_MAX, 200.f );
+    //__set_shape_timeline_const( service, shape, DZ_SHAPE_RECT_WIDTH_MAX, 300.f );
+    //__set_shape_timeline_const( service, shape, DZ_SHAPE_RECT_HEIGHT_MAX, 200.f );
 
     //float triangles[] = {-100.f, -100.f, 100.f, 0.f, 100.f, 100.f, 300.f, 200.f, 400.f, 200.f, 400.f, 500.f};
-    //dz_shape_data_set_polygon( shape_data, triangles, 2 );
+    //dz_shape_set_polygon( shape, triangles, 2 );
 
     uint8_t mask[] = {
         0, 0, 0, 0, 0,
@@ -312,69 +312,69 @@ int main( int argc, char ** argv )
         0, 0, 0, 0, 0
     };
 
-    dz_shape_data_set_mask( shape_data, mask, 1, 5, 5, 5 );
+    dz_shape_set_mask( shape, mask, 1, 5, 5, 5 );
 
-    dz_shape_data_set_mask_scale( shape_data, 50.f );
+    dz_shape_set_mask_scale( shape, 50.f );
 
-    dz_emitter_data_t * emitter_data;
-    if( dz_emitter_data_create( service, &emitter_data, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_emitter_t * emitter;
+    if( dz_emitter_create( service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    dz_emitter_data_set_life( emitter_data, 1000.f );
+    dz_emitter_set_life( emitter, 1000.f );
 
-    __set_emitter_timeline_const( service, emitter_data, DZ_EMITTER_DATA_SPAWN_DELAY, 0.1f );
-    __set_emitter_timeline_const( service, emitter_data, DZ_EMITTER_DATA_SPAWN_COUNT, 3.f );
+    __set_emitter_timeline_const( service, emitter, DZ_EMITTER_SPAWN_DELAY, 0.1f );
+    __set_emitter_timeline_const( service, emitter, DZ_EMITTER_SPAWN_COUNT, 3.f );
 
-    dz_affector_data_t * affector_data;
-    if( dz_affector_data_create( service, &affector_data, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_affector_t * affector;
+    if( dz_affector_create( service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
-    typedef struct
+    typedef struct timeline_t
     {
-        dz_affector_data_timeline_type_e type;
+        dz_affector_timeline_type_e type;
         float time0;
         float time1;
         float value0;
         float value1;
         float value2;
-    } timeline_data_t;
+    } timeline_t;
 
-    timeline_data_t timeline_datas[] = {
-        {DZ_AFFECTOR_DATA_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f},
+    timeline_t timeline_datas[] = {
+        {DZ_AFFECTOR_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f},
 
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.f, 0.1f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, 0.5f, 1.f, 0.01f, 0.1f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, 0.5f, 1.f, 0.001f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_SIZE, 0.5f, 1.f, 5.f, 15.f, 0.f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },
-        {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.f, 0.1f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_SPIN_SPEED, 0.5f, 1.f, 0.01f, 0.1f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, 0.5f, 1.f, 0.001f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_SIZE, 0.5f, 1.f, 5.f, 15.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
+        {DZ_AFFECTOR_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
+        {DZ_AFFECTOR_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },
+        {DZ_AFFECTOR_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f},
     };
 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_DATA_TIMELINE_MAX__; ++index )
+    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
-        timeline_data_t data = timeline_datas[index];
+        timeline_t data = timeline_datas[index];
 
-        if( __set_affector_timeline_linear2( service, affector_data, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
+        if( __set_affector_timeline_linear2( service, affector, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
     }
 
-    dz_emitter_t * emitter;
-    if( dz_emitter_create( service, &emitter, DZ_NULLPTR, shape_data, emitter_data, affector_data, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_effect_t * effect;
+    if( dz_effect_create( service, &effect, DZ_NULLPTR, shape, emitter, affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -392,7 +392,7 @@ int main( int argc, char ** argv )
     {
         glfwPollEvents();
 
-        dz_emitter_update( service, emitter, 0.005f );
+        dz_effect_update( service, effect, 0.005f );
 
         opengl_set_camera( opengl_handle, camera_offset_x, camera_offset_y, camera_scale );
 
@@ -410,7 +410,7 @@ int main( int argc, char ** argv )
         void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
         void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
 
-        dz_emitter_mesh_t mesh;
+        dz_effect_mesh_t mesh;
         mesh.position_buffer = vertices;
         mesh.position_offset = offsetof( gl_vertex_t, x );
         mesh.position_stride = sizeof( gl_vertex_t );
@@ -425,23 +425,23 @@ int main( int argc, char ** argv )
 
         mesh.index_buffer = indices;
 
-        mesh.flags = DZ_EMITTER_MESH_FLAG_NONE;
+        mesh.flags = DZ_EFFECT_MESH_FLAG_NONE;
         mesh.r = 1.f;
         mesh.g = 1.f;
         mesh.b = 1.f;
         mesh.a = 1.f;
 
-        dz_emitter_mesh_chunk_t chunks[16];
+        dz_effect_mesh_chunk_t chunks[16];
         uint32_t chunk_count;
 
-        dz_emitter_compute_mesh( emitter, &mesh, chunks, 16, &chunk_count );
+        dz_effect_compute_mesh( effect, &mesh, chunks, 16, &chunk_count );
 
         glUnmapBuffer( GL_ARRAY_BUFFER );
         glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 
         for( uint32_t index = 0; index != chunk_count; ++index )
         {
-            dz_emitter_mesh_chunk_t * chunk = chunks + index;
+            dz_effect_mesh_chunk_t * chunk = chunks + index;
 
             glDrawElements( GL_TRIANGLES, chunk->index_size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
         }
@@ -449,10 +449,10 @@ int main( int argc, char ** argv )
         glfwSwapBuffers( fwWindow );
     }
 
+    dz_effect_destroy( service, effect );
     dz_emitter_destroy( service, emitter );
-    dz_emitter_data_destroy( service, emitter_data );
-    dz_affector_data_destroy( service, affector_data );
-    dz_shape_data_destroy( service, shape_data );
+    dz_affector_destroy( service, affector );
+    dz_shape_destroy( service, shape );
     dz_service_destroy( service );
 
     return EXIT_SUCCESS;

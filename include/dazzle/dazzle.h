@@ -105,119 +105,107 @@ const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_int
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );
 void dz_timeline_key_set_interpolate( dz_timeline_key_t * _key0, dz_timeline_interpolate_t * _interpolate, dz_timeline_key_t * _key1 );
 
-typedef struct dz_affector_data_t dz_affector_data_t;
+typedef struct dz_affector_t dz_affector_t;
 
-dz_result_t dz_affector_data_create( dz_service_t * _service, dz_affector_data_t ** _affector_data, dz_userdata_t _ud );
-void dz_affector_data_destroy( dz_service_t * _service, const dz_affector_data_t * _affector_data );
+dz_result_t dz_affector_create( dz_service_t * _service, dz_affector_t ** _affector, dz_userdata_t _ud );
+void dz_affector_destroy( dz_service_t * _service, const dz_affector_t * _affector );
 
-dz_userdata_t dz_affector_data_get_ud( const dz_affector_data_t * _affector_data );
+dz_userdata_t dz_affector_get_ud( const dz_affector_t * _affector );
 
-typedef enum dz_affector_data_timeline_type_e
+typedef enum dz_affector_timeline_type_e
 {
-    DZ_AFFECTOR_DATA_TIMELINE_LIFE,
-    DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED,
-    DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE,
-    DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED,
-    DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE,
-    DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED,
-    DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE,
-    DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED,
-    DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE,
-    DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE,
-    DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT,
-    DZ_AFFECTOR_DATA_TIMELINE_SIZE,
-    DZ_AFFECTOR_DATA_TIMELINE_COLOR_R,
-    DZ_AFFECTOR_DATA_TIMELINE_COLOR_G,
-    DZ_AFFECTOR_DATA_TIMELINE_COLOR_B,
-    DZ_AFFECTOR_DATA_TIMELINE_COLOR_A,
+    DZ_AFFECTOR_TIMELINE_LIFE,
+    DZ_AFFECTOR_TIMELINE_MOVE_SPEED,
+    DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE,
+    DZ_AFFECTOR_TIMELINE_ROTATE_SPEED,
+    DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE,
+    DZ_AFFECTOR_TIMELINE_SPIN_SPEED,
+    DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE,
+    DZ_AFFECTOR_TIMELINE_STRAFE_SPEED,
+    DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE,
+    DZ_AFFECTOR_TIMELINE_STRAFE_SIZE,
+    DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT,
+    DZ_AFFECTOR_TIMELINE_SIZE,
+    DZ_AFFECTOR_TIMELINE_COLOR_R,
+    DZ_AFFECTOR_TIMELINE_COLOR_G,
+    DZ_AFFECTOR_TIMELINE_COLOR_B,
+    DZ_AFFECTOR_TIMELINE_COLOR_A,
 
-    __DZ_AFFECTOR_DATA_TIMELINE_MAX__
-} dz_affector_data_timeline_type_e;
+    __DZ_AFFECTOR_TIMELINE_MAX__
+} dz_affector_timeline_type_e;
 
-void get_timeline_limits( dz_affector_data_timeline_type_e _timeline, float * _min, float * _max );
+void dz_affector_set_timeline( dz_affector_t * _affector, dz_affector_timeline_type_e _type, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_affector_get_timeline( const dz_affector_t * _affector, dz_affector_timeline_type_e _type );
 
-void dz_affector_data_set_timeline( dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_affector_data_get_timeline( const dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type );
-
-typedef enum dz_shape_data_type_e
+typedef enum dz_timeline_limit_status_e
 {
-    DZ_SHAPE_DATA_POINT,
-    DZ_SHAPE_DATA_SEGMENT,
-    DZ_SHAPE_DATA_CIRCLE,
-    DZ_SHAPE_DATA_LINE,
-    DZ_SHAPE_DATA_RECT,
-    DZ_SHAPE_DATA_POLYGON,
-    DZ_SHAPE_DATA_MASK,
+    DZ_TIMELINE_LIMIT_NORMAL = 0x00000000,
+    DZ_TIMELINE_LIMIT_MIN = 0x00000001,
+    DZ_TIMELINE_LIMIT_MAX = 0x00000002,
+    DZ_TIMELINE_LIMIT_MINMAX = 0x00000003
+} dz_timeline_limit_status_e;
 
-    __DZ_SHAPE_DATA_MAX__
-} dz_shape_data_type_e;
+void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
 
-typedef struct dz_shape_data_t dz_shape_data_t;
-
-dz_result_t dz_shape_data_create( dz_service_t * _service, dz_shape_data_t ** _shape_data, dz_shape_data_type_e _type, dz_userdata_t _ud );
-void dz_shape_data_destroy( dz_service_t * _service, const dz_shape_data_t * _shape_data );
-
-dz_userdata_t dz_shape_data_get_ud( const dz_shape_data_t * _shape_data );
-dz_shape_data_type_e dz_shape_data_get_type( const dz_shape_data_t * _shape_data );
-
-typedef enum dz_shape_data_timeline_type_e
+typedef enum dz_shape_type_e
 {
-    DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN,
-    DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX,
-    DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN,
-    DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX,
-    DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN,
-    DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX,
-    DZ_SHAPE_DATA_LINE_ANGLE,
-    DZ_SHAPE_DATA_LINE_SIZE,
-    DZ_SHAPE_DATA_RECT_WIDTH_MIN,
-    DZ_SHAPE_DATA_RECT_WIDTH_MAX,
-    DZ_SHAPE_DATA_RECT_HEIGHT_MIN,
-    DZ_SHAPE_DATA_RECT_HEIGHT_MAX,
+    DZ_SHAPE_POINT,
+    DZ_SHAPE_SEGMENT,
+    DZ_SHAPE_CIRCLE,
+    DZ_SHAPE_LINE,
+    DZ_SHAPE_RECT,
+    DZ_SHAPE_POLYGON,
+    DZ_SHAPE_MASK,
 
-    __DZ_SHAPE_DATA_TIMELINE_MAX__
-} dz_shape_data_timeline_type_e;
+    __DZ_SHAPE_MAX__
+} dz_shape_type_e;
 
-void dz_shape_data_set_timeline( dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_shape_data_get_timeline( const dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type );
+typedef struct dz_shape_t dz_shape_t;
 
-dz_result_t dz_shape_data_set_polygon( dz_shape_data_t * _shape, const float * _triangles, uint32_t _count );
-void dz_shape_data_get_polygon( const dz_shape_data_t * _shape, const float ** _triangles, uint32_t * _count );
+dz_result_t dz_shape_create( dz_service_t * _service, dz_shape_t ** _shape, dz_shape_type_e _type, dz_userdata_t _ud );
+void dz_shape_destroy( dz_service_t * _service, const dz_shape_t * _shape );
 
-dz_result_t dz_shape_data_set_mask( dz_shape_data_t * _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height );
-void dz_shape_data_get_mask( const dz_shape_data_t * _shape, const void ** _buffer, uint32_t * _bites, uint32_t * _pitch, uint32_t * _width, uint32_t * _height );
+dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape );
+dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape );
 
-void dz_shape_data_set_mask_scale( dz_shape_data_t * _shape, float _scale );
-float dz_shape_data_get_mask_scale( const dz_shape_data_t * _shape );
-
-void dz_shape_data_set_mask_threshold( dz_shape_data_t * _shape, uint32_t _threshold );
-uint32_t dz_shape_data_get_mask_threshold( const dz_shape_data_t * _shape );
-
-typedef struct dz_emitter_data_t dz_emitter_data_t;
-
-dz_result_t dz_emitter_data_create( dz_service_t * _service, dz_emitter_data_t ** _data, dz_userdata_t _ud );
-void dz_emitter_data_destroy( dz_service_t * _service, const dz_emitter_data_t * _emitter_data );
-
-dz_userdata_t dz_emitter_data_get_ud( const dz_emitter_data_t * _emitter_data );
-
-void dz_emitter_data_set_life( dz_emitter_data_t * _emitter_data, float _life );
-float dz_emitter_data_get_life( const dz_emitter_data_t * _emitter_data );
-
-typedef enum dz_emitter_data_timeline_type_e
+typedef enum dz_shape_timeline_type_e
 {
-    DZ_EMITTER_DATA_SPAWN_DELAY,
-    DZ_EMITTER_DATA_SPAWN_COUNT,
-    DZ_EMITTER_DATA_SPAWN_SPIN,
+    DZ_SHAPE_SEGMENT_ANGLE_MIN,
+    DZ_SHAPE_SEGMENT_ANGLE_MAX,
+    DZ_SHAPE_CIRCLE_RADIUS_MIN,
+    DZ_SHAPE_CIRCLE_RADIUS_MAX,
+    DZ_SHAPE_CIRCLE_ANGLE_MIN,
+    DZ_SHAPE_CIRCLE_ANGLE_MAX,
+    DZ_SHAPE_LINE_ANGLE,
+    DZ_SHAPE_LINE_SIZE,
+    DZ_SHAPE_RECT_WIDTH_MIN,
+    DZ_SHAPE_RECT_WIDTH_MAX,
+    DZ_SHAPE_RECT_HEIGHT_MIN,
+    DZ_SHAPE_RECT_HEIGHT_MAX,
 
-    __DZ_EMITTER_DATA_TIMELINE_MAX__
-} dz_emitter_data_timeline_type_e;
+    __DZ_SHAPE_TIMELINE_MAX__
+} dz_shape_timeline_type_e;
 
-void dz_emitter_data_set_timeline( dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
-const dz_timeline_key_t * dz_emitter_data_get_timeline( const dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type );
+void dz_shape_set_timeline( dz_shape_t * _shape, dz_shape_timeline_type_e _type, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_shape_get_timeline( const dz_shape_t * _shape, dz_shape_timeline_type_e _type );
+
+void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
+
+dz_result_t dz_shape_set_polygon( dz_shape_t * _shape, const float * _triangles, uint32_t _count );
+void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles, uint32_t * _count );
+
+dz_result_t dz_shape_set_mask( dz_shape_t * _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height );
+void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, uint32_t * _bites, uint32_t * _pitch, uint32_t * _width, uint32_t * _height );
+
+void dz_shape_set_mask_scale( dz_shape_t * _shape, float _scale );
+float dz_shape_get_mask_scale( const dz_shape_t * _shape );
+
+void dz_shape_set_mask_threshold( dz_shape_t * _shape, uint32_t _threshold );
+uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape );
 
 typedef struct dz_emitter_t dz_emitter_t;
 
-dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter, const dz_material_t * _material, const dz_shape_data_t * _shape_data, const dz_emitter_data_t * _emitter_data, const dz_affector_data_t * _affector_data, uint32_t _seed, float _life, dz_userdata_t _ud );
+dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter, dz_userdata_t _ud );
 void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter );
 
 dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter );
@@ -225,34 +213,57 @@ dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter );
 void dz_emitter_set_life( dz_emitter_t * _emitter, float _life );
 float dz_emitter_get_life( const dz_emitter_t * _emitter );
 
-void dz_emitter_set_time( dz_emitter_t * _emitter, float _time );
-float dz_emitter_get_time( const dz_emitter_t * _emitter );
-
-uint32_t dz_emitter_get_seed( const dz_emitter_t * _emitter );
-
-void dz_emitter_set_particle_limit( dz_emitter_t * _emitter, uint32_t _limit );
-uint32_t dz_emitter_get_particle_limit( const dz_emitter_t * _emitter );
-
-void dz_emitter_update( dz_service_t * _service, dz_emitter_t * _emitter, float _time );
-
-typedef enum dz_emitter_state_e
+typedef enum dz_emitter_timeline_type_e
 {
-    DZ_EMITTER_PROCESS = 0x00000000,
-    DZ_EMITTER_EMIT_COMPLETE = 0x00000001,
-    DZ_EMITTER_PARTICLE_COMPLETE = 0x00000002,
-} dz_emitter_state_e;
+    DZ_EMITTER_SPAWN_DELAY,
+    DZ_EMITTER_SPAWN_COUNT,
+    DZ_EMITTER_SPAWN_SPIN_MIN,
+    DZ_EMITTER_SPAWN_SPIN_MAX,
 
-dz_emitter_state_e dz_emitter_get_state( const dz_emitter_t * _emitter );
+    __DZ_EMITTER_TIMELINE_MAX__
+} dz_emitter_timeline_type_e;
 
-typedef enum dz_emitter_mesh_flags_e
+void dz_emitter_set_timeline( dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, const dz_timeline_key_t * _timeline );
+const dz_timeline_key_t * dz_emitter_get_timeline( const dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type );
+
+void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
+
+typedef struct dz_effect_t dz_effect_t;
+
+dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, uint32_t _seed, float _life, dz_userdata_t _ud );
+void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect );
+
+dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect );
+
+void dz_effect_set_life( dz_effect_t * _effect, float _life );
+float dz_effect_get_life( const dz_effect_t * _effect );
+
+void dz_effect_set_time( dz_effect_t * _effect, float _time );
+float dz_effect_get_time( const dz_effect_t * _effect );
+
+uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
+
+void dz_effect_set_particle_limit( dz_effect_t * _effect, uint32_t _limit );
+uint32_t dz_effect_get_particle_limit( const dz_effect_t * _effect );
+
+void dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time );
+
+typedef enum dz_effect_state_e
 {
-    DZ_EMITTER_MESH_FLAG_NONE = 0x00000000,
-    DZ_EMITTER_MESH_FLAG_APPLY_COLOR = 0x00000001,
-    DZ_EMITTER_MESH_FLAG_APPLY_MATRIX = 0x00000002,
-    DZ_EMITTER_MESH_FLAG_INDEX32 = 0x00000004,
-} dz_emitter_mesh_flags_e;
+    DZ_EFFECT_PROCESS = 0x00000001,
+    DZ_EFFECT_EMIT_COMPLETE = 0x00000002,
+    DZ_EFFECT_PARTICLE_COMPLETE = 0x00000004,
+} dz_effect_state_e;
 
-typedef struct dz_emitter_mesh_chunk_t
+dz_effect_state_e dz_emitter_get_state( const dz_effect_t * _effect );
+
+typedef enum dz_effect_mesh_flags_e
+{
+    DZ_EFFECT_MESH_FLAG_NONE = 0x00000000,
+    DZ_EFFECT_MESH_FLAG_INDEX32 = 0x00000001,
+} dz_effect_mesh_flags_e;
+
+typedef struct dz_effect_mesh_chunk_t
 {
     uint16_t offset;
     uint16_t vertex_size;
@@ -261,9 +272,9 @@ typedef struct dz_emitter_mesh_chunk_t
     dz_blend_type_e blend_type;
 
     const dz_texture_t * texture;
-} dz_emitter_mesh_chunk_t;
+} dz_effect_mesh_chunk_t;
 
-typedef struct dz_emitter_mesh_t
+typedef struct dz_effect_mesh_t
 {
     void * position_buffer;
     dz_size_t position_offset;
@@ -279,15 +290,15 @@ typedef struct dz_emitter_mesh_t
 
     void * index_buffer;
 
-    dz_emitter_mesh_flags_e flags;
+    dz_effect_mesh_flags_e flags;
     float r;
     float g;
     float b;
     float a;
 
     float m[16];
-} dz_emitter_mesh_t;
+} dz_effect_mesh_t;
 
-void dz_emitter_compute_mesh( const dz_emitter_t * _emitter, dz_emitter_mesh_t * _mesh, dz_emitter_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count );
+void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _mesh, dz_effect_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count );
 
 #endif

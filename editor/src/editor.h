@@ -42,18 +42,18 @@ protected:
 
     dz_service_t * m_service;
 
-    dz_shape_data_t * m_shapeData;
-    dz_emitter_data_t * m_emitterData;
-    dz_affector_data_t * m_affectorData;
+    dz_shape_t * m_shapeData;
+    dz_emitter_t * m_emitterData;
+    dz_affector_t * m_affectorData;
 
-    dz_emitter_t * m_emitter;
+    dz_effect_t * m_emitter;
 
     example_opengl_handle_t * m_openglHandle;
     GLFWwindow * m_fwWindow;
 
     typedef struct
     {
-        dz_shape_data_timeline_type_e type;
+        dz_shape_timeline_type_e type;
         const char * name;
 
         float value0;
@@ -61,13 +61,13 @@ protected:
         float maxValue;
 
         PointsArray param;
-    } timeline_shape_data_t;
+    } timeline_t;
 
-    timeline_shape_data_t m_timelineShapeData[__DZ_SHAPE_DATA_TIMELINE_MAX__];
+    timeline_t m_timelineShapeData[__DZ_SHAPE_TIMELINE_MAX__];
 
     typedef struct
     {
-        dz_affector_data_timeline_type_e type;
+        dz_affector_timeline_type_e type;
         const char * name;
 
         float time0;
@@ -79,13 +79,13 @@ protected:
         float maxValue;
 
         PointsArray param;
-    } timeline_affector_data_t;
+    } timeline_affector_t;
 
-    timeline_affector_data_t m_timelineAffectorData[__DZ_AFFECTOR_DATA_TIMELINE_MAX__];
+    timeline_affector_t m_timelineAffectorData[__DZ_AFFECTOR_TIMELINE_MAX__];
 
     typedef struct
     {
-        dz_emitter_data_timeline_type_e type;
+        dz_emitter_timeline_type_e type;
         const char * name;
 
         float value0;
@@ -93,9 +93,9 @@ protected:
         float maxValue;
 
         PointsArray param;
-    } timeline_emitter_data_t;
+    } timeline_emitter_t;
 
-    timeline_emitter_data_t m_timelineEmitterData[__DZ_EMITTER_DATA_TIMELINE_MAX__];
+    timeline_emitter_t m_timelineEmitterData[__DZ_EMITTER_TIMELINE_MAX__];
 
-    dz_shape_data_type_e m_shapeType;
+    dz_shape_type_e m_shapeType;
 };

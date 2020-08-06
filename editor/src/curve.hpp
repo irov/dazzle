@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-/* To use, add this prototype somewhere.. 
+/* To use, add this prototype somewhere..
 
 namespace ImGui
 {
@@ -38,17 +38,17 @@ namespace ImGui
 namespace ImGui
 {
     //////////////////////////////////////////////////////////////////////////
-    float CurveValue(float _p, int _maxpoints, const ImVec2 *_points)
+    float CurveValue( float _p, int _maxpoints, const ImVec2 * _points )
     {
-        if (_maxpoints < 2 || _points == 0)
+        if( _maxpoints < 2 || _points == 0 )
             return 0;
-        if (_p < 0) return _points[0].y;
+        if( _p < 0 ) return _points[0].y;
 
         int left = 0;
-        while (left < _maxpoints && _points[left].x < _p && _points[left].x != -1) left++;
-        if (left) left--;
+        while( left < _maxpoints && _points[left].x < _p && _points[left].x != -1 ) left++;
+        if( left ) left--;
 
-        if (left == _maxpoints-1)
+        if( left == _maxpoints - 1 )
             return _points[_maxpoints - 1].y;
 
         float d = (_p - _points[left].x) / (_points[left + 1].x - _points[left].x);
@@ -60,10 +60,10 @@ namespace ImGui
     {
         int modified = 0;
         int i;
-        if (_maxpoints < 2 || _points == 0)
+        if( _maxpoints < 2 || _points == 0 )
             return 0;
 
-        if (_points[0].x < 0)
+        if( _points[0].x < 0 )
         {
             _points[0].x = 0;
             _points[0].y = 0;
@@ -72,30 +72,30 @@ namespace ImGui
             _points[2].x = -1;
         }
 
-        ImGuiWindow* window = GetCurrentWindow();
-        ImGuiContext& g = *GImGui;
-        const ImGuiStyle& style = g.Style;
-        const ImGuiID id = window->GetID(_label);
-        if (window->SkipItems)
+        ImGuiWindow * window = GetCurrentWindow();
+        ImGuiContext & g = *GImGui;
+        const ImGuiStyle & style = g.Style;
+        const ImGuiID id = window->GetID( _label );
+        if( window->SkipItems )
             return 0;
 
-        ImRect bb(window->DC.CursorPos, window->DC.CursorPos + _size);
-        ItemSize(bb);
-        if (!ItemAdd(bb, NULL))
+        ImRect bb( window->DC.CursorPos, window->DC.CursorPos + _size );
+        ItemSize( bb );
+        if( !ItemAdd( bb, NULL ) )
             return 0;
 
         const bool hovered = ImGui::IsItemHovered();
 
         int max = 0;
-        while (max < _maxpoints && _points[max].x >= 0) max++;
+        while( max < _maxpoints && _points[max].x >= 0 ) max++;
 
         int kill = 0;
         do
         {
-            if (kill)
+            if( kill )
             {
                 modified = 1;
-                for (i = kill + 1; i < max; i++)
+                for( i = kill + 1; i < max; i++ )
                 {
                     _points[i - 1] = _points[i];
                 }
@@ -104,96 +104,98 @@ namespace ImGui
                 kill = 0;
             }
 
-            for (i = 1; i < max - 1; i++)
+            for( i = 1; i < max - 1; i++ )
             {
-                if (abs(_points[i].x - _points[i - 1].x) < 1 / 128.0)
+                if( abs( _points[i].x - _points[i - 1].x ) < 1.f / 128.f )
                 {
                     kill = i;
                 }
             }
-        }
-        while (kill);
+        } while( kill );
 
 
-        RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg, 1), true, style.FrameRounding);
+        RenderFrame( bb.Min, bb.Max, GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
 
         float ht = bb.Max.y - bb.Min.y;
         float wd = bb.Max.x - bb.Min.x;
 
-        if (hovered)
+        if( hovered )
         {
-            SetHoveredID(id);
-            if (g.IO.MouseDown[0] && g.IO.KeyCtrl)
+            SetHoveredID( id );
+            if( g.IO.MouseDown[0] && g.IO.KeyCtrl )
             {
                 modified = 1;
                 ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
-                pos.y = 1 - pos.y;              
+                pos.y = 1 - pos.y;
 
                 int left = 0;
-                while (left < max && _points[left].x < pos.x) left++;
-                if (left) left--;
+                while( left < max && _points[left].x < pos.x ) left++;
+                if( left ) left--;
 
                 ImVec2 p = _points[left] - pos;
-                float p1d = sqrt(p.x*p.x + p.y*p.y);
-                p = _points[left+1] - pos;
-                float p2d = sqrt(p.x*p.x + p.y*p.y);
+                float p1d = sqrt( p.x * p.x + p.y * p.y );
+                p = _points[left + 1] - pos;
+                float p2d = sqrt( p.x * p.x + p.y * p.y );
                 int sel = -1;
-                if (p1d < (1 / 16.0)) sel = left;
-                if (p2d < (1 / 16.0)) sel = left + 1;
+                if( p1d < (1.f / 16.f) ) sel = left;
+                if( p2d < (1.f / 16.f) ) sel = left + 1;
 
-                if (sel != -1)
+                if( sel != -1 )
                 {
                     _points[sel] = pos;
                 }
                 else
                 {
-                    if (max < _maxpoints)
+                    if( max < _maxpoints )
                     {
                         max++;
-                        for (i = max; i > left; i--)
+                        for( i = max; i > left; i-- )
                         {
                             _points[i] = _points[i - 1];
                         }
                         _points[left + 1] = pos;
                     }
-                    if (max < _maxpoints)
+                    if( max < _maxpoints )
                         _points[max].x = -1;
                 }
 
                 // snap first/last to min/max
-                if( _points[0].x < _points[max - 1].x ) {
-                    _points[0].x= 0;
-                    _points[max - 1].x = 1;
-                } else {
-                    _points[0].x= 1;
-                    _points[max - 1].x = 0;
+                if( _points[0].x < _points[max - 1].x )
+                {
+                    _points[0].x = 0.f;
+                    _points[max - 1].x = 1.f;
+                }
+                else
+                {
+                    _points[0].x = 1.f;
+                    _points[max - 1].x = 0.f;
                 }
             }
         }
 
         // bg grid
         window->DrawList->AddLine(
-            ImVec2(bb.Min.x, bb.Min.y + ht / 2),
-            ImVec2(bb.Max.x, bb.Min.y + ht / 2),
-            GetColorU32(ImGuiCol_TextDisabled), 3);
+            ImVec2( bb.Min.x, bb.Min.y + ht / 2.f ),
+            ImVec2( bb.Max.x, bb.Min.y + ht / 2.f ),
+            GetColorU32( ImGuiCol_TextDisabled ), 3 );
 
         window->DrawList->AddLine(
-            ImVec2(bb.Min.x, bb.Min.y + ht / 4),
-            ImVec2(bb.Max.x, bb.Min.y + ht / 4),
-            GetColorU32(ImGuiCol_TextDisabled));
+            ImVec2( bb.Min.x, bb.Min.y + ht / 4.f ),
+            ImVec2( bb.Max.x, bb.Min.y + ht / 4.f ),
+            GetColorU32( ImGuiCol_TextDisabled ) );
 
         window->DrawList->AddLine(
-            ImVec2(bb.Min.x, bb.Min.y + ht / 4 * 3),
-            ImVec2(bb.Max.x, bb.Min.y + ht / 4 * 3),
-            GetColorU32(ImGuiCol_TextDisabled));
+            ImVec2( bb.Min.x, bb.Min.y + ht / 4.f * 3.f ),
+            ImVec2( bb.Max.x, bb.Min.y + ht / 4.f * 3.f ),
+            GetColorU32( ImGuiCol_TextDisabled ) );
 
-        for (i = 0; i < 9; i++)
+        for( i = 0; i < 9; i++ )
         {
             window->DrawList->AddLine(
-                ImVec2(bb.Min.x + (wd / 10) * (i + 1), bb.Min.y),
-                ImVec2(bb.Min.x + (wd / 10) * (i + 1), bb.Max.y),
-                GetColorU32(ImGuiCol_TextDisabled));
-        }   
+                ImVec2( bb.Min.x + (wd / 10.f) * (i + 1), bb.Min.y ),
+                ImVec2( bb.Min.x + (wd / 10.f) * (i + 1), bb.Max.y ),
+                GetColorU32( ImGuiCol_TextDisabled ) );
+        }
 
         // lines
         for( i = 1; i < max; i++ )
@@ -207,28 +209,28 @@ namespace ImGui
             window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
         }
 
-        if (hovered)
+        if( hovered )
         {
             // control points
-            for (i = 0; i < max; i++)
+            for( i = 0; i < max; i++ )
             {
                 ImVec2 p = _points[i];
-                p.y = 1 - p.y;
+                p.y = 1.f - p.y;
                 p = p * (bb.Max - bb.Min) + bb.Min;
-                ImVec2 a = p - ImVec2(2, 2);
-                ImVec2 b = p + ImVec2(2, 2);
-                window->DrawList->AddRect(a, b, GetColorU32(ImGuiCol_PlotLinesHovered));
+                ImVec2 a = p - ImVec2( 2.f, 2.f );
+                ImVec2 b = p + ImVec2( 2.f, 2.f );
+                window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
             }
         }
 
         {
             char buf[128];
-            const char *str = _label;
+            const char * str = _label;
 
             if( hovered )
             {
                 ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
-                pos.y = 1 - pos.y;
+                pos.y = 1.f - pos.y;
                 float x = _x_min + pos.x * (_x_max - _x_min);
                 float y = _y_min + pos.y * (_y_max - _y_min);
 
@@ -259,7 +261,7 @@ namespace ImGui
 
             RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 1.f, 1.f ) );
         }
-        
+
         return modified;
     }
 

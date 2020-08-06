@@ -36,6 +36,8 @@ typedef void * dz_userdata_t;
 #define DZ_DEBUG
 #endif
 
+#define DZ_TODO
+
 #ifndef DZ_UNUSED
 #define DZ_UNUSED(X) ((void)(X))
 #endif
