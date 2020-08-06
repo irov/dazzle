@@ -134,10 +134,18 @@ typedef enum dz_affector_data_timeline_type_e
     __DZ_AFFECTOR_DATA_TIMELINE_MAX__
 } dz_affector_data_timeline_type_e;
 
-void get_timeline_limits( dz_affector_data_timeline_type_e _timeline, float * _min, float * _max );
-
 void dz_affector_data_set_timeline( dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_affector_data_get_timeline( const dz_affector_data_t * _affector_data, dz_affector_data_timeline_type_e _type );
+
+typedef enum dz_timeline_limit_status_e
+{
+    DZ_TIMELINE_LIMIT_NORMAL = 0x00000000,
+    DZ_TIMELINE_LIMIT_MIN = 0x00000001,
+    DZ_TIMELINE_LIMIT_MAX = 0x00000002,
+    DZ_TIMELINE_LIMIT_MINMAX = 0x00000003
+} dz_timeline_limit_status_e;
+
+void dz_affector_data_timeline_get_limit( dz_affector_data_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
 
 typedef enum dz_shape_data_type_e
 {
@@ -181,6 +189,8 @@ typedef enum dz_shape_data_timeline_type_e
 void dz_shape_data_set_timeline( dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_shape_data_get_timeline( const dz_shape_data_t * _shape, dz_shape_data_timeline_type_e _type );
 
+void dz_shape_data_timeline_get_limit( dz_shape_data_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
+
 dz_result_t dz_shape_data_set_polygon( dz_shape_data_t * _shape, const float * _triangles, uint32_t _count );
 void dz_shape_data_get_polygon( const dz_shape_data_t * _shape, const float ** _triangles, uint32_t * _count );
 
@@ -207,13 +217,16 @@ typedef enum dz_emitter_data_timeline_type_e
 {
     DZ_EMITTER_DATA_SPAWN_DELAY,
     DZ_EMITTER_DATA_SPAWN_COUNT,
-    DZ_EMITTER_DATA_SPAWN_SPIN,
+    DZ_EMITTER_DATA_SPAWN_SPIN_MIN,
+    DZ_EMITTER_DATA_SPAWN_SPIN_MAX,
 
     __DZ_EMITTER_DATA_TIMELINE_MAX__
 } dz_emitter_data_timeline_type_e;
 
 void dz_emitter_data_set_timeline( dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_emitter_data_get_timeline( const dz_emitter_data_t * _emitter_data, dz_emitter_data_timeline_type_e _type );
+
+void dz_emitter_data_timeline_get_limit( dz_emitter_data_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
 
 typedef struct dz_emitter_t dz_emitter_t;
 

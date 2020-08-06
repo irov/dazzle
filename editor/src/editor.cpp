@@ -525,7 +525,7 @@ static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
 editor::editor()
     : m_windowWidth( 0.f )
     , m_windowHeight( 0.f )
-    
+
     , m_service( nullptr )
 
     , m_shapeData( nullptr )
@@ -538,47 +538,48 @@ editor::editor()
     , m_fwWindow( nullptr )
 
     , m_timelineShapeData{
-        { DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN, "Segment angle min", -DZ_PI * 0.25f, 100.f },
-        { DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, "Segment angle max", DZ_PI * 0.25f, 100.f },
-        { DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, "Circle radius min", 50.f, 200.f },
-        { DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, "Circle radius max", 100.f, 200.f },
-        { DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, "Circle angle min", -DZ_PI * 0.25f, 100.f },
-        { DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, "Circle angle max", DZ_PI * 0.25f, 100.f },
-        { DZ_SHAPE_DATA_LINE_ANGLE, "Line angle", 0.f, 100.f },
-        { DZ_SHAPE_DATA_LINE_SIZE, "Line size", 200.f, 500.f },
-        { DZ_SHAPE_DATA_RECT_WIDTH_MIN, "Rect width min", 0.f, 500.f },
-        { DZ_SHAPE_DATA_RECT_WIDTH_MAX, "Rect width max", 300.f, 500.f },
-        { DZ_SHAPE_DATA_RECT_HEIGHT_MIN, "Rect height min", 0.f, 500.f },
-        { DZ_SHAPE_DATA_RECT_HEIGHT_MAX, "Rect height max", 200.f, 100.f },
-    }
+        {DZ_SHAPE_DATA_SEGMENT_ANGLE_MIN, "Segment angle min", -DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_DATA_SEGMENT_ANGLE_MAX, "Segment angle max", DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_DATA_CIRCLE_RADIUS_MIN, "Circle radius min", 50.f, 200.f},
+        {DZ_SHAPE_DATA_CIRCLE_RADIUS_MAX, "Circle radius max", 100.f, 200.f},
+        {DZ_SHAPE_DATA_CIRCLE_ANGLE_MIN, "Circle angle min", -DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_DATA_CIRCLE_ANGLE_MAX, "Circle angle max", DZ_PI * 0.25f, 100.f},
+        {DZ_SHAPE_DATA_LINE_ANGLE, "Line angle", 0.f, 100.f},
+        {DZ_SHAPE_DATA_LINE_SIZE, "Line size", 200.f, 500.f},
+        {DZ_SHAPE_DATA_RECT_WIDTH_MIN, "Rect width min", 0.f, 500.f},
+        {DZ_SHAPE_DATA_RECT_WIDTH_MAX, "Rect width max", 300.f, 500.f},
+        {DZ_SHAPE_DATA_RECT_HEIGHT_MIN, "Rect height min", 0.f, 500.f},
+        {DZ_SHAPE_DATA_RECT_HEIGHT_MAX, "Rect height max", 200.f, 100.f},
+}
 
-    , m_timelineAffectorData{
-        { DZ_AFFECTOR_DATA_TIMELINE_LIFE, "Life", 0.5f, 1.f, 3.f, 5.f, 2.f, 10.f },
+, m_timelineAffectorData{
+    {DZ_AFFECTOR_DATA_TIMELINE_LIFE, "Life", 0.5f, 1.f, 3.f, 5.f, 2.f, 10.f},
 
-        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, "Speed", 0.5f, 1.f, 100.f, 50.f, 0.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, "Accelerate", 0.5f, 1.f, 0.1f, 0.5f, 0.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, "Rotate speed", 0.5f, 1.f, 0.0f, 0.1f, 0.f, 0.5f },
-        { DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, "Rotate accelerate", 0.5f, 1.f, 0.0f, 0.f, 0.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, "Spin speed", 0.5f, 1.f, 0.01f, 0.1f, 0.f, 0.5f },
-        { DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, "Spin accelerate", 0.5f, 1.f, 0.001f, 0.f, 0.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, "Strafe speed", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE, "Strafe frequence", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, "Strafe size", 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, "Strafe shift", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_SIZE, "Size", 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, "Color Red", 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, "Color Green", 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, "Color Blue", 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f },
-        { DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, "Color Alpha", 0.05f, 1.f, 0.f, 1.f, 0.f, 1.f },
-    }
+    {DZ_AFFECTOR_DATA_TIMELINE_MOVE_SPEED, "Speed", 0.5f, 1.f, 100.f, 50.f, 0.f, 200.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_MOVE_ACCELERATE, "Accelerate", 0.5f, 1.f, 0.1f, 0.5f, 0.f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_SPEED, "Rotate speed", 0.5f, 1.f, 0.0f, 0.1f, 0.f, 0.5f},
+    {DZ_AFFECTOR_DATA_TIMELINE_ROTATE_ACCELERATE, "Rotate accelerate", 0.5f, 1.f, 0.0f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_SPIN_SPEED, "Spin speed", 0.5f, 1.f, 0.01f, 0.1f, 0.f, 0.5f},
+    {DZ_AFFECTOR_DATA_TIMELINE_SPIN_ACCELERATE, "Spin accelerate", 0.5f, 1.f, 0.001f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SPEED, "Strafe speed", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_FRENQUENCE, "Strafe frequence", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SIZE, "Strafe size", 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_STRAFE_SHIFT, "Strafe shift", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_SIZE, "Size", 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_R, "Color Red", 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_G, "Color Green", 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_B, "Color Blue", 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f},
+    {DZ_AFFECTOR_DATA_TIMELINE_COLOR_A, "Color Alpha", 0.05f, 1.f, 0.f, 1.f, 0.f, 1.f},
+}
 
-    , m_timelineEmitterData{
-        { DZ_EMITTER_DATA_SPAWN_DELAY, "Spawn delay", 0.1f, 1.f },
-        { DZ_EMITTER_DATA_SPAWN_COUNT, "Spawn count", 1.f, 10.f },
-        { DZ_EMITTER_DATA_SPAWN_SPIN, "Spawn spin", 0.f, 10.f },
-     }
+, m_timelineEmitterData{
+    {DZ_EMITTER_DATA_SPAWN_DELAY, "Spawn delay", 0.1f, 1.f},
+    {DZ_EMITTER_DATA_SPAWN_COUNT, "Spawn count", 1.f, 10.f},
+    {DZ_EMITTER_DATA_SPAWN_SPIN_MIN, "Spawn spin min", 0.f, 10.f},
+    {DZ_EMITTER_DATA_SPAWN_SPIN_MAX, "Spawn spin max", 0.f, 10.f},
+}
 
-    , m_shapeType( DZ_SHAPE_DATA_RECT )
+, m_shapeType( DZ_SHAPE_DATA_RECT )
 {
 }
 //////////////////////////////////////////////////////////////////////////
@@ -829,7 +830,7 @@ int editor::update()
             float width = ImGui::GetWindowContentRegionWidth();
             ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
-            static bool headerFlags[__DZ_SHAPE_DATA_TIMELINE_MAX__] = { false };
+            static bool headerFlags[__DZ_SHAPE_DATA_TIMELINE_MAX__] = {false};
 
             ImGui::Separator();
 
@@ -901,7 +902,7 @@ int editor::update()
             float width = ImGui::GetWindowContentRegionWidth();
             ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
-            static bool headerFlags[__DZ_AFFECTOR_DATA_TIMELINE_MAX__] = { false };
+            static bool headerFlags[__DZ_AFFECTOR_DATA_TIMELINE_MAX__] = {false};
 
             ImGui::Separator();
 
@@ -978,7 +979,7 @@ int editor::update()
             float width = ImGui::GetWindowContentRegionWidth();
             ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
-            static bool headerFlags[__DZ_EMITTER_DATA_TIMELINE_MAX__] = { false };
+            static bool headerFlags[__DZ_EMITTER_DATA_TIMELINE_MAX__] = {false};
 
             ImGui::Separator();
 
@@ -1008,7 +1009,7 @@ int editor::update()
 
             ImGui::End();
         }
-        
+
         ImGui::EndFrame();
 
         ImGui::Render();
