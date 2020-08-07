@@ -198,28 +198,41 @@ namespace ImGui
         }
 
         // lines
-        for( i = 1; i < max; i++ )
+        if( max == 1 )
         {
-            ImVec2 a = _points[i - 1];
-            ImVec2 b = _points[i];
+            ImVec2 a( 0.f, _points[0].y );
+            ImVec2 b( 1.f, _points[0].y );
             a.y = 1 - a.y;
             b.y = 1 - b.y;
             a = a * (bb.Max - bb.Min) + bb.Min;
             b = b * (bb.Max - bb.Min) + bb.Min;
             window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
         }
-
-        if( hovered )
+        else
         {
-            // control points
-            for( i = 0; i < max; i++ )
+            for( i = 1; i < max; i++ )
             {
-                ImVec2 p = _points[i];
-                p.y = 1.f - p.y;
-                p = p * (bb.Max - bb.Min) + bb.Min;
-                ImVec2 a = p - ImVec2( 2.f, 2.f );
-                ImVec2 b = p + ImVec2( 2.f, 2.f );
-                window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+                ImVec2 a = _points[i - 1];
+                ImVec2 b = _points[i];
+                a.y = 1 - a.y;
+                b.y = 1 - b.y;
+                a = a * (bb.Max - bb.Min) + bb.Min;
+                b = b * (bb.Max - bb.Min) + bb.Min;
+                window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+            }
+
+            if( hovered )
+            {
+                // control points
+                for( i = 0; i < max; i++ )
+                {
+                    ImVec2 p = _points[i];
+                    p.y = 1.f - p.y;
+                    p = p * (bb.Max - bb.Min) + bb.Min;
+                    ImVec2 a = p - ImVec2( 2.f, 2.f );
+                    ImVec2 b = p + ImVec2( 2.f, 2.f );
+                    window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+                }
             }
         }
 

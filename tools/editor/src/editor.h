@@ -77,14 +77,14 @@ protected:
         dz_shape_timeline_type_e type;
         const char * name;
 
-        float value0;
+        float startValue;
 
         float maxValue;
 
         PointsArray param;
-    } timeline_t;
+    } timeline_shape_t;
 
-    timeline_t m_timelineShapeData[__DZ_SHAPE_TIMELINE_MAX__];
+    timeline_shape_t m_timelineShapeData[__DZ_SHAPE_TIMELINE_MAX__];
 
     typedef struct
     {
@@ -94,8 +94,11 @@ protected:
         float time0;
         float time1;
         float value0;
+        //float startValue;
         float value1;
         float value2;
+
+        //float endValue;
 
         float maxValue;
 
@@ -109,7 +112,7 @@ protected:
         dz_emitter_timeline_type_e type;
         const char * name;
 
-        float value0;
+        float startValue;
 
         float maxValue;
 
