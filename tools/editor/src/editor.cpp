@@ -569,7 +569,7 @@ editor::editor()
         {DZ_SHAPE_RECT_WIDTH_MIN, "Rect width min", 0.f, 500.f},
         {DZ_SHAPE_RECT_WIDTH_MAX, "Rect width max", 300.f, 500.f},
         {DZ_SHAPE_RECT_HEIGHT_MIN, "Rect height min", 0.f, 500.f},
-        {DZ_SHAPE_RECT_HEIGHT_MAX, "Rect height max", 200.f, 100.f},
+        {DZ_SHAPE_RECT_HEIGHT_MAX, "Rect height max", 200.f, 500.f},
 }
 
 , m_timelineAffectorData{
