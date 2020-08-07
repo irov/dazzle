@@ -12,7 +12,6 @@ namespace ImGui
     float CurveValue( float _p, int _maxpoints, const ImVec2 * _points );
 };
 //////////////////////////////////////////////////////////////////////////
-ImVec4 clear_color = ImVec4( 0.45f, 0.55f, 0.60f, 1.00f );
 //static constexpr float WINDOW_WIDTH = 1024;
 //static constexpr float WINDOW_HEIGHT = 768;
 
@@ -485,13 +484,21 @@ static void glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int 
 //////////////////////////////////////////////////////////////////////////
 static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 {
+    editor * p_editor = reinterpret_cast<editor *>(glfwGetWindowUserPointer( _window ));
+
     if( glfwGetKey( _window, GLFW_KEY_SPACE ) != GLFW_PRESS )
     {
         return;
     }
 
-    camera_offset_x -= mouse_pos_x / camera_scale;
-    camera_offset_y -= mouse_pos_y / camera_scale;
+    const ImVec2 & dzWindowPos = p_editor->getDzWindowPos();
+    const ImVec2 & dzWindowSize = p_editor->getDzWindowSize();
+
+    float mouse_pos_x_norm = mouse_pos_x - dzWindowPos.x;
+    float mouse_pos_y_norm = mouse_pos_y - dzWindowPos.y;
+
+    camera_offset_x -= mouse_pos_x_norm / camera_scale;
+    camera_offset_y -= mouse_pos_x_norm / camera_scale;
 
     float scroll = (float)_y * camera_scale_step;
 
@@ -508,8 +515,8 @@ static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
         camera_scale += scroll;
     }
 
-    camera_offset_x += mouse_pos_x / camera_scale;
-    camera_offset_y += mouse_pos_y / camera_scale;
+    camera_offset_x += mouse_pos_x_norm / camera_scale;
+    camera_offset_y += mouse_pos_x_norm / camera_scale;
 }
 //////////////////////////////////////////////////////////////////////////
 static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
@@ -531,6 +538,13 @@ static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
 editor::editor()
     : m_windowWidth( WINDOW_WIDTH )
     , m_windowHeight( WINDOW_HEIGHT )
+
+    , m_dzWindowPos( 0.f, 0.f )
+    , m_dzWindowSize( 500.f, 500.f )
+
+    , m_backgroundColor( 0.f, 0.f, 0.f, 1.f )
+
+    , m_showDebugInfoOverlay( false )
 
     , m_service( nullptr )
 
@@ -595,7 +609,7 @@ editor::~editor()
 //////////////////////////////////////////////////////////////////////////
 int editor::init()
 {
-    // init opengl
+    // init window
     {
         if( glfwInit() == 0 )
         {
@@ -612,6 +626,8 @@ int editor::init()
         camera_offset_y = m_windowHeight * 0.5f;
 
         m_fwWindow = glfwCreateWindow( (uint32_t)m_windowWidth, (uint32_t)m_windowHeight, "dazzle particle editor", 0, 0 );
+
+        glfwSetWindowUserPointer( m_fwWindow, this );
 
         if( m_fwWindow == 0 )
         {
@@ -749,8 +765,7 @@ int editor::init()
         uint32_t max_vertex_count = 8196 * 2;
         uint32_t max_index_count = 32768;
 
-
-        if( dz_render_initialize( &m_openglHandle, (float)m_windowWidth, (float)m_windowHeight, max_vertex_count, max_index_count ) == false )
+        if( dz_render_initialize( &m_openglHandle, (float)m_dzWindowSize.x, (float)m_dzWindowSize.y, max_vertex_count, max_index_count ) == false )
         {
             return EXIT_FAILURE;
         }
@@ -805,223 +820,210 @@ int editor::update()
 
         ImGui::NewFrame();
 
-        // properties
-        ImGui::Begin( "Common" );
-        ImGui::Spacing();
-        ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate );
+        // layout
+        ImGuiWindowFlags window_flags = 0;
+        window_flags |= ImGuiWindowFlags_NoTitleBar;
+        window_flags |= ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoResize;
+        window_flags |= ImGuiWindowFlags_MenuBar;
+
+        ImGui::SetNextWindowPos( ImVec2( 0.f, 0.f), ImGuiCond_Always );
+        ImGui::SetNextWindowSize( ImVec2( m_windowWidth, m_windowHeight ), ImGuiCond_Always );
+        if( ImGui::Begin( "Example: Simple layout", NULL, window_flags ) )
+        {
+            // menu bar
+            if( this->showMenuBar() == EXIT_FAILURE )
+            {
+                return EXIT_FAILURE;
+            }
+
+            // Left
+            //ImGui::BeginGroup();
+
+            //ImGui::EndGroup();
+
+            // data type
+            enum SelectedType
+            {
+                SELECTED_SHAPE_DATA,
+                SELECTED_AFFECTOR_DATA,
+                SELECTED_EMITTER_DATA,
+
+                __SELECTED_DATA_MAX__
+            };
+
+            static int selected = SELECTED_SHAPE_DATA;
+            {
+                ImGui::BeginChild( "left pane", ImVec2( 150, 0 ), true );
+
+                if( ImGui::Selectable( "Shape data", selected == SelectedType::SELECTED_SHAPE_DATA ) )
+                    selected = SelectedType::SELECTED_SHAPE_DATA;
+
+                if( ImGui::Selectable( "Affector data", selected == SelectedType::SELECTED_AFFECTOR_DATA ) )
+                    selected = SelectedType::SELECTED_AFFECTOR_DATA;
+
+                if( ImGui::Selectable( "Emitter data", selected == SelectedType::SELECTED_EMITTER_DATA ) )
+                    selected = SelectedType::SELECTED_EMITTER_DATA;
+
+                ImGui::EndChild();
+            }
+            ImGui::SameLine();
+
+            // Right
+            {
+                ImGui::BeginGroup();
+
+                // elements
+                ImGui::BeginChild( "Selected data", ImVec2( 300, 0 ), true );
+
+                
+
+                switch( selected )
+                {
+                case SelectedType::SELECTED_SHAPE_DATA:
+                    {
+                        if( this->showShapeData() )
+                        {
+                            return EXIT_FAILURE;
+                        }
+                    } 
+                    break;
+                case SelectedType::SELECTED_AFFECTOR_DATA:
+                    {
+                        if( this->showAffectorData() )
+                        {
+                            return EXIT_FAILURE;
+                        }
+                    }
+                    break;
+                case SelectedType::SELECTED_EMITTER_DATA:
+                    {
+                        if( this->showEmitterData() )
+                        {
+                            return EXIT_FAILURE;
+                        }
+                    }
+                    break;
+                }
+
+                ImGui::EndChild();
+
+                ImGui::EndGroup();
+            }
+            ImGui::SameLine();
+
+            // Right
+            {
+                ImGui::BeginGroup();
+
+                ImGui::BeginChild( "item view", ImVec2( 0, 0 ), true ); // Leave room for 1 line below us
+
+                
+                // content
+                
+
+                // ======================================================= //
+                // test
+                // ======================================================= //
+                //ImGui::Spacing();
+
+                float columnWidth = ImGui::GetColumnWidth();
+                float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * 3;
+
+                if( m_dzWindowSize.x != columnWidth || m_dzWindowSize.y != columnHeight )
+                {
+                    m_dzWindowSize.x = columnWidth;
+                    m_dzWindowSize.y = columnHeight;
+
+                    // init opengl
+                    {
+                        uint32_t max_vertex_count = 8196 * 2;
+                        uint32_t max_index_count = 32768;
+
+                        if( dz_render_initialize( &m_openglHandle, (float)m_dzWindowSize.x, (float)m_dzWindowSize.y, max_vertex_count, max_index_count ) == false )
+                        {
+                            return EXIT_FAILURE;
+                        }
+                    }
+                }
+
+                ImGuiWindow * window = ImGui::GetCurrentWindow();
+                ImGuiContext & g = *GImGui;
+                const ImGuiStyle & style = g.Style;
+                const ImGuiID id = window->GetID( "testrender" );
+                if( window->SkipItems )
+                    return EXIT_FAILURE;
+
+                ImVec2 cursorPos = window->DC.CursorPos;
+
+                m_dzWindowPos = ImVec2(cursorPos.x, m_windowHeight - cursorPos.y - m_dzWindowSize.y);
+
+                ImRect bb( cursorPos, cursorPos + m_dzWindowSize );
+                ImGui::ItemSize( bb );
+                if( !ImGui::ItemAdd( bb, NULL ) )
+                    return 0;
+
+                ImGui::RenderFrame( bb.Min, bb.Max, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
+
+                //{
+                //    char buf[32];
+                //    sprintf( buf, "camera_scale: % .2f", camera_scale );
+
+                //    ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.98f, 0.98f ) );
+                //}
+
+                // ======================================================= //
+                ImGui::Separator();
+                ImGui::Spacing();
+                // header
+                if( ImGui::Button( "Reset" ) )
+                {
+                    this->resetEmitter();
+                }
+
+                ImGui::SameLine();
+
+                float life = dz_effect_get_life( m_emitter );
+                float time = dz_effect_get_time( m_emitter );
+
+                ImGui::Text( "Life: %.3f s | Time: %.3f s | Application average %.3f ms/frame (%.1f FPS)", life, time, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate );
+
+                // emitter states
+                {
+                    ImGui::Text( "Emitter states:" );
+                    ImGui::SameLine();
+
+                    dz_effect_state_e emitter_state = dz_emitter_get_state( m_emitter );
+
+                    auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
+                    {
+                        ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
+                        ImVec4 colorRed( ImColor( 255, 0, 0 ) );
+
+                        ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
+                        //ImGui::Text( _value ? "true" : "false" );
+                        ImGui::Text( _msg );
+                        ImGui::PopStyleColor( 1 );
+                        //ImGui::SameLine( 50.f );
+                        ImGui::SameLine();
+                        //ImGui::Text( _msg );
+                    };
+
+                    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
+                    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
+                }
+
+                ImGui::EndChild();
+
+                ImGui::EndGroup();
+            }
+        }
+
         ImGui::End();
 
-        // shape data
+        if( m_showDebugInfoOverlay == true )
         {
-            dz_shape_type_e current_shape_type = dz_shape_get_type( m_shapeData );
-
-            const char * shape_type_names[] = {
-                "Point",
-                "Segment",
-                "Circle",
-                "Line",
-                "Rect",
-                //"Polygon",
-                //"Mask",
-            };
-            static int selected_type = current_shape_type;
-
-            ImGui::Begin( "Shape data" );
-
-            ImGui::Combo( "Shape type", &selected_type, shape_type_names, IM_ARRAYSIZE( shape_type_names ), IM_ARRAYSIZE( shape_type_names ) );
-
-            if( selected_type != current_shape_type )
-            {
-                m_shapeType = static_cast<dz_shape_type_e>(selected_type);
-
-                this->resetEmitter();
-            }
-
-            // timeline
-            float width = ImGui::GetWindowContentRegionWidth();
-            ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
-
-            static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = {false};
-
-            ImGui::Separator();
-
-            for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
-            {
-                timeline_t & data = m_timelineShapeData[index];
-
-                bool show = false;
-
-                switch( m_shapeType )
-                {
-                case DZ_SHAPE_SEGMENT:
-                    if( data.type >= DZ_SHAPE_SEGMENT_ANGLE_MIN && data.type <= DZ_SHAPE_SEGMENT_ANGLE_MAX )
-                    {
-                        show = true;
-                    }
-                    break;
-                case DZ_SHAPE_CIRCLE:
-                    if( data.type >= DZ_SHAPE_CIRCLE_RADIUS_MIN && data.type <= DZ_SHAPE_CIRCLE_ANGLE_MAX )
-                    {
-                        show = true;
-                    }
-                    break;
-                case DZ_SHAPE_LINE:
-                    if( data.type >= DZ_SHAPE_LINE_ANGLE && data.type <= DZ_SHAPE_LINE_SIZE )
-                    {
-                        show = true;
-                    }
-                    break;
-                case DZ_SHAPE_RECT:
-                    if( data.type >= DZ_SHAPE_RECT_WIDTH_MIN && data.type <= DZ_SHAPE_RECT_HEIGHT_MAX )
-                    {
-                        show = true;
-                    }
-                    break;
-                }
-
-                if( show == true )
-                {
-                    ImGui::PushID( index );
-
-                    ImGui::Checkbox( data.name, &headerFlags[index] );
-
-                    if( headerFlags[index] == true )
-                    {
-                        float life = dz_effect_get_life( m_emitter );
-                        if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
-                        {
-                            if( __reset_shape_timeline_linear_from_points( m_service, m_shapeData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
-                            {
-                                return EXIT_FAILURE;
-                            }
-                        }
-                    }
-
-                    ImGui::Separator();
-
-                    ImGui::PopID();
-                }
-            }
-
-            ImGui::End();
-        }
-
-        // affector data
-        {
-            ImGui::Begin( "Affector data" );
-
-            // timeline
-            float width = ImGui::GetWindowContentRegionWidth();
-            ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
-
-            static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = {false};
-
-            ImGui::Separator();
-
-            for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
-            {
-                ImGui::PushID( index );
-
-                timeline_affector_t & data = m_timelineAffectorData[index];
-
-                ImGui::Checkbox( data.name, &headerFlags[index] );
-
-                if( headerFlags[index] == true )
-                {
-                    float life = dz_effect_get_life( m_emitter );
-                    if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
-                    {
-                        if( __reset_affector_timeline_linear_from_points( m_service, m_affectorData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
-                        {
-                            return EXIT_FAILURE;
-                        }
-                    }
-                }
-
-                ImGui::Separator();
-
-                ImGui::PopID();
-            }
-
-            ImGui::End();
-        }
-
-        // emiter data
-        {
-            ImGui::Begin( "Emitter data" );
-
-            // time
-            float life = dz_effect_get_life( m_emitter );
-            float time = dz_effect_get_time( m_emitter );
-
-            ImGui::Text( "Life: %.3f s | Time: %.3f s", life, time );
-
-            ImGui::Spacing();
-
-            if( ImGui::Button( "Reset" ) )
-            {
-                this->resetEmitter();
-            }
-
-            ImGui::Spacing();
-
-            // emitter states
-            if( ImGui::CollapsingHeader( "State" ) )
-            {
-                dz_effect_state_e emitter_state = dz_emitter_get_state( m_emitter );
-
-                auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
-                {
-                    ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
-                    ImVec4 colorRed( ImColor( 255, 0, 0 ) );
-
-                    ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
-                    ImGui::Text( _value ? "true" : "false" );
-                    ImGui::PopStyleColor( 1 );
-                    ImGui::SameLine( 50.f );
-                    ImGui::Text( _msg );
-                };
-
-                lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "DZ_EMITTER_EMIT_COMPLETE" );
-                lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "DZ_EMITTER_PARTICLE_COMPLETE" );
-
-                ImGui::Separator();
-            }
-
-            // timeline
-            float width = ImGui::GetWindowContentRegionWidth();
-            ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
-
-            static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = {false};
-
-            ImGui::Separator();
-
-            for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
-            {
-                timeline_emitter_t & data = m_timelineEmitterData[index];
-
-                ImGui::PushID( index );
-
-                ImGui::Checkbox( data.name, &headerFlags[index] );
-
-                if( headerFlags[index] == true )
-                {
-                    float life = dz_effect_get_life( m_emitter );
-                    if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
-                    {
-                        if( __reset_emitter_timeline_linear_from_points( m_service, m_emitterData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
-                        {
-                            return EXIT_FAILURE;
-                        }
-                    }
-                }
-
-                ImGui::Separator();
-
-                ImGui::PopID();
-            }
-
-            ImGui::End();
+            this->showDebugInfoOverlay( &m_showDebugInfoOverlay );
         }
 
         ImGui::EndFrame();
@@ -1042,9 +1044,12 @@ int editor::render()
 {
     // render background
     {
-        glClearColor( 0.45f, 0.55f, 0.60f, 1.00f );
+        glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w );
         glClear( GL_COLOR_BUFFER_BIT );
     }
+
+    // render imgui
+    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 
     // render dazzle
     {
@@ -1088,6 +1093,8 @@ int editor::render()
         glUnmapBuffer( GL_ARRAY_BUFFER );
         glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 
+        glViewport( m_dzWindowPos.x, m_dzWindowPos.y, m_dzWindowSize.x, m_dzWindowSize.y );
+
         for( uint32_t index = 0; index != chunk_count; ++index )
         {
             dz_effect_mesh_chunk_t * chunk = chunks + index;
@@ -1096,8 +1103,10 @@ int editor::render()
         }
     }
 
-    // render imgui
-    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+    glViewport( 0.f, 0.f, m_windowWidth, m_windowHeight );
+
+    //// render imgui
+    //ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 
     glfwSwapBuffers( m_fwWindow );
 
@@ -1130,6 +1139,16 @@ int editor::run()
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
+const ImVec2 & editor::getDzWindowPos() const
+{
+    return m_dzWindowPos;
+}
+//////////////////////////////////////////////////////////////////////////
+const ImVec2 & editor::getDzWindowSize() const
+{
+    return m_dzWindowSize;
+}
+//////////////////////////////////////////////////////////////////////////
 int editor::resetEmitter()
 {
     dz_effect_destroy( m_service, m_emitter );
@@ -1155,6 +1174,280 @@ int editor::resetEmitter()
     {
         return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::showMenuBar()
+{
+    if( ImGui::BeginMenuBar() )
+    {
+        if( ImGui::BeginMenu( "File" ) )
+        {
+            if( ImGui::MenuItem( "Open", "CTRL+O" ) )
+            {
+            }
+            ImGui::EndMenu();
+        }
+        if( ImGui::BeginMenu( "Edit" ) )
+        {
+            if( ImGui::MenuItem( "Undo", "CTRL+Z" ) )
+            {
+            }
+            if( ImGui::MenuItem( "Redo", "CTRL+Y", false, false ) )
+            {
+            }  // Disabled item
+            ImGui::Separator();
+            if( ImGui::MenuItem( "Cut", "CTRL+X" ) )
+            {
+            }
+            if( ImGui::MenuItem( "Copy", "CTRL+C" ) )
+            {
+            }
+            if( ImGui::MenuItem( "Paste", "CTRL+V" ) )
+            {
+            }
+
+            //ImGui::MenuItem( "Debug info", NULL, &m_showDebugInfoOverlay );
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::showShapeData()
+{
+    dz_shape_type_e current_shape_type = dz_shape_get_type( m_shapeData );
+
+    const char * shape_type_names[] = {
+        "Point",
+        "Segment",
+        "Circle",
+        "Line",
+        "Rect",
+        //"Polygon",
+        //"Mask",
+    };
+    static int selected_type = current_shape_type;
+
+    ImGui::Combo( "Shape type", &selected_type, shape_type_names, IM_ARRAYSIZE( shape_type_names ), IM_ARRAYSIZE( shape_type_names ) );
+
+    if( selected_type != current_shape_type )
+    {
+        m_shapeType = static_cast<dz_shape_type_e>(selected_type);
+
+        this->resetEmitter();
+    }
+
+    // timeline
+    ImGui::Spacing();
+    ImGui::Text( "Shape timelines:" );
+
+    float width = ImGui::GetWindowContentRegionWidth();
+    ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
+
+    static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = { false };
+
+    ImGui::Separator();
+
+    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    {
+        timeline_t & data = m_timelineShapeData[index];
+
+        bool show = false;
+
+        switch( m_shapeType )
+        {
+        case DZ_SHAPE_SEGMENT:
+            if( data.type >= DZ_SHAPE_SEGMENT_ANGLE_MIN && data.type <= DZ_SHAPE_SEGMENT_ANGLE_MAX )
+            {
+                show = true;
+            }
+            break;
+        case DZ_SHAPE_CIRCLE:
+            if( data.type >= DZ_SHAPE_CIRCLE_RADIUS_MIN && data.type <= DZ_SHAPE_CIRCLE_ANGLE_MAX )
+            {
+                show = true;
+            }
+            break;
+        case DZ_SHAPE_LINE:
+            if( data.type >= DZ_SHAPE_LINE_ANGLE && data.type <= DZ_SHAPE_LINE_SIZE )
+            {
+                show = true;
+            }
+            break;
+        case DZ_SHAPE_RECT:
+            if( data.type >= DZ_SHAPE_RECT_WIDTH_MIN && data.type <= DZ_SHAPE_RECT_HEIGHT_MAX )
+            {
+                show = true;
+            }
+            break;
+        }
+
+        if( show == true )
+        {
+            ImGui::PushID( index );
+
+            ImGui::Checkbox( data.name, &headerFlags[index] );
+
+            if( headerFlags[index] == true )
+            {
+                float life = dz_effect_get_life( m_emitter );
+                if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+                {
+                    if( __reset_shape_timeline_linear_from_points( m_service, m_shapeData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                    {
+                        return EXIT_FAILURE;
+                    }
+                }
+            }
+
+            ImGui::Separator();
+
+            ImGui::PopID();
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::showAffectorData()
+{
+    // timeline
+    ImGui::Spacing();
+    ImGui::Text( "Affector timelines:" );
+
+    float width = ImGui::GetWindowContentRegionWidth();
+    ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
+
+    static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = { false };
+
+    ImGui::Separator();
+
+    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    {
+        ImGui::PushID( index );
+
+        timeline_affector_t & data = m_timelineAffectorData[index];
+
+        ImGui::Checkbox( data.name, &headerFlags[index] );
+
+        if( headerFlags[index] == true )
+        {
+            float life = dz_effect_get_life( m_emitter );
+            if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            {
+                if( __reset_affector_timeline_linear_from_points( m_service, m_affectorData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                {
+                    return EXIT_FAILURE;
+                }
+            }
+        }
+
+        ImGui::Separator();
+
+        ImGui::PopID();
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::showEmitterData()
+{
+    // timeline
+    ImGui::Spacing();
+    ImGui::Text( "Emitter timelines:" );
+
+    float width = ImGui::GetWindowContentRegionWidth();
+    ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
+
+    static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = { false };
+
+    ImGui::Separator();
+
+    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    {
+        timeline_emitter_t & data = m_timelineEmitterData[index];
+
+        ImGui::PushID( index );
+
+        ImGui::Checkbox( data.name, &headerFlags[index] );
+
+        if( headerFlags[index] == true )
+        {
+            float life = dz_effect_get_life( m_emitter );
+            if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            {
+                if( __reset_emitter_timeline_linear_from_points( m_service, m_emitterData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                {
+                    return EXIT_FAILURE;
+                }
+            }
+        }
+
+        ImGui::Separator();
+
+        ImGui::PopID();
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::showDebugInfoOverlay( bool * _isOpen )
+{
+    const float DISTANCE = 10.0f;
+    static int corner = 2; // Bottom-left
+    ImGuiIO & io = ImGui::GetIO();
+    if( corner != -1 )
+    {
+        ImVec2 window_pos = ImVec2( (corner & 1) ? io.DisplaySize.x - DISTANCE : DISTANCE, (corner & 2) ? io.DisplaySize.y - DISTANCE : DISTANCE );
+        ImVec2 window_pos_pivot = ImVec2( (corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f );
+        ImGui::SetNextWindowPos( window_pos, ImGuiCond_Always, window_pos_pivot );
+    }
+    ImGui::SetNextWindowBgAlpha( 0.35f ); // Transparent background
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    if( corner != -1 )
+        window_flags |= ImGuiWindowFlags_NoMove;
+    if( ImGui::Begin( "Example: Simple overlay", _isOpen, window_flags ) )
+    {
+        ImGui::Text( "Simple overlay\n" "in the corner of the screen.\n" "(right-click to change position)" );
+        ImGui::Separator();
+        
+        // debug info
+        ImGui::Text( 
+            "camera_scale: %.2f\n"
+            "camera_scale_min: %.2f\n"
+            "camera_scale_max: %.2f\n"
+            "camera_scale_step: %.2f\n"
+            "camera_offset_x: %.2f\n"
+            "camera_offset_y: %.2f\n"
+            "mouse_pos_x: %.2f\n"
+            "mouse_pos_y: %.2f\n"
+            , camera_scale
+            , camera_scale_min
+            , camera_scale_max
+            , camera_scale_step
+            , camera_offset_x
+            , camera_offset_y
+            , mouse_pos_x
+            , mouse_pos_y
+        );
+
+        if( ImGui::BeginPopupContextWindow() )
+        {
+            if( ImGui::MenuItem( "Custom", NULL, corner == -1 ) ) corner = -1;
+            if( ImGui::MenuItem( "Top-left", NULL, corner == 0 ) ) corner = 0;
+            if( ImGui::MenuItem( "Top-right", NULL, corner == 1 ) ) corner = 1;
+            if( ImGui::MenuItem( "Bottom-left", NULL, corner == 2 ) ) corner = 2;
+            if( ImGui::MenuItem( "Bottom-right", NULL, corner == 3 ) ) corner = 3;
+            if( _isOpen && ImGui::MenuItem( "Close" ) ) * _isOpen = false;
+            ImGui::EndPopup();
+        }
+    }
+    ImGui::End();
 
     return EXIT_SUCCESS;
 }

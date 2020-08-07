@@ -33,12 +33,31 @@ protected:
 public:
     int run();
 
+public:
+    const ImVec2 & getDzWindowPos() const;
+    const ImVec2 & getDzWindowSize() const;
+
 protected:
     int resetEmitter();
+
+    int showMenuBar();
+
+    int showShapeData();
+    int showAffectorData();
+    int showEmitterData();
+
+    int showDebugInfoOverlay( bool * _isOpen );
 
 protected:
     float m_windowWidth;
     float m_windowHeight;
+
+    ImVec2 m_dzWindowPos;
+    ImVec2 m_dzWindowSize;
+
+    ImVec4 m_backgroundColor;
+
+    bool m_showDebugInfoOverlay;
 
     dz_service_t * m_service;
 
