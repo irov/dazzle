@@ -13,6 +13,12 @@ namespace ImGui
 };
 //////////////////////////////////////////////////////////////////////////
 ImVec4 clear_color = ImVec4( 0.45f, 0.55f, 0.60f, 1.00f );
+//static constexpr float WINDOW_WIDTH = 1024;
+//static constexpr float WINDOW_HEIGHT = 768;
+
+// HD 720p
+static constexpr float WINDOW_WIDTH = 1280;
+static constexpr float WINDOW_HEIGHT = 720; 
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -523,8 +529,8 @@ static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
 }
 //////////////////////////////////////////////////////////////////////////
 editor::editor()
-    : m_windowWidth( 0.f )
-    , m_windowHeight( 0.f )
+    : m_windowWidth( WINDOW_WIDTH )
+    , m_windowHeight( WINDOW_HEIGHT )
 
     , m_service( nullptr )
 
@@ -601,9 +607,6 @@ int editor::init()
         glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE );
         glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
         glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
-
-        m_windowWidth = 1024;
-        m_windowHeight = 768;
 
         camera_offset_x = m_windowWidth * 0.5f;
         camera_offset_y = m_windowHeight * 0.5f;
