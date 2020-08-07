@@ -12,12 +12,14 @@ namespace ImGui
     float CurveValue( float _p, int _maxpoints, const ImVec2 * _points );
 };
 //////////////////////////////////////////////////////////////////////////
-//static constexpr float WINDOW_WIDTH = 1024;
-//static constexpr float WINDOW_HEIGHT = 768;
+// aspect ratio 3:4
+//static constexpr float WINDOW_WIDTH = 1024.f;
+//static constexpr float WINDOW_HEIGHT = 768.f;
 
-// HD 720p
-static constexpr float WINDOW_WIDTH = 1280;
-static constexpr float WINDOW_HEIGHT = 720; 
+// aspect ratio HD 720p
+static constexpr float WINDOW_WIDTH = 1280.f;
+static constexpr float WINDOW_HEIGHT = 720.f; 
+static constexpr float TIMELINE_PANEL_WIDTH = 350.f;
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -540,11 +542,12 @@ editor::editor()
     , m_windowHeight( WINDOW_HEIGHT )
 
     , m_dzWindowPos( 0.f, 0.f )
-    , m_dzWindowSize( 500.f, 500.f )
+    //, m_dzWindowSize( 500.f, 500.f )
+    , m_dzWindowSize( 732.f, 616.f )
 
     , m_backgroundColor( 0.f, 0.f, 0.f, 1.f )
 
-    , m_showDebugInfoOverlay( false )
+    , m_showDebugInfo( false )
 
     , m_service( nullptr )
 
@@ -874,9 +877,7 @@ int editor::update()
                 ImGui::BeginGroup();
 
                 // elements
-                ImGui::BeginChild( "Selected data", ImVec2( 300, 0 ), true );
-
-                
+                ImGui::BeginChild( "Selected data", ImVec2( TIMELINE_PANEL_WIDTH, 0.f ), true );
 
                 switch( selected )
                 {
@@ -918,99 +919,9 @@ int editor::update()
 
                 ImGui::BeginChild( "item view", ImVec2( 0, 0 ), true ); // Leave room for 1 line below us
 
-                
-                // content
-                
-
-                // ======================================================= //
-                // test
-                // ======================================================= //
-                //ImGui::Spacing();
-
-                float columnWidth = ImGui::GetColumnWidth();
-                float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * 3;
-
-                if( m_dzWindowSize.x != columnWidth || m_dzWindowSize.y != columnHeight )
+                if ( this->showContentPane() == EXIT_FAILURE )
                 {
-                    m_dzWindowSize.x = columnWidth;
-                    m_dzWindowSize.y = columnHeight;
-
-                    // init opengl
-                    {
-                        uint32_t max_vertex_count = 8196 * 2;
-                        uint32_t max_index_count = 32768;
-
-                        if( dz_render_initialize( &m_openglHandle, (float)m_dzWindowSize.x, (float)m_dzWindowSize.y, max_vertex_count, max_index_count ) == false )
-                        {
-                            return EXIT_FAILURE;
-                        }
-                    }
-                }
-
-                ImGuiWindow * window = ImGui::GetCurrentWindow();
-                ImGuiContext & g = *GImGui;
-                const ImGuiStyle & style = g.Style;
-                const ImGuiID id = window->GetID( "testrender" );
-                if( window->SkipItems )
                     return EXIT_FAILURE;
-
-                ImVec2 cursorPos = window->DC.CursorPos;
-
-                m_dzWindowPos = ImVec2(cursorPos.x, m_windowHeight - cursorPos.y - m_dzWindowSize.y);
-
-                ImRect bb( cursorPos, cursorPos + m_dzWindowSize );
-                ImGui::ItemSize( bb );
-                if( !ImGui::ItemAdd( bb, NULL ) )
-                    return 0;
-
-                ImGui::RenderFrame( bb.Min, bb.Max, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
-
-                //{
-                //    char buf[32];
-                //    sprintf( buf, "camera_scale: % .2f", camera_scale );
-
-                //    ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.98f, 0.98f ) );
-                //}
-
-                // ======================================================= //
-                ImGui::Separator();
-                ImGui::Spacing();
-                // header
-                if( ImGui::Button( "Reset" ) )
-                {
-                    this->resetEmitter();
-                }
-
-                ImGui::SameLine();
-
-                float life = dz_effect_get_life( m_emitter );
-                float time = dz_effect_get_time( m_emitter );
-
-                ImGui::Text( "Life: %.3f s | Time: %.3f s | Application average %.3f ms/frame (%.1f FPS)", life, time, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate );
-
-                // emitter states
-                {
-                    ImGui::Text( "Emitter states:" );
-                    ImGui::SameLine();
-
-                    dz_effect_state_e emitter_state = dz_emitter_get_state( m_emitter );
-
-                    auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
-                    {
-                        ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
-                        ImVec4 colorRed( ImColor( 255, 0, 0 ) );
-
-                        ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
-                        //ImGui::Text( _value ? "true" : "false" );
-                        ImGui::Text( _msg );
-                        ImGui::PopStyleColor( 1 );
-                        //ImGui::SameLine( 50.f );
-                        ImGui::SameLine();
-                        //ImGui::Text( _msg );
-                    };
-
-                    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
-                    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
                 }
 
                 ImGui::EndChild();
@@ -1020,11 +931,6 @@ int editor::update()
         }
 
         ImGui::End();
-
-        if( m_showDebugInfoOverlay == true )
-        {
-            this->showDebugInfoOverlay( &m_showDebugInfoOverlay );
-        }
 
         ImGui::EndFrame();
 
@@ -1208,7 +1114,7 @@ int editor::showMenuBar()
             {
             }
 
-            //ImGui::MenuItem( "Debug info", NULL, &m_showDebugInfoOverlay );
+            ImGui::MenuItem( "Debug info", "CTRL+I", &m_showDebugInfo );
 
             ImGui::EndMenu();
         }
@@ -1396,36 +1302,64 @@ int editor::showEmitterData()
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showDebugInfoOverlay( bool * _isOpen )
+int editor::showContentPane()
 {
-    const float DISTANCE = 10.0f;
-    static int corner = 2; // Bottom-left
-    ImGuiIO & io = ImGui::GetIO();
-    if( corner != -1 )
+    // content
+    float columnWidth = ImGui::GetColumnWidth();
+    float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * 3;
+
+    if( m_dzWindowSize.x != columnWidth || m_dzWindowSize.y != columnHeight )
     {
-        ImVec2 window_pos = ImVec2( (corner & 1) ? io.DisplaySize.x - DISTANCE : DISTANCE, (corner & 2) ? io.DisplaySize.y - DISTANCE : DISTANCE );
-        ImVec2 window_pos_pivot = ImVec2( (corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f );
-        ImGui::SetNextWindowPos( window_pos, ImGuiCond_Always, window_pos_pivot );
+        m_dzWindowSize.x = columnWidth;
+        m_dzWindowSize.y = columnHeight;
+
+        // init opengl
+        {
+            uint32_t max_vertex_count = 8196 * 2;
+            uint32_t max_index_count = 32768;
+
+            if( dz_render_initialize( &m_openglHandle, (float)m_dzWindowSize.x, (float)m_dzWindowSize.y, max_vertex_count, max_index_count ) == false )
+            {
+                return EXIT_FAILURE;
+            }
+        }
     }
-    ImGui::SetNextWindowBgAlpha( 0.35f ); // Transparent background
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    if( corner != -1 )
-        window_flags |= ImGuiWindowFlags_NoMove;
-    if( ImGui::Begin( "Example: Simple overlay", _isOpen, window_flags ) )
+
+    ImGuiWindow * window = ImGui::GetCurrentWindow();
+    ImGuiContext & g = *GImGui;
+    const ImGuiStyle & style = g.Style;
+    const ImGuiID id = window->GetID( "testrender" );
+    if( window->SkipItems )
+        return EXIT_FAILURE;
+
+    ImVec2 cursorPos = window->DC.CursorPos;
+
+    m_dzWindowPos = ImVec2( cursorPos.x, m_windowHeight - cursorPos.y - m_dzWindowSize.y );
+
+    ImRect bb( cursorPos, cursorPos + m_dzWindowSize );
+    ImGui::ItemSize( bb );
+    if( !ImGui::ItemAdd( bb, NULL ) )
+        return 0;
+
+    ImGui::RenderFrame( bb.Min, bb.Max, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
+
+    if( m_showDebugInfo == true )
     {
-        ImGui::Text( "Simple overlay\n" "in the corner of the screen.\n" "(right-click to change position)" );
-        ImGui::Separator();
-        
-        // debug info
-        ImGui::Text( 
-            "camera_scale: %.2f\n"
-            "camera_scale_min: %.2f\n"
-            "camera_scale_max: %.2f\n"
+        char buf[500];
+
+        sprintf( buf,
+            "Application average %.3f ms/frame (%.1f FPS)\n\n"
+            "      window size: (%.2f, %.2f)\n"
+            "     camera_scale: %.2f\n"
+            " camera_scale_min: %.2f\n"
+            " camera_scale_max: %.2f\n"
             "camera_scale_step: %.2f\n"
-            "camera_offset_x: %.2f\n"
-            "camera_offset_y: %.2f\n"
-            "mouse_pos_x: %.2f\n"
-            "mouse_pos_y: %.2f\n"
+            "  camera_offset_x: %.2f\n"
+            "  camera_offset_y: %.2f\n"
+            "      mouse_pos_x: %.2f\n"
+            "      mouse_pos_y: %.2f\n"
+            , 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate
+            , m_dzWindowSize.x, m_dzWindowSize.y
             , camera_scale
             , camera_scale_min
             , camera_scale_max
@@ -1436,18 +1370,51 @@ int editor::showDebugInfoOverlay( bool * _isOpen )
             , mouse_pos_y
         );
 
-        if( ImGui::BeginPopupContextWindow() )
-        {
-            if( ImGui::MenuItem( "Custom", NULL, corner == -1 ) ) corner = -1;
-            if( ImGui::MenuItem( "Top-left", NULL, corner == 0 ) ) corner = 0;
-            if( ImGui::MenuItem( "Top-right", NULL, corner == 1 ) ) corner = 1;
-            if( ImGui::MenuItem( "Bottom-left", NULL, corner == 2 ) ) corner = 2;
-            if( ImGui::MenuItem( "Bottom-right", NULL, corner == 3 ) ) corner = 3;
-            if( _isOpen && ImGui::MenuItem( "Close" ) ) * _isOpen = false;
-            ImGui::EndPopup();
-        }
+        window->DrawList->AddText( ImVec2( bb.Min.x + style.FramePadding.x, bb.Min.y + style.FramePadding.y ), ImGui::GetColorU32( ImGuiCol_Text, 0.7f ), buf );
     }
-    ImGui::End();
+
+    // controls
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    float life = dz_effect_get_life( m_emitter );
+    float time = dz_effect_get_time( m_emitter );
+
+    if( ImGui::Button( "Reset" ) )
+    {
+        this->resetEmitter();
+    }
+    ImGui::SameLine();
+
+    ImGui::Text( "Life: %.3f s", life );
+    ImGui::SameLine();
+
+    ImGui::SliderFloat( "", &time, 0.0f, life, "Time: %.3f s" );
+    ImGui::SameLine();
+
+    ImGui::Spacing();
+
+    // emitter states
+    {
+        ImGui::Text( "Emitter states:" );
+        ImGui::SameLine();
+
+        dz_effect_state_e emitter_state = dz_emitter_get_state( m_emitter );
+
+        auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
+        {
+            ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
+            ImVec4 colorRed( ImColor( 255, 0, 0 ) );
+
+            ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
+            ImGui::Text( _msg );
+            ImGui::PopStyleColor( 1 );
+            ImGui::SameLine();
+        };
+
+        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
+        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
+    }
 
     return EXIT_SUCCESS;
 }

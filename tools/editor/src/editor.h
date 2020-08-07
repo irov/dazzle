@@ -46,7 +46,7 @@ protected:
     int showAffectorData();
     int showEmitterData();
 
-    int showDebugInfoOverlay( bool * _isOpen );
+    int showContentPane();
 
 protected:
     float m_windowWidth;
@@ -57,7 +57,7 @@ protected:
 
     ImVec4 m_backgroundColor;
 
-    bool m_showDebugInfoOverlay;
+    bool m_showDebugInfo;
 
     dz_service_t * m_service;
 
