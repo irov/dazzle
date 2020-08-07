@@ -2,7 +2,7 @@
 
 #include "dazzle/dazzle.hpp"
 
-#include "opengl.h"
+#include "render/render.h"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -48,7 +48,9 @@ protected:
 
     dz_effect_t * m_emitter;
 
-    example_opengl_handle_t * m_openglHandle;
+    GLuint m_textureId;
+
+    dz_render_handle_t * m_openglHandle;
     GLFWwindow * m_fwWindow;
 
     typedef struct

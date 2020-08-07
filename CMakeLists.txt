@@ -59,9 +59,11 @@ ENDIF()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 SET(DAZZLE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+SET(DAZZLE_CMAKE_DIR ${DAZZLE_ROOT_DIR}/cmake)
 SET(DAZZLE_SOURCE_DIR ${DAZZLE_ROOT_DIR}/src)
 SET(DAZZLE_INCLUDE_DIR ${DAZZLE_ROOT_DIR}/include)
 SET(DAZZLE_DEPENDENCIES_DIR ${DAZZLE_ROOT_DIR}/dependencies)
+SET(DAZZLE_TOOLS_DIR ${DAZZLE_ROOT_DIR}/tools)
 
 set(DAZZLE_SOURCES
     ${DAZZLE_SOURCE_DIR}/affector.h
@@ -104,24 +106,7 @@ if(DAZZLE_TESTS)
     
     add_subdirectory(tests)
 else()
-    if(DAZZLE_EDITOR_BUILD)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/macro.cmake)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glad_download.cmake)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glfw_download.cmake)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/stb_libs_download.cmake)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/imgui_download.cmake)
-    
-        add_subdirectory(editor)
-    endif()
-
-    if(DAZZLE_EXAMPLE_BUILD)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/macro.cmake)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glad_download.cmake)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/glfw_download.cmake)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/stb_libs_download.cmake)
-        
-        add_subdirectory(example)
-    endif()
+    add_subdirectory(tools)
 
     if(DAZZLE_TESTS_IN_SOLUTIONS)
         add_subdirectory(tests)

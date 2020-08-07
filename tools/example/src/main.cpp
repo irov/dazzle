@@ -1,11 +1,12 @@
 #include "dazzle/dazzle.hpp"
 
-#include "opengl.h"
+#include "render/render.h"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 //////////////////////////////////////////////////////////////////////////
@@ -382,11 +383,19 @@ int main( int argc, char ** argv )
     uint32_t max_vertex_count = 8196 * 2;
     uint32_t max_index_count = 32768;
 
-    example_opengl_handle_t * opengl_handle;
-    if( initialize_opengl( &opengl_handle, (float)window_width, (float)window_height, max_vertex_count, max_index_count ) == false )
+    dz_render_handle_t * opengl_handle;
+    if( dz_render_initialize( &opengl_handle, (float)window_width, (float)window_height, max_vertex_count, max_index_count ) == false )
     {
         return EXIT_FAILURE;
     }
+
+    char texture_path[250];
+    sprintf( texture_path, "%s/%s"
+        , DAZZLE_EXAMPLE_CONTENT_DIR
+        , "particle.png"
+    );
+
+    GLuint textureId = dz_render_make_texture( texture_path );
 
     while( glfwWindowShouldClose( fwWindow ) == 0 )
     {
@@ -394,15 +403,15 @@ int main( int argc, char ** argv )
 
         dz_effect_update( service, effect, 0.005f );
 
-        opengl_set_camera( opengl_handle, camera_offset_x, camera_offset_y, camera_scale );
+        dz_render_set_camera( opengl_handle, camera_offset_x, camera_offset_y, camera_scale );
 
         glClearColor( 0, 0, 0, 255 );
         glClear( GL_COLOR_BUFFER_BIT );
 
         glActiveTexture( GL_TEXTURE0 );
-        glBindTexture( GL_TEXTURE_2D, opengl_handle->textureId );
+        glBindTexture( GL_TEXTURE_2D, textureId );
 
-        opengl_use_texture_program( opengl_handle );
+        dz_render_use_texture_program( opengl_handle );
                 
         glBindBuffer( GL_ARRAY_BUFFER, opengl_handle->VBO );
         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, opengl_handle->IBO );

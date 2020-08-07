@@ -1,9 +1,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 
-set(DAZZLE_EXAMPLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(DAZZLE_EXAMPLE_CONTENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/content)
+set(DAZZLE_EDITOR_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(DAZZLE_EDITOR_CONTENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/content)
 
-project(dazzle_example)
+project(dazzle_editor)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -17,25 +17,27 @@ elseif(UNIX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 endif()
 
-include_directories(${DAZZLE_EXAMPLE_SOURCE_DIR})
+include_directories(${DAZZLE_EDITOR_SOURCE_DIR})
 include_directories(${DAZZLE_DEPENDENCIES_DIR})
 include_directories(${GLFW_INCLUDE_DIR})
 include_directories(${GLAD_INCLUDE_DIR})
+include_directories(${IMGUI_INCLUDE_DIR})
+include_directories(${DAZZLE_TOOLS_DIR}/render/include)
 
 if(MSVC)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
-set(DAZZLE_EXAMPLE_SOURCES
-    ${DAZZLE_EXAMPLE_SOURCE_DIR}/main.cpp
-    
-    ${DAZZLE_EXAMPLE_SOURCE_DIR}/opengl.h
-    ${DAZZLE_EXAMPLE_SOURCE_DIR}/opengl.cpp
+set(DAZZLE_EDITOR_SOURCES
+    ${DAZZLE_EDITOR_SOURCE_DIR}/main.cpp
+    ${DAZZLE_EDITOR_SOURCE_DIR}/editor.cpp
+    ${DAZZLE_EDITOR_SOURCE_DIR}/editor.h
+    ${DAZZLE_EDITOR_SOURCE_DIR}/curve.hpp
 )
 
-ADD_DEFINITIONS(-DDAZZLE_EXAMPLE_CONTENT_DIR="${DAZZLE_EXAMPLE_CONTENT_DIR}")
+ADD_DEFINITIONS(-DDAZZLE_EDITOR_CONTENT_DIR="${DAZZLE_EDITOR_CONTENT_DIR}")
 
-add_executable(${PROJECT_NAME} ${DAZZLE_EXAMPLE_SOURCES})
+add_executable(${PROJECT_NAME} ${DAZZLE_EDITOR_SOURCES})
 
 message("UNIX: ${UNIX}")
 message("APPLE: ${APPLE}")
@@ -43,13 +45,18 @@ message("ANDROID: ${ANDROID}")
 
 target_link_libraries(${PROJECT_NAME}
     dazzle
+    dazzle_render
     glad
     glfw
+    imgui
+    imgui_glfw
+    imgui_opengl3
 )
 
 add_dependencies(${PROJECT_NAME}
     glad_download
     glfw_download
+    imgui_download
 )
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
@@ -72,5 +79,5 @@ if(APPLE)
 endif()
 
 set_target_properties (${PROJECT_NAME} PROPERTIES
-    FOLDER example
+    FOLDER editor
 )

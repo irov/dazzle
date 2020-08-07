@@ -16,10 +16,8 @@ typedef struct gl_vertex_t
 //////////////////////////////////////////////////////////////////////////
 typedef dz_uint16_t gl_index_t;
 //////////////////////////////////////////////////////////////////////////
-typedef struct example_opengl_handle_t
+typedef struct dz_render_handle_t
 {
-    GLuint textureId;
-
     GLuint VAO;
     GLuint VBO;
     GLuint IBO;
@@ -27,12 +25,15 @@ typedef struct example_opengl_handle_t
     GLuint shaderCurrentProgram;
     GLuint shaderColorProgram;
     GLuint shaderTextureProgram;
-}example_opengl_handle_t;
+}dz_render_handle_t;
 //////////////////////////////////////////////////////////////////////////
-bool initialize_opengl( example_opengl_handle_t ** _handle, float _width, float _height, int _max_vertex_count, int _max_index_count );
-void finalize_opengl( example_opengl_handle_t * _handle );
+bool dz_render_initialize( dz_render_handle_t ** _handle, float _width, float _height, int _max_vertex_count, int _max_index_count );
+void dz_render_finalize( dz_render_handle_t * _handle );
 //////////////////////////////////////////////////////////////////////////
-void opengl_use_color_program( example_opengl_handle_t * _handle );
-void opengl_use_texture_program( example_opengl_handle_t * _handle );
-void opengl_set_camera( example_opengl_handle_t * _handle, float _offsetX, float _offsetY, float _scale );
+GLuint dz_render_make_texture( const char * _path );
+void dz_render_delete_texture( GLuint _id );
+//////////////////////////////////////////////////////////////////////////
+void dz_render_use_color_program( dz_render_handle_t * _handle );
+void dz_render_use_texture_program( dz_render_handle_t * _handle );
+void dz_render_set_camera( dz_render_handle_t * _handle, float _offsetX, float _offsetY, float _scale );
 //////////////////////////////////////////////////////////////////////////

@@ -4,12 +4,9 @@
 #define STBI_NO_SIMD
 #include "stb/stb_image.h"
 
-#include "opengl.h"
+#include "render/render.h"
 
 #include "glad/glad.h"
-
-#include <stdlib.h>
-#include <stdio.h>
 
 //////////////////////////////////////////////////////////////////////////
 static void __make_ortho( float _l, float _r, float _t, float _b, float _n, float _f, float _m[16] )
@@ -89,19 +86,13 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
     return shaderProgram;
 }
 //////////////////////////////////////////////////////////////////////////
-static GLuint __make_texture( const char * _path )
+GLuint dz_render_make_texture( const char * _path )
 {
     int width;
     int height;
     int comp;
 
-    char texture_path[250];
-    sprintf( texture_path, "%s/%s"
-        , DAZZLE_EXAMPLE_CONTENT_DIR
-        , _path
-    );
-
-    uint8_t * data = stbi_load( texture_path, &width, &height, &comp, STBI_default );
+    uint8_t * data = stbi_load( _path, &width, &height, &comp, STBI_default );
 
     if( data == DZ_NULLPTR )
     {
@@ -151,6 +142,11 @@ static GLuint __make_texture( const char * _path )
     stbi_image_free( data );
 
     return id;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_render_delete_texture( GLuint _id )
+{
+    glDeleteTextures( 1, &_id );
 }
 //////////////////////////////////////////////////////////////////////////
 static const char * vertexShaderColorSource = "#version 330 core\n"
@@ -203,10 +199,8 @@ static const char * fragmentShaderTextureSource = "#version 330 core\n"
 "   oColor = texColor * v2fColor;\n"
 "}\n\0";
 //////////////////////////////////////////////////////////////////////////
-bool initialize_opengl( example_opengl_handle_t ** _handle, float _width, float _height, int _max_vertex_count, int _max_index_count )
+bool dz_render_initialize( dz_render_handle_t ** _handle, float _width, float _height, int _max_vertex_count, int _max_index_count )
 {
-    GLuint textureId = __make_texture( "particle.png" );
-
     GLuint shaderColorProgram = __make_program( vertexShaderColorSource, fragmentShaderColorSource );
     GLuint shaderTextureProgram = __make_program( vertexShaderTextureSource, fragmentShaderTextureSource );
 
@@ -302,9 +296,8 @@ bool initialize_opengl( example_opengl_handle_t ** _handle, float _width, float 
     glBufferData( GL_ARRAY_BUFFER, _max_vertex_count * sizeof( gl_vertex_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
     glBufferData( GL_ELEMENT_ARRAY_BUFFER, _max_index_count * sizeof( gl_index_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
 
-    example_opengl_handle_t * opengl_handle = new example_opengl_handle_t;
+    dz_render_handle_t * opengl_handle = new dz_render_handle_t;
 
-    opengl_handle->textureId = textureId;
     opengl_handle->VAO = VAO;
     opengl_handle->VBO = VBO;
     opengl_handle->IBO = IBO;
@@ -317,10 +310,8 @@ bool initialize_opengl( example_opengl_handle_t ** _handle, float _width, float 
     return true;
 }
 //////////////////////////////////////////////////////////////////////////
-void finalize_opengl( example_opengl_handle_t * _handle )
+void dz_render_finalize( dz_render_handle_t * _handle )
 {
-    glDeleteTextures( 1, &_handle->textureId );
-
     glDeleteVertexArrays( 1, &_handle->VAO );
     glDeleteBuffers( 1, &_handle->VBO );
     glDeleteBuffers( 1, &_handle->IBO );
@@ -329,21 +320,21 @@ void finalize_opengl( example_opengl_handle_t * _handle )
     glDeleteProgram( _handle->shaderTextureProgram );
 }
 //////////////////////////////////////////////////////////////////////////
-void opengl_use_color_program( example_opengl_handle_t * _handle )
+void dz_render_use_color_program( dz_render_handle_t * _handle )
 {
     _handle->shaderCurrentProgram = _handle->shaderColorProgram;
 
     glUseProgram( _handle->shaderCurrentProgram );
 }
 //////////////////////////////////////////////////////////////////////////
-void opengl_use_texture_program( example_opengl_handle_t * _handle )
+void dz_render_use_texture_program( dz_render_handle_t * _handle )
 {
     _handle->shaderCurrentProgram = _handle->shaderTextureProgram;
 
     glUseProgram( _handle->shaderCurrentProgram );
 }
 //////////////////////////////////////////////////////////////////////////
-void opengl_set_camera( example_opengl_handle_t * _handle, float _offsetX, float _offsetY, float _scale )
+void dz_render_set_camera( dz_render_handle_t * _handle, float _offsetX, float _offsetY, float _scale )
 {
     glUseProgram( _handle->shaderCurrentProgram );
 
