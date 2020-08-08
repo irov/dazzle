@@ -588,10 +588,12 @@ editor::editor()
     , m_showDebugInfo( false )
 
     , m_service( nullptr )
-
-    , m_shapeData( nullptr )
-    , m_emitterData( nullptr )
-    , m_affectorData( nullptr )
+    , m_texture( nullptr )
+    , m_material( nullptr )
+    
+    , m_shape( nullptr )
+    , m_emitter( nullptr )
+    , m_affector( nullptr )
 
     , m_effect( nullptr )
     , m_fwWindow( nullptr )
@@ -710,6 +712,19 @@ int editor::init()
         }
 
         glfwSwapInterval( 1 );
+    }
+
+    // init opengl
+    {
+        uint32_t max_vertex_count = 8196 * 2;
+        uint32_t max_index_count = 32768;
+
+        if( dz_render_initialize( &m_openglDesc, max_vertex_count, max_index_count ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
+
+        dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
 
         char texture_path[250];
         sprintf( texture_path, "%s/%s"
@@ -736,8 +751,21 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
+        if( dz_texture_create( m_service, &m_texture, &m_textureId ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
+
+        if( dz_material_create( m_service, &m_material, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
+
+        dz_material_set_blend( m_material, DZ_BLEND_ADD );
+        dz_material_set_texture( m_material, m_texture );
+
         // shape data
-        if( dz_shape_create( m_service, &m_shapeData, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
@@ -746,7 +774,7 @@ int editor::init()
         {
             timeline_shape_t & data = m_timelineShapeData[index];
 
-            if( __set_shape_timeline_const( m_service, m_shapeData, data.type, data.startValue ) == DZ_FAILURE )
+            if( __set_shape_timeline_const( m_service, m_shape, data.type, data.startValue ) == DZ_FAILURE )
             {
                 return EXIT_FAILURE;
             }
@@ -758,18 +786,18 @@ int editor::init()
         }
 
         // emitter data
-        if( dz_emitter_create( m_service, &m_emitterData, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_emitter_create( m_service, &m_emitter, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
 
-        dz_emitter_set_life( m_emitterData, 1000.f );
+        dz_emitter_set_life( m_emitter, 1000.f );
 
         for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
         {
             timeline_emitter_t & data = m_timelineEmitterData[index];
 
-            if( __set_emitter_timeline_const( m_service, m_emitterData, data.type, data.startValue ) == DZ_FAILURE )
+            if( __set_emitter_timeline_const( m_service, m_emitter, data.type, data.startValue ) == DZ_FAILURE )
             {
                 return EXIT_FAILURE;
             }
@@ -781,7 +809,7 @@ int editor::init()
         }
 
         // affector data
-        if( dz_affector_create( m_service, &m_affectorData, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_affector_create( m_service, &m_affector, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
@@ -790,7 +818,7 @@ int editor::init()
         {
             timeline_affector_t & data = m_timelineAffectorData[index];
 
-            if( __set_affector_timeline_linear2( m_service, m_affectorData, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
+            if( __set_affector_timeline_linear2( m_service, m_affector, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
             {
                 return EXIT_FAILURE;
             }
@@ -806,24 +834,13 @@ int editor::init()
         }
 
         // emitter
-        if( dz_effect_create( m_service, &m_effect, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
     }
 
-    // init opengl
-    {
-        uint32_t max_vertex_count = 8196 * 2;
-        uint32_t max_index_count = 32768;
 
-        if( dz_render_initialize( &m_openglDesc, max_vertex_count, max_index_count ) == DZ_FAILURE )
-        {
-            return EXIT_FAILURE;
-        }
-
-        dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
-    }
 
     // init imgui
     {
@@ -1068,11 +1085,25 @@ const ImVec2 & editor::getDzWindowSize() const
 //////////////////////////////////////////////////////////////////////////
 int editor::resetEmitter()
 {
+    dz_texture_destroy( m_service, m_texture );
+    dz_material_destroy( m_service, m_material );
+    dz_shape_destroy( m_service, m_shape );
     dz_effect_destroy( m_service, m_effect );
 
-    dz_shape_destroy( m_service, m_shapeData );
+    if( dz_texture_create( m_service, &m_texture, &m_textureId ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
 
-    if( dz_shape_create( m_service, &m_shapeData, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_material_create( m_service, &m_material, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_material_set_blend( m_material, DZ_BLEND_ADD );
+    dz_material_set_texture( m_material, m_texture );
+
+    if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -1081,13 +1112,13 @@ int editor::resetEmitter()
     {
         timeline_shape_t & data = m_timelineShapeData[index];
 
-        if( __set_shape_timeline_linear_from_points( m_service, m_shapeData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+        if( __set_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
     }
 
-    if( dz_effect_create( m_service, &m_effect, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -1137,7 +1168,7 @@ int editor::showMenuBar()
 //////////////////////////////////////////////////////////////////////////
 int editor::showShapeData()
 {
-    dz_shape_type_e current_shape_type = dz_shape_get_type( m_shapeData );
+    dz_shape_type_e current_shape_type = dz_shape_get_type( m_shape );
 
     const char * shape_type_names[] = {
         "Point",
@@ -1156,7 +1187,10 @@ int editor::showShapeData()
     {
         m_shapeType = static_cast<dz_shape_type_e>(selected_type);
 
-        this->resetEmitter();
+        if( this->resetEmitter() == EXIT_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
     }
 
     // timeline
@@ -1219,7 +1253,7 @@ int editor::showShapeData()
                 float life = dz_effect_get_life( m_effect );
                 if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
                 {
-                    if( __reset_shape_timeline_linear_from_points( m_service, m_shapeData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                    if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                     {
                         return EXIT_FAILURE;
                     }
@@ -1261,7 +1295,7 @@ int editor::showAffectorData()
             float life = dz_effect_get_life( m_effect );
             if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
-                if( __reset_affector_timeline_linear_from_points( m_service, m_affectorData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                 {
                     return EXIT_FAILURE;
                 }
@@ -1302,7 +1336,7 @@ int editor::showEmitterData()
             float life = dz_effect_get_life( m_effect );
             if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
-                if( __reset_emitter_timeline_linear_from_points( m_service, m_emitterData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                 {
                     return EXIT_FAILURE;
                 }
@@ -1390,8 +1424,12 @@ int editor::showContentPane()
 
     if( ImGui::Button( "Reset" ) )
     {
-        this->resetEmitter();
+        if( this->resetEmitter() == EXIT_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
     }
+
     ImGui::SameLine();
 
     ImGui::Text( "Life: %.3f s", life );
@@ -1432,9 +1470,9 @@ void editor::finalize()
     // finalize emitter
     {
         dz_effect_destroy( m_service, m_effect );
-        dz_emitter_destroy( m_service, m_emitterData );
-        dz_affector_destroy( m_service, m_affectorData );
-        dz_shape_destroy( m_service, m_shapeData );
+        dz_emitter_destroy( m_service, m_emitter );
+        dz_affector_destroy( m_service, m_affector );
+        dz_shape_destroy( m_service, m_shape );
         dz_service_destroy( m_service );
     }
 

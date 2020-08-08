@@ -266,9 +266,6 @@ dz_result_t dz_render_initialize( dz_render_desc_t * _desc, int32_t _max_vertex_
 
     glBindBuffer( GL_ARRAY_BUFFER, VBO );
 
-    glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
     glBufferData( GL_ARRAY_BUFFER, _max_vertex_count * sizeof( gl_vertex_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
     glBufferData( GL_ELEMENT_ARRAY_BUFFER, _max_index_count * sizeof( gl_index_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
 
@@ -355,7 +352,7 @@ void dz_render_set_camera( const dz_render_desc_t * _desc, float _offsetX, float
     }
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t * _effect )
+dz_result_t dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t * _effect )
 {
     glBindBuffer( GL_ARRAY_BUFFER, _desc->VBO );
     glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _desc->IBO );
@@ -396,7 +393,39 @@ void dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t * _effe
     {
         dz_effect_mesh_chunk_t * chunk = chunks + index;
 
+        GLuint textureId = *(GLuint *)dz_texture_get_ud( chunk->texture );
+
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture( GL_TEXTURE_2D, textureId );
+
+        glEnable( GL_BLEND );
+
+        switch( chunk->blend_type )
+        {
+        case DZ_BLEND_NORNAL:
+            {                
+                glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+            }break;
+        case DZ_BLEND_ADD:
+            {
+                glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+            }break;
+        case DZ_BLEND_MULTIPLY:
+            {
+                glBlendFunc( GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA );
+            }break;
+        case DZ_BLEND_SCREEN:
+            {
+                glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+            }break;
+        case __DZ_BLEND_MAX__:
+        default:
+            return DZ_FAILURE;
+        }
+
         glDrawElements( GL_TRIANGLES, chunk->index_size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
     }
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////

@@ -60,9 +60,11 @@ protected:
 
     dz_service_t * m_service;
 
-    dz_shape_t * m_shapeData;
-    dz_emitter_t * m_emitterData;
-    dz_affector_t * m_affectorData;
+    dz_texture_t * m_texture;
+    dz_material_t * m_material;
+    dz_shape_t * m_shape;
+    dz_emitter_t * m_emitter;
+    dz_affector_t * m_affector;
 
     dz_effect_t * m_effect;
 

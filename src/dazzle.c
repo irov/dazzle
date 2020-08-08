@@ -748,6 +748,38 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, uint32_t _seed, float _life, dz_userdata_t _ud )
 {
+#ifdef DZ_DEBUG
+    if( _service == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( _material == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( _shape == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( _emitter == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( _affector == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( _life < 0.f )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
     dz_effect_t * effect = DZ_NEW( _service, dz_effect_t );
 
     effect->material = _material;
@@ -1566,8 +1598,10 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
     chunk->vertex_size = particle_iterator * 4;
     chunk->index_size = particle_iterator * 6;
 
-    chunk->blend_type = DZ_BLEND_NORNAL;
-    chunk->texture = DZ_NULLPTR;
+    const dz_material_t * material = _effect->material;
+
+    chunk->blend_type = material->blend_type;
+    chunk->texture = material->texture;
 
     *_count = 1;
 }

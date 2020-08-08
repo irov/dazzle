@@ -281,6 +281,27 @@ int main( int argc, char ** argv )
 
     glfwSwapInterval( 1 );
 
+    uint32_t max_vertex_count = 8196 * 2;
+    uint32_t max_index_count = 32768;
+
+    dz_render_desc_t opengl_desc;
+    if( dz_render_initialize( &opengl_desc, max_vertex_count, max_index_count ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_render_use_texture_program( &opengl_desc );
+
+    dz_render_set_proj( &opengl_desc, -(float)window_width * 0.5f, (float)window_width * 0.5f, -(float)window_height * 0.5f, (float)window_height * 0.5f );
+
+    char texture_path[250];
+    sprintf( texture_path, "%s/%s"
+        , DAZZLE_EXAMPLE_CONTENT_DIR
+        , "particle.png"
+    );
+
+    GLuint textureId = dz_render_make_texture( texture_path );
+
     dz_service_providers_t providers;
     providers.f_malloc = &dz_malloc;
     providers.f_realloc = &dz_realloc;
@@ -295,8 +316,23 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
+    dz_texture_t * texture;
+    if( dz_texture_create( service, &texture, &textureId ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_material_t * material;
+    if( dz_material_create( service, &material, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_material_set_blend( material, DZ_BLEND_ADD );
+    dz_material_set_texture( material, texture );
+
     dz_shape_t * shape;
-    if( dz_shape_create( service, &shape, DZ_SHAPE_MASK, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_shape_create( service, &shape, DZ_SHAPE_POINT, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -349,7 +385,7 @@ int main( int argc, char ** argv )
     timeline_t timeline_datas[] = {
         {DZ_AFFECTOR_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f},
 
-        {DZ_AFFECTOR_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 10.f, 50.f, 100.f},
         {DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
         {DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.f, 0.1f, 0.f},
         {DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
@@ -359,7 +395,7 @@ int main( int argc, char ** argv )
         {DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, 0.5f, 1.f, 0.f, 0.f, 0.f},
         {DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f},
         {DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_SIZE, 0.5f, 1.f, 5.f, 15.f, 0.f},
+        {DZ_AFFECTOR_TIMELINE_SIZE, 0.5f, 1.f, 15.f, 25.f, 100.f},
         {DZ_AFFECTOR_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
         {DZ_AFFECTOR_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
         {DZ_AFFECTOR_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },
@@ -377,29 +413,10 @@ int main( int argc, char ** argv )
     }
 
     dz_effect_t * effect;
-    if( dz_effect_create( service, &effect, DZ_NULLPTR, shape, emitter, affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( service, &effect, material, shape, emitter, affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
-
-    uint32_t max_vertex_count = 8196 * 2;
-    uint32_t max_index_count = 32768;
-
-    dz_render_desc_t opengl_desc;
-    if( dz_render_initialize( &opengl_desc, max_vertex_count, max_index_count ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
-
-    dz_render_set_proj( &opengl_desc, -(float)window_width * 0.5f, (float)window_width * 0.5f, -(float)window_height * 0.5f, (float)window_height * 0.5f );
-
-    char texture_path[250];
-    sprintf( texture_path, "%s/%s"
-        , DAZZLE_EXAMPLE_CONTENT_DIR
-        , "particle.png"
-    );
-
-    GLuint textureId = dz_render_make_texture( texture_path );
 
     while( glfwWindowShouldClose( fwWindow ) == 0 )
     {
@@ -412,11 +429,6 @@ int main( int argc, char ** argv )
         glClearColor( 0, 0, 0, 255 );
         glClear( GL_COLOR_BUFFER_BIT );
 
-        glActiveTexture( GL_TEXTURE0 );
-        glBindTexture( GL_TEXTURE_2D, textureId );
-
-        dz_render_use_texture_program( &opengl_desc );
-                
         dz_render_effect( &opengl_desc, effect );
 
         glfwSwapBuffers( fwWindow );
