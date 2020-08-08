@@ -238,6 +238,9 @@ dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect );
 void dz_effect_set_life( dz_effect_t * _effect, float _life );
 float dz_effect_get_life( const dz_effect_t * _effect );
 
+void dz_effect_set_loop( dz_effect_t * _effect, dz_bool_t _loop );
+dz_bool_t dz_effect_get_loop( const dz_effect_t * _effect );
+
 void dz_effect_set_time( dz_effect_t * _effect, float _time );
 float dz_effect_get_time( const dz_effect_t * _effect );
 

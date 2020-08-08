@@ -1,8 +1,7 @@
 #pragma once
 
 #include "dazzle/dazzle.hpp"
-
-#include "render/render.h"
+#include "render/render.hpp"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -69,7 +68,7 @@ protected:
 
     GLuint m_textureId;
 
-    dz_render_handle_t * m_openglHandle;
+    dz_render_desc_t m_openglDesc;
     GLFWwindow * m_fwWindow;
 
     typedef struct

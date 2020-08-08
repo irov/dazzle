@@ -93,43 +93,43 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
 
     return DZ_SUCCESSFUL;
 }
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_linear( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _time0, float _value0, float _value1 )
-{
-    dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_interpolate_t * interpolate0;
-    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-
-    dz_shape_set_timeline( _shape, _type, key0 );
-
-    return DZ_SUCCESSFUL;
-}
+////////////////////////////////////////////////////////////////////////////
+//static dz_result_t __set_shape_timeline_linear( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _time0, float _value0, float _value1 )
+//{
+//    dz_timeline_key_t * key0;
+//    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_interpolate_t * interpolate0;
+//    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_key_t * key1;
+//    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
+//
+//    dz_shape_set_timeline( _shape, _type, key0 );
+//
+//    return DZ_SUCCESSFUL;
+//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __set_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
@@ -249,43 +249,43 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
 
     return DZ_SUCCESSFUL;
 }
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_linear( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _time0, float _value0, float _value1 )
-{
-    dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_interpolate_t * interpolate0;
-    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-
-    dz_emitter_set_timeline( _emitter, _type, key0 );
-
-    return DZ_SUCCESSFUL;
-}
+////////////////////////////////////////////////////////////////////////////
+//static dz_result_t __set_emitter_timeline_linear( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _time0, float _value0, float _value1 )
+//{
+//    dz_timeline_key_t * key0;
+//    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_interpolate_t * interpolate0;
+//    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_key_t * key1;
+//    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
+//
+//    dz_emitter_set_timeline( _emitter, _type, key0 );
+//
+//    return DZ_SUCCESSFUL;
+//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
@@ -339,61 +339,61 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 
     return DZ_SUCCESSFUL;
 }
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
-{
-    dz_timeline_key_t * timeline;
-    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_affector_set_timeline( _affector, _type, timeline );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_linear( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _value0, float _value1 )
-{
-    dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_interpolate_t * interpolate0;
-    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-
-    dz_affector_set_timeline( _affector, _type, key0 );
-
-    return DZ_SUCCESSFUL;
-}
+////////////////////////////////////////////////////////////////////////////
+//static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
+//{
+//    dz_timeline_key_t * timeline;
+//    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_affector_set_timeline( _affector, _type, timeline );
+//
+//    return DZ_SUCCESSFUL;
+//}
+////////////////////////////////////////////////////////////////////////////
+//static dz_result_t __set_affector_timeline_linear( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _value0, float _value1 )
+//{
+//    dz_timeline_key_t * key0;
+//    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_interpolate_t * interpolate0;
+//    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_key_t * key1;
+//    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
+//
+//    dz_affector_set_timeline( _affector, _type, key0 );
+//
+//    return DZ_SUCCESSFUL;
+//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
 {
@@ -523,6 +523,8 @@ static void glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int 
 //////////////////////////////////////////////////////////////////////////
 static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 {
+    DZ_UNUSED( _x );
+
     editor * p_editor = reinterpret_cast<editor *>(glfwGetWindowUserPointer( _window ));
 
     if( glfwGetKey( _window, GLFW_KEY_SPACE ) != GLFW_PRESS )
@@ -531,13 +533,12 @@ static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
     }
 
     const ImVec2 & dzWindowPos = p_editor->getDzWindowPos();
-    const ImVec2 & dzWindowSize = p_editor->getDzWindowSize();
 
     float mouse_pos_x_norm = mouse_pos_x - dzWindowPos.x;
     float mouse_pos_y_norm = mouse_pos_y - dzWindowPos.y;
 
     camera_offset_x -= mouse_pos_x_norm / camera_scale;
-    camera_offset_y -= mouse_pos_x_norm / camera_scale;
+    camera_offset_y -= mouse_pos_y_norm / camera_scale;
 
     float scroll = (float)_y * camera_scale_step;
 
@@ -555,7 +556,7 @@ static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
     }
 
     camera_offset_x += mouse_pos_x_norm / camera_scale;
-    camera_offset_y += mouse_pos_x_norm / camera_scale;
+    camera_offset_y += mouse_pos_y_norm / camera_scale;
 }
 //////////////////////////////////////////////////////////////////////////
 static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
@@ -593,8 +594,6 @@ editor::editor()
     , m_affectorData( nullptr )
 
     , m_emitter( nullptr )
-
-    , m_openglHandle( nullptr )
     , m_fwWindow( nullptr )
 
     , m_timelineShapeData{
@@ -681,9 +680,6 @@ int editor::init()
         glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE );
         glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
         glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
-
-        camera_offset_x = m_windowWidth * 0.5f;
-        camera_offset_y = m_windowHeight * 0.5f;
 
         m_fwWindow = glfwCreateWindow( (uint32_t)m_windowWidth, (uint32_t)m_windowHeight, "dazzle particle editor", 0, 0 );
 
@@ -821,10 +817,12 @@ int editor::init()
         uint32_t max_vertex_count = 8196 * 2;
         uint32_t max_index_count = 32768;
 
-        if( dz_render_initialize( &m_openglHandle, (float)m_dzWindowSize.x, (float)m_dzWindowSize.y, max_vertex_count, max_index_count ) == false )
+        if( dz_render_initialize( &m_openglDesc, max_vertex_count, max_index_count ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
+
+        dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
     }
 
     // init imgui
@@ -994,7 +992,7 @@ int editor::update()
     dz_effect_update( m_service, m_emitter, 0.005f );
 
     // update camera
-    dz_render_set_camera( m_openglHandle, camera_offset_x, camera_offset_y, camera_scale );
+    dz_render_set_camera( &m_openglDesc, camera_offset_x, camera_offset_y, camera_scale );
 
     return EXIT_SUCCESS;
 }
@@ -1015,10 +1013,10 @@ int editor::render()
         glActiveTexture( GL_TEXTURE0 );
         glBindTexture( GL_TEXTURE_2D, m_textureId );
 
-        dz_render_use_texture_program( m_openglHandle );
+        dz_render_use_texture_program( &m_openglDesc );
 
-        glBindBuffer( GL_ARRAY_BUFFER, m_openglHandle->VBO );
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, m_openglHandle->IBO );
+        glBindBuffer( GL_ARRAY_BUFFER, m_openglDesc.VBO );
+        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, m_openglDesc.IBO );
 
         void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
         void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
@@ -1052,7 +1050,7 @@ int editor::render()
         glUnmapBuffer( GL_ARRAY_BUFFER );
         glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 
-        glViewport( m_dzWindowPos.x, m_dzWindowPos.y, m_dzWindowSize.x, m_dzWindowSize.y );
+        glViewport( (GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y );
 
         for( uint32_t index = 0; index != chunk_count; ++index )
         {
@@ -1062,7 +1060,7 @@ int editor::render()
         }
     }
 
-    glViewport( 0.f, 0.f, m_windowWidth, m_windowHeight );
+    glViewport( 0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight );
 
     //// render imgui
     //ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
@@ -1371,15 +1369,8 @@ int editor::showContentPane()
         m_dzWindowSize.y = columnHeight;
 
         // init opengl
-        {
-            uint32_t max_vertex_count = 8196 * 2;
-            uint32_t max_index_count = 32768;
 
-            if( dz_render_initialize( &m_openglHandle, (float)m_dzWindowSize.x, (float)m_dzWindowSize.y, max_vertex_count, max_index_count ) == false )
-            {
-                return EXIT_FAILURE;
-            }
-        }
+        dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
     }
 
     ImGuiWindow * window = ImGui::GetCurrentWindow();

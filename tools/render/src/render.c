@@ -199,29 +199,12 @@ static const char * fragmentShaderTextureSource = "#version 330 core\n"
 "   oColor = texColor * v2fColor;\n"
 "}\n\0";
 //////////////////////////////////////////////////////////////////////////
-bool dz_render_initialize( dz_render_handle_t ** _handle, float _width, float _height, int _max_vertex_count, int _max_index_count )
+dz_result_t dz_render_initialize( dz_render_desc_t * _desc, int32_t _max_vertex_count, int32_t _max_index_count )
 {
     GLuint shaderColorProgram = __make_program( vertexShaderColorSource, fragmentShaderColorSource );
     GLuint shaderTextureProgram = __make_program( vertexShaderTextureSource, fragmentShaderTextureSource );
 
-    float left = 0.f;
-    float right = _width;
-    float bottom = _height;
-    float top = 0.f;
-    float zNear = -1.f;
-    float zFar = 1.f;
-
-    float projOrtho[16];
-    __make_ortho( left, right, top, bottom, zNear, zFar, projOrtho );
-
     glUseProgram( shaderColorProgram );
-
-    GLint wvpColorLocation = glGetUniformLocation( shaderColorProgram, "uWVP" );
-
-    if( wvpColorLocation >= 0 )
-    {
-        glUniformMatrix4fv( wvpColorLocation, 1, GL_FALSE, projOrtho );
-    }
 
     GLint uOffsetColorLocation = glGetUniformLocation( shaderColorProgram, "uOffset" );
 
@@ -244,13 +227,6 @@ bool dz_render_initialize( dz_render_handle_t ** _handle, float _width, float _h
     if( texLocRGB >= 0 )
     {
         glUniform1i( texLocRGB, 0 );
-    }
-
-    GLint wvpTextureLocation = glGetUniformLocation( shaderTextureProgram, "uWVP" );
-
-    if( wvpTextureLocation >= 0 )
-    {
-        glUniformMatrix4fv( wvpTextureLocation, 1, GL_FALSE, projOrtho );
     }
 
     GLint uOffsetTextureLocation = glGetUniformLocation( shaderTextureProgram, "uOffset" );
@@ -296,45 +272,71 @@ bool dz_render_initialize( dz_render_handle_t ** _handle, float _width, float _h
     glBufferData( GL_ARRAY_BUFFER, _max_vertex_count * sizeof( gl_vertex_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
     glBufferData( GL_ELEMENT_ARRAY_BUFFER, _max_index_count * sizeof( gl_index_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
 
-    dz_render_handle_t * opengl_handle = new dz_render_handle_t;
+    _desc->VAO = VAO;
+    _desc->VBO = VBO;
+    _desc->IBO = IBO;
+    _desc->shaderCurrentProgram = shaderColorProgram;
+    _desc->shaderColorProgram = shaderColorProgram;
+    _desc->shaderTextureProgram = shaderTextureProgram;
 
-    opengl_handle->VAO = VAO;
-    opengl_handle->VBO = VBO;
-    opengl_handle->IBO = IBO;
-    opengl_handle->shaderCurrentProgram = shaderColorProgram;
-    opengl_handle->shaderColorProgram = shaderColorProgram;
-    opengl_handle->shaderTextureProgram = shaderTextureProgram;
-
-    *_handle = opengl_handle;
-
-    return true;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_finalize( dz_render_handle_t * _handle )
+void dz_render_finalize( dz_render_desc_t * _desc )
 {
-    glDeleteVertexArrays( 1, &_handle->VAO );
-    glDeleteBuffers( 1, &_handle->VBO );
-    glDeleteBuffers( 1, &_handle->IBO );
+    glDeleteVertexArrays( 1, &_desc->VAO );
+    glDeleteBuffers( 1, &_desc->VBO );
+    glDeleteBuffers( 1, &_desc->IBO );
 
-    glDeleteProgram( _handle->shaderColorProgram );
-    glDeleteProgram( _handle->shaderTextureProgram );
+    glDeleteProgram( _desc->shaderColorProgram );
+    glDeleteProgram( _desc->shaderTextureProgram );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_use_color_program( dz_render_handle_t * _handle )
+void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _right, float _top, float _bottom )
+{
+    float zNear = -1.f;
+    float zFar = 1.f;
+
+    float projOrtho[16];
+    __make_ortho( _left, _right, _top, _bottom, zNear, zFar, projOrtho );
+
+    GLuint shaderColorProgram = _desc->shaderColorProgram;
+    GLuint shaderTextureProgram = _desc->shaderTextureProgram;
+
+    glUseProgram( shaderColorProgram );
+
+    GLint wvpColorLocation = glGetUniformLocation( shaderColorProgram, "uWVP" );
+
+    if( wvpColorLocation >= 0 )
+    {
+        glUniformMatrix4fv( wvpColorLocation, 1, GL_FALSE, projOrtho );
+    }
+
+    glUseProgram( shaderTextureProgram );
+
+    GLint wvpTextureLocation = glGetUniformLocation( shaderTextureProgram, "uWVP" );
+
+    if( wvpTextureLocation >= 0 )
+    {
+        glUniformMatrix4fv( wvpTextureLocation, 1, GL_FALSE, projOrtho );
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_render_use_color_program( dz_render_desc_t * _handle )
 {
     _handle->shaderCurrentProgram = _handle->shaderColorProgram;
 
     glUseProgram( _handle->shaderCurrentProgram );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_use_texture_program( dz_render_handle_t * _handle )
+void dz_render_use_texture_program( dz_render_desc_t * _handle )
 {
     _handle->shaderCurrentProgram = _handle->shaderTextureProgram;
 
     glUseProgram( _handle->shaderCurrentProgram );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_set_camera( dz_render_handle_t * _handle, float _offsetX, float _offsetY, float _scale )
+void dz_render_set_camera( const dz_render_desc_t * _handle, float _offsetX, float _offsetY, float _scale )
 {
     glUseProgram( _handle->shaderCurrentProgram );
 

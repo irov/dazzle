@@ -1,6 +1,5 @@
 #include "dazzle/dazzle.hpp"
-
-#include "render/render.h"
+#include "render/render.hpp"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -61,24 +60,24 @@ static float dz_sinf( float _a, dz_userdata_t _ud )
 
     return value;
 }
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
-{
-    dz_timeline_key_t * timeline;
-    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_shape_set_timeline( _shape, _type, timeline );
-
-    return DZ_SUCCESSFUL;
-}
+////////////////////////////////////////////////////////////////////////////
+//static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
+//{
+//    dz_timeline_key_t * timeline;
+//    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_shape_set_timeline( _shape, _type, timeline );
+//
+//    return DZ_SUCCESSFUL;
+//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _value )
 {
@@ -97,24 +96,24 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
 
     return DZ_SUCCESSFUL;
 }
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
-{
-    dz_timeline_key_t * timeline;
-    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_affector_set_timeline( _affector, _type, timeline );
-
-    return DZ_SUCCESSFUL;
-}
+////////////////////////////////////////////////////////////////////////////
+//static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
+//{
+//    dz_timeline_key_t * timeline;
+//    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    dz_affector_set_timeline( _affector, _type, timeline );
+//
+//    return DZ_SUCCESSFUL;
+//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
 {
@@ -191,6 +190,9 @@ static void glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int 
 //////////////////////////////////////////////////////////////////////////
 static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 {
+    DZ_UNUSED( _window );
+    DZ_UNUSED( _x );
+
     camera_offset_x -= mouse_pos_x / camera_scale;
     camera_offset_y -= mouse_pos_y / camera_scale;
 
@@ -248,8 +250,8 @@ int main( int argc, char ** argv )
     int window_width = 1024;
     int window_height = 768;
 
-    camera_offset_x = window_width * 0.5f;
-    camera_offset_y = window_height * 0.5f;
+    //camera_offset_x = window_width * 0.5f;
+    //camera_offset_y = window_height * 0.5f;
 
     GLFWwindow * fwWindow = glfwCreateWindow( window_width, window_height, "graphics", 0, 0 );
 
@@ -383,11 +385,13 @@ int main( int argc, char ** argv )
     uint32_t max_vertex_count = 8196 * 2;
     uint32_t max_index_count = 32768;
 
-    dz_render_handle_t * opengl_handle;
-    if( dz_render_initialize( &opengl_handle, (float)window_width, (float)window_height, max_vertex_count, max_index_count ) == false )
+    dz_render_desc_t opengl_desc;
+    if( dz_render_initialize( &opengl_desc, max_vertex_count, max_index_count ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
+
+    dz_render_set_proj( &opengl_desc, -(float)window_width * 0.5f, (float)window_width * 0.5f, -(float)window_height * 0.5f, (float)window_height * 0.5f );
 
     char texture_path[250];
     sprintf( texture_path, "%s/%s"
@@ -403,7 +407,7 @@ int main( int argc, char ** argv )
 
         dz_effect_update( service, effect, 0.005f );
 
-        dz_render_set_camera( opengl_handle, camera_offset_x, camera_offset_y, camera_scale );
+        dz_render_set_camera( &opengl_desc, camera_offset_x, camera_offset_y, camera_scale );
 
         glClearColor( 0, 0, 0, 255 );
         glClear( GL_COLOR_BUFFER_BIT );
@@ -411,10 +415,10 @@ int main( int argc, char ** argv )
         glActiveTexture( GL_TEXTURE0 );
         glBindTexture( GL_TEXTURE_2D, textureId );
 
-        dz_render_use_texture_program( opengl_handle );
+        dz_render_use_texture_program( &opengl_desc );
                 
-        glBindBuffer( GL_ARRAY_BUFFER, opengl_handle->VBO );
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, opengl_handle->IBO );
+        glBindBuffer( GL_ARRAY_BUFFER, opengl_desc.VBO );
+        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, opengl_desc.IBO );
 
         void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
         void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );

@@ -84,6 +84,7 @@ set(DAZZLE_SOURCES
 set(DAZZLE_HEADERS
     ${DAZZLE_INCLUDE_DIR}/dazzle/config.h
     ${DAZZLE_INCLUDE_DIR}/dazzle/dazzle.h
+    ${DAZZLE_INCLUDE_DIR}/dazzle/dazzle.hpp
 )
 
 include_directories(${PROJECT_NAME} ${DAZZLE_INCLUDE_DIR})

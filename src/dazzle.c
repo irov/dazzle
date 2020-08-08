@@ -763,6 +763,8 @@ dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, c
     effect->partices_capacity = 0;
     effect->particle_limit = ~1U;
 
+    effect->loop = DZ_FALSE;
+
     effect->life = _life;
 
     effect->time = 0.f;
@@ -808,6 +810,16 @@ void dz_effect_set_life( dz_effect_t * _effect, float _life )
 float dz_effect_get_life( const dz_effect_t * _effect )
 {
     return _effect->life;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_set_loop( dz_effect_t * _effect, dz_bool_t _loop )
+{
+    _effect->loop = _loop;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_bool_t dz_effect_get_loop( const dz_effect_t * _effect )
+{
+    return _effect->loop;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_set_time( dz_effect_t * _effect, float _time )
@@ -1311,11 +1323,11 @@ void dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _ti
 
     for( ;;)
     {
-        if( _effect->life > 0.f && _effect->emitter_time > _effect->life )
+        if( _effect->loop == DZ_FALSE && _effect->emitter_time > _effect->life )
         {
             break;
         }
-        else if( _effect->life < 0.f )
+        else if( _effect->loop == DZ_TRUE )
         {
             for( ; _effect->emitter_time > _effect->life; _effect->emitter_time -= _effect->life );
         }
@@ -1353,12 +1365,19 @@ dz_effect_state_e dz_emitter_get_state( const dz_effect_t * _effect )
 {
     dz_effect_state_e state = DZ_EFFECT_PROCESS;
 
-    if( _effect->life > 0.f && _effect->emitter_time > _effect->life )
+    if( _effect->loop == DZ_TRUE )
     {
-        state |= DZ_EFFECT_EMIT_COMPLETE;
+        return state;
     }
 
-    if( state & DZ_EFFECT_EMIT_COMPLETE && _effect->partices_count == 0U )
+    if( _effect->emitter_time < _effect->life )
+    {
+        return state;
+    }
+
+    state |= DZ_EFFECT_EMIT_COMPLETE;
+
+    if( _effect->partices_count == 0U )
     {
         state |= DZ_EFFECT_PARTICLE_COMPLETE;
     }

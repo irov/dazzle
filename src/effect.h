@@ -23,6 +23,8 @@ typedef struct dz_effect_t
     uint32_t partices_capacity;
     uint32_t particle_limit;
 
+    dz_bool_t loop;
+
     float life;
 
     float time;
