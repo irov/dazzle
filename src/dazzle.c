@@ -770,6 +770,11 @@ dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, c
     effect->time = 0.f;
     effect->emitter_time = 0.f;
 
+    effect->x = 0.f;
+    effect->y = 0.f;
+
+    effect->angle = 0.f;
+
     effect->ud = _ud;
 
     *_effect = effect;
@@ -832,7 +837,7 @@ float dz_effect_get_time( const dz_effect_t * _effect )
     return _effect->time;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_rands( dz_particle_t * _p, dz_effect_t * _effect, dz_affector_timeline_type_e _type )
+static float __get_affector_value_rands( dz_particle_t * _p, const dz_effect_t * _effect, dz_affector_timeline_type_e _type )
 {
     const dz_timeline_key_t * timeline_key = _effect->affector->timelines[_type];
 
@@ -850,18 +855,18 @@ static float __get_affector_value_rands( dz_particle_t * _p, dz_effect_t * _effe
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_update( dz_service_t * _service, dz_effect_t * _emitter, dz_particle_t * _p, float _time )
+static void __particle_update( dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, float _time )
 {
     _p->time += _time;
 
-    float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_SPEED );
-    float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE );
+    const float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_SPEED );
+    const float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE );
 
-    float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_SPEED );
-    float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE );
+    const float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_SPEED );
+    const float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE );
 
-    float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED );
-    float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE );
+    const float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED );
+    const float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE );
 
     _p->size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SIZE );
 
@@ -876,35 +881,35 @@ static void __particle_update( dz_service_t * _service, dz_effect_t * _emitter, 
     _p->spin_accelerate_aux += spin_accelerate * _time * _time;
     _p->spin += spin_speed * _time + _p->spin_accelerate_aux;
 
-    float dx = DZ_COSF( _service, _p->angle );
-    float dy = DZ_SINF( _service, _p->angle );
+    const float dx = DZ_COSF( _service, _p->angle );
+    const float dy = DZ_SINF( _service, _p->angle );
 
-    _p->move_accelerate_aux += move_accelerate * _time * _time;
-
-    float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SIZE );
+    const float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SIZE );
 
     if( strafe_size != 0.f )
     {
-        float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SPEED );
-        float strafe_frenquence = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE );
+        const float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SPEED );
+        const float strafe_frenquence = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE );
 
-        float strafe_shift = _p->rands[DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT];
+        const float strafe_shift = _p->rands[DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT];
 
-        float strafex = -dy * DZ_COSF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
-        float strafey = dx * DZ_SINF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
+        const float strafex = -dy * DZ_COSF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
+        const float strafey = dx * DZ_SINF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
 
         _p->x += strafex;
         _p->y += strafey;
     }
 
-    float movex = dx * (move_speed * _time + _p->move_accelerate_aux);
-    float movey = dy * (move_speed * _time + _p->move_accelerate_aux);
+    _p->move_accelerate_aux += move_accelerate * _time * _time;
+
+    const float movex = dx * (move_speed * _time + _p->move_accelerate_aux);
+    const float movey = dy * (move_speed * _time + _p->move_accelerate_aux);
 
     _p->x += movex;
     _p->y += movey;
 
-    float sx = DZ_COSF( _service, _p->angle + _p->spin );
-    float sy = DZ_SINF( _service, _p->angle + _p->spin );
+    const float sx = DZ_COSF( _service, _p->angle + _p->spin );
+    const float sy = DZ_SINF( _service, _p->angle + _p->spin );
 
     _p->sx = sx;
     _p->sy = sy;
@@ -912,9 +917,9 @@ static void __particle_update( dz_service_t * _service, dz_effect_t * _emitter, 
 //////////////////////////////////////////////////////////////////////////
 static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _life, float _time )
 {
-    float t = __get_randf( _seed );
+    const float t = __get_randf( _seed );
 
-    float value = __get_timeline_value( t, _timeline, _life, _time );
+    const float value = __get_timeline_value( t, _timeline, _life, _time );
 
     return value;
 }
@@ -925,12 +930,12 @@ static float __get_shape_value_seed( dz_effect_t * _effect, dz_shape_timeline_ty
 
     if( timeline_key == DZ_NULLPTR )
     {
-        float default_value = __get_shape_timeline_default( _type );
+        const float default_value = __get_shape_timeline_default( _type );
 
         return default_value;
     }
 
-    float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
 
     return value;
 }
@@ -941,12 +946,12 @@ static float __get_emitter_value_seed( dz_effect_t * _effect, dz_emitter_timelin
 
     if( timeline_key == DZ_NULLPTR )
     {
-        float default_value = __get_emitter_timeline_default( _type );
+        const float default_value = __get_emitter_timeline_default( _type );
 
         return default_value;
     }
 
-    float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
 
     return value;
 }
@@ -957,19 +962,19 @@ static float __get_affector_value_seed( dz_effect_t * _effect, dz_affector_timel
 
     if( timeline_key == DZ_NULLPTR )
     {
-        float default_value = __get_affector_timeline_default( _type );
+        const float default_value = __get_affector_timeline_default( _type );
 
         return default_value;
     }
 
-    float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __calc_triangle_area( float ax, float ay, float bx, float by, float cx, float cy )
 {
-    float area = (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)) * 0.5f;
+    const float area = (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)) * 0.5f;
 
     if( area < 0.f )
     {
@@ -1029,7 +1034,7 @@ static uint32_t __calc_mask_threshold_value_count( const void * _buffer, uint32_
     return threshold_value_count;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __get_mask_threshold_value( const void * _buffer, uint32_t _pitch, uint32_t _bites, uint32_t _width, uint32_t _height, uint32_t _threshold, uint32_t _index, uint32_t * _x, uint32_t * _y )
+static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _pitch, uint32_t _bites, uint32_t _width, uint32_t _height, uint32_t _threshold, uint32_t _index, uint32_t * _x, uint32_t * _y )
 {
     const void * buffer_iterator = _buffer;
 
@@ -1073,17 +1078,19 @@ static void __get_mask_threshold_value( const void * _buffer, uint32_t _pitch, u
                 *_x = w;
                 *_y = h;
 
-                return;
+                return DZ_SUCCESSFUL;
             }
         }
 
         buffer_iterator = (const uint8_t *)buffer_iterator + _pitch;
     }
+
+    return DZ_FAILURE;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __emitter_spawn_particle( dz_service_t * _service, dz_effect_t * _effect, float _life, float _spawn_time )
+static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_t * _effect, float _life, float _spawn_time )
 {
-    float time = _effect->time - _spawn_time;
+    const float time = _effect->time - _spawn_time;
 
     if( _effect->partices_count >= _effect->partices_capacity )
     {
@@ -1097,6 +1104,11 @@ static void __emitter_spawn_particle( dz_service_t * _service, dz_effect_t * _ef
         }
 
         _effect->partices = DZ_REALLOCN( _service, _effect->partices, dz_particle_t, _effect->partices_capacity );
+
+        if( _effect->partices == DZ_NULLPTR )
+        {
+            return DZ_FAILURE;
+        }
     }
 
     dz_particle_t * p = _effect->partices + _effect->partices_count++;
@@ -1113,81 +1125,92 @@ static void __emitter_spawn_particle( dz_service_t * _service, dz_effect_t * _ef
     p->rotate_accelerate_aux = 0.f;
     p->spin_accelerate_aux = 0.f;
 
+    p->x = _effect->x;
+    p->y = _effect->y;
+
+    p->angle = _effect->angle;
+
     dz_shape_type_e shape_type = _effect->shape->type;
 
     switch( shape_type )
     {
     case DZ_SHAPE_POINT:
         {
-            p->x = 0.f;
-            p->y = 0.f;
+            p->x += 0.f;
+            p->y += 0.f;
 
-            p->angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+
+            p->angle += angle;
         }break;
     case DZ_SHAPE_SEGMENT:
         {
-            p->x = 0.f;
-            p->y = 0.f;
+            p->x += 0.f;
+            p->y += 0.f;
 
-            float angle_min = __get_shape_value_seed( _effect, DZ_SHAPE_SEGMENT_ANGLE_MIN, _life, _spawn_time );
-            float angle_max = __get_shape_value_seed( _effect, DZ_SHAPE_SEGMENT_ANGLE_MAX, _life, _spawn_time );
+            const float angle_min = __get_shape_value_seed( _effect, DZ_SHAPE_SEGMENT_ANGLE_MIN, _life, _spawn_time );
+            const float angle_max = __get_shape_value_seed( _effect, DZ_SHAPE_SEGMENT_ANGLE_MAX, _life, _spawn_time );
 
-            p->angle = __get_randf2( &_effect->seed, angle_min, angle_max );
+            const float angle = __get_randf2( &_effect->seed, angle_min, angle_max );
+
+            p->angle += angle;
         }break;
     case DZ_SHAPE_CIRCLE:
         {
-            float radius_min = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_RADIUS_MIN, _life, _spawn_time );
-            float radius_max = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_RADIUS_MAX, _life, _spawn_time );
+            const float radius_min = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_RADIUS_MIN, _life, _spawn_time );
+            const float radius_max = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_RADIUS_MAX, _life, _spawn_time );
 
-            float angle = __get_randf( &_effect->seed ) * DZ_PI2;
-            float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_effect->seed ) ) * (radius_max - radius_min);
+            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            const float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_effect->seed ) ) * (radius_max - radius_min);
 
-            float rx = radius * DZ_COSF( _service, angle );
-            float ry = radius * DZ_SINF( _service, angle );
+            const float rx = radius * DZ_COSF( _service, angle );
+            const float ry = radius * DZ_SINF( _service, angle );
 
-            p->x = rx;
-            p->y = ry;
+            p->x += rx;
+            p->y += ry;
 
-            float angle_min = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_ANGLE_MIN, _life, _spawn_time );
-            float angle_max = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_ANGLE_MAX, _life, _spawn_time );
+            const float angle_min = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_ANGLE_MIN, _life, _spawn_time );
+            const float angle_max = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_ANGLE_MAX, _life, _spawn_time );
 
-            p->angle = angle + __get_randf2( &_effect->seed, angle_min, angle_max );
+            const float angle_dispersion = __get_randf2( &_effect->seed, angle_min, angle_max );
+
+            p->angle += angle + angle_dispersion;
         }break;
     case DZ_SHAPE_LINE:
         {
-            float angle = __get_shape_value_seed( _effect, DZ_SHAPE_LINE_ANGLE, _life, _spawn_time );
+            const float angle = __get_shape_value_seed( _effect, DZ_SHAPE_LINE_ANGLE, _life, _spawn_time );
 
-            float dx = DZ_COSF( _service, angle );
-            float dy = DZ_SINF( _service, angle );
+            const float dx = DZ_COSF( _service, angle );
+            const float dy = DZ_SINF( _service, angle );
 
-            float size = __get_shape_value_seed( _effect, DZ_SHAPE_LINE_SIZE, _life, _spawn_time );
+            const float size = __get_shape_value_seed( _effect, DZ_SHAPE_LINE_SIZE, _life, _spawn_time );
 
-            float l = (__get_randf( &_effect->seed ) - 0.5f) * size;
+            const float l = (__get_randf( &_effect->seed ) - 0.5f) * size;
 
-            p->x = -dy * l;
-            p->y = dx * l;
+            p->x += -dy * l;
+            p->y += dx * l;
 
-            p->angle = angle;
+            p->angle += angle;
         }break;
     case DZ_SHAPE_RECT:
         {
-            float width_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MIN, _spawn_time, 0.f );
-            float width_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MAX, _life, _spawn_time );
-            float height_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MIN, _spawn_time, 0.f );
-            float height_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MAX, _life, _spawn_time );
+            const float width_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MIN, _spawn_time, 0.f );
+            const float width_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MAX, _life, _spawn_time );
+            const float height_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MIN, _spawn_time, 0.f );
+            const float height_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MAX, _life, _spawn_time );
 
             DZ_TODO DZ_UNUSED( width_min );
             DZ_TODO DZ_UNUSED( height_min );
 
-            float x = (__get_randf( &_effect->seed ) - 0.5f) * width_max;
-            float y = (__get_randf( &_effect->seed ) - 0.5f) * height_max;
+            const float x = (__get_randf( &_effect->seed ) - 0.5f) * width_max;
+            const float y = (__get_randf( &_effect->seed ) - 0.5f) * height_max;
 
-            p->x = x;
-            p->y = y;
+            p->x += x;
+            p->y += y;
 
             float angle = __get_randf( &_effect->seed ) * DZ_PI2;
 
-            p->angle = angle;
+            p->angle += angle;
         }break;
     case DZ_SHAPE_POLYGON:
         {
@@ -1195,33 +1218,33 @@ static void __emitter_spawn_particle( dz_service_t * _service, dz_effect_t * _ef
             float areas[1024];
 
             const float * triangles = _effect->shape->triangles;
-            uint32_t triangle_count = _effect->shape->triangle_count;
+            const uint32_t triangle_count = _effect->shape->triangle_count;
 
             for( uint32_t index = 0; index != triangle_count; ++index )
             {
-                float ax = triangles[index * 6 + 0];
-                float ay = triangles[index * 6 + 1];
-                float bx = triangles[index * 6 + 2];
-                float by = triangles[index * 6 + 3];
-                float cx = triangles[index * 6 + 4];
-                float cy = triangles[index * 6 + 5];
+                const float ax = triangles[index * 6 + 0];
+                const float ay = triangles[index * 6 + 1];
+                const float bx = triangles[index * 6 + 2];
+                const float by = triangles[index * 6 + 3];
+                const float cx = triangles[index * 6 + 4];
+                const float cy = triangles[index * 6 + 5];
 
-                float area = __calc_triangle_area( ax, ay, bx, by, cx, cy );
+                const float area = __calc_triangle_area( ax, ay, bx, by, cx, cy );
 
                 total_area += area;
 
                 areas[index] = total_area;
             }
 
-            float triangle_rand = __get_randf( &_effect->seed );
+            const float triangle_rand = __get_randf( &_effect->seed );
 
-            float triangle_find_area = triangle_rand * total_area;
+            const float triangle_find_area = triangle_rand * total_area;
 
             uint32_t triangle_found_index = 0;
 
             for( uint32_t index = 0; index != triangle_count; ++index )
             {
-                float area = areas[index];
+                const float area = areas[index];
 
                 if( area < triangle_find_area )
                 {
@@ -1233,75 +1256,102 @@ static void __emitter_spawn_particle( dz_service_t * _service, dz_effect_t * _ef
                 break;
             }
 
-            float rax = triangles[triangle_found_index * 6 + 0];
-            float ray = triangles[triangle_found_index * 6 + 1];
-            float rbx = triangles[triangle_found_index * 6 + 2];
-            float rby = triangles[triangle_found_index * 6 + 3];
-            float rcx = triangles[triangle_found_index * 6 + 4];
-            float rcy = triangles[triangle_found_index * 6 + 5];
+            const float rax = triangles[triangle_found_index * 6 + 0];
+            const float ray = triangles[triangle_found_index * 6 + 1];
+            const float rbx = triangles[triangle_found_index * 6 + 2];
+            const float rby = triangles[triangle_found_index * 6 + 3];
+            const float rcx = triangles[triangle_found_index * 6 + 4];
+            const float rcy = triangles[triangle_found_index * 6 + 5];
 
-            float r1 = __get_randf( &_effect->seed );
-            float r2 = __get_randf( &_effect->seed );
+            const float r1 = __get_randf( &_effect->seed );
+            const float r2 = __get_randf( &_effect->seed );
 
-            float qr1 = DZ_SQRTF( _service, r1 );
+            const float qr1 = DZ_SQRTF( _service, r1 );
 
-            float tx = (1.f - qr1) * rax + (qr1 * (1.f - r2)) * rbx + (qr1 * r2) * rcx;
-            float ty = (1.f - qr1) * ray + (qr1 * (1.f - r2)) * rby + (qr1 * r2) * rcy;
+            const float tx = (1.f - qr1) * rax + (qr1 * (1.f - r2)) * rbx + (qr1 * r2) * rcx;
+            const float ty = (1.f - qr1) * ray + (qr1 * (1.f - r2)) * rby + (qr1 * r2) * rcy;
 
-            p->x = tx;
-            p->y = ty;
+            p->x += tx;
+            p->y += ty;
 
-            float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
 
-            p->angle = angle;
+            p->angle += angle;
         }break;
     case DZ_SHAPE_MASK:
         {
             const void * mask_buffer = _effect->shape->mask_buffer;
-            uint32_t mask_bites = _effect->shape->mask_bites;
-            uint32_t mask_pitch = _effect->shape->mask_pitch;
-            uint32_t mask_width = _effect->shape->mask_width;
-            uint32_t mask_height = _effect->shape->mask_height;
-            uint32_t mask_threshold = _effect->shape->mask_threshold;
-            float mask_scale = _effect->shape->mask_scale;
+            const uint32_t mask_bites = _effect->shape->mask_bites;
+            const uint32_t mask_pitch = _effect->shape->mask_pitch;
+            const uint32_t mask_width = _effect->shape->mask_width;
+            const uint32_t mask_height = _effect->shape->mask_height;
+            const uint32_t mask_threshold = _effect->shape->mask_threshold;
+            const float mask_scale = _effect->shape->mask_scale;
 
             uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
 
-            float r = __get_randf( &_effect->seed );
+            const float r = __get_randf( &_effect->seed );
 
             uint32_t threshold_value_index = (uint32_t)(r * (threshold_value_count - 1) + 0.5f);
 
-            uint32_t w_found = 0;
-            uint32_t h_found = 0;
-            __get_mask_threshold_value( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold, threshold_value_index, &w_found, &h_found );
+            uint32_t w_found;
+            uint32_t h_found;
+            if( __get_mask_threshold_value( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold, threshold_value_index, &w_found, &h_found ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
 
-            p->x = w_found * mask_scale;
-            p->y = h_found * mask_scale;
+            p->x += w_found * mask_scale;
+            p->y += h_found * mask_scale;
 
-            float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
 
-            p->angle = angle;
+            p->angle += angle;
         }break;
     case __DZ_SHAPE_MAX__:
     default:
         break;
     }
 
-    float spin_min = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_SPIN_MIN, _life, _spawn_time );
-    float spin_max = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_SPIN_MAX, _life, _spawn_time );
+    const float spin_min = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_SPIN_MIN, _life, _spawn_time );
+    const float spin_max = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_SPIN_MAX, _life, _spawn_time );
 
     p->spin = (__get_randf( &_effect->seed ) * 2.f - 1.f) * __get_randf2( &_effect->seed, spin_min, spin_max );
 
-    float sx = DZ_COSF( _service, p->spin );
-    float sy = DZ_SINF( _service, p->spin );
+    const float sx = DZ_COSF( _service, p->spin );
+    const float sy = DZ_SINF( _service, p->spin );
 
     p->sx = sx;
     p->sy = sy;
 
     __particle_update( _service, _effect, p, time );
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time )
+void dz_effect_set_position( dz_effect_t * _effect, float _x, float _y )
+{
+    _effect->x = _x;
+    _effect->y = _y;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_get_position( const dz_effect_t * _effect, float * _x, float * _y )
+{
+    *_x = _effect->x;
+    *_y = _effect->y;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_set_rotate( dz_effect_t * _effect, float _angle )
+{
+    _effect->angle = _angle;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_effect_get_rotate( const dz_effect_t * _effect )
+{
+    return _effect->angle;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time )
 {
     _effect->time += _time;
 
@@ -1351,7 +1401,10 @@ void dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _ti
 
             if( life > ptime && _effect->partices_count < _effect->particle_limit )
             {
-                __emitter_spawn_particle( _service, _effect, life, spawn_time );
+                if( __emitter_spawn_particle( _service, _effect, life, spawn_time ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
             }
 
             count -= 1.f;
@@ -1359,6 +1412,8 @@ void dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _ti
 
         _effect->emitter_time += delay;
     }
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_effect_state_e dz_emitter_get_state( const dz_effect_t * _effect )

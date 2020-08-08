@@ -30,6 +30,11 @@ typedef struct dz_effect_t
     float time;
     float emitter_time;
 
+    float x;
+    float y;
+
+    float angle;
+
     dz_userdata_t ud;
 } dz_effect_t;
 

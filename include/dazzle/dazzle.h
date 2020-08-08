@@ -249,7 +249,13 @@ uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
 void dz_effect_set_particle_limit( dz_effect_t * _effect, uint32_t _limit );
 uint32_t dz_effect_get_particle_limit( const dz_effect_t * _effect );
 
-void dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time );
+void dz_effect_set_position( dz_effect_t * _effect, float _x, float _y );
+void dz_effect_get_position( const dz_effect_t * _effect, float * _x, float * _y );
+
+void dz_effect_set_rotate( dz_effect_t * _effect, float _angle );
+float dz_effect_get_rotate( const dz_effect_t * _effect );
+
+dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time );
 
 typedef enum dz_effect_state_e
 {
