@@ -64,7 +64,7 @@ protected:
     dz_emitter_t * m_emitterData;
     dz_affector_t * m_affectorData;
 
-    dz_effect_t * m_emitter;
+    dz_effect_t * m_effect;
 
     GLuint m_textureId;
 

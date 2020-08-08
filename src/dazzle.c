@@ -1194,9 +1194,9 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
         }break;
     case DZ_SHAPE_RECT:
         {
-            const float width_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MIN, _spawn_time, 0.f );
+            const float width_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MIN, _life, _spawn_time );
             const float width_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MAX, _life, _spawn_time );
-            const float height_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MIN, _spawn_time, 0.f );
+            const float height_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MIN, _life, _spawn_time );
             const float height_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MAX, _life, _spawn_time );
 
             DZ_TODO DZ_UNUSED( width_min );

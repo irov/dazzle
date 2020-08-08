@@ -417,47 +417,7 @@ int main( int argc, char ** argv )
 
         dz_render_use_texture_program( &opengl_desc );
                 
-        glBindBuffer( GL_ARRAY_BUFFER, opengl_desc.VBO );
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, opengl_desc.IBO );
-
-        void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
-        void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
-
-        dz_effect_mesh_t mesh;
-        mesh.position_buffer = vertices;
-        mesh.position_offset = offsetof( gl_vertex_t, x );
-        mesh.position_stride = sizeof( gl_vertex_t );
-
-        mesh.color_buffer = vertices;
-        mesh.color_offset = offsetof( gl_vertex_t, c );
-        mesh.color_stride = sizeof( gl_vertex_t );
-
-        mesh.uv_buffer = vertices;
-        mesh.uv_offset = offsetof( gl_vertex_t, u );
-        mesh.uv_stride = sizeof( gl_vertex_t );
-
-        mesh.index_buffer = indices;
-
-        mesh.flags = DZ_EFFECT_MESH_FLAG_NONE;
-        mesh.r = 1.f;
-        mesh.g = 1.f;
-        mesh.b = 1.f;
-        mesh.a = 1.f;
-
-        dz_effect_mesh_chunk_t chunks[16];
-        uint32_t chunk_count;
-
-        dz_effect_compute_mesh( effect, &mesh, chunks, 16, &chunk_count );
-
-        glUnmapBuffer( GL_ARRAY_BUFFER );
-        glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-
-        for( uint32_t index = 0; index != chunk_count; ++index )
-        {
-            dz_effect_mesh_chunk_t * chunk = chunks + index;
-
-            glDrawElements( GL_TRIANGLES, chunk->index_size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
-        }
+        dz_render_effect( &opengl_desc, effect );
 
         glfwSwapBuffers( fwWindow );
     }

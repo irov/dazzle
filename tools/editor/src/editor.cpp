@@ -593,7 +593,7 @@ editor::editor()
     , m_emitterData( nullptr )
     , m_affectorData( nullptr )
 
-    , m_emitter( nullptr )
+    , m_effect( nullptr )
     , m_fwWindow( nullptr )
 
     , m_timelineShapeData{
@@ -806,7 +806,7 @@ int editor::init()
         }
 
         // emitter
-        if( dz_effect_create( m_service, &m_emitter, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_effect_create( m_service, &m_effect, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
@@ -989,7 +989,7 @@ int editor::update()
     }
 
     // update and render dazzle
-    dz_effect_update( m_service, m_emitter, 0.005f );
+    dz_effect_update( m_service, m_effect, 0.005f );
 
     // update camera
     dz_render_set_camera( &m_openglDesc, camera_offset_x, camera_offset_y, camera_scale );
@@ -1015,49 +1015,9 @@ int editor::render()
 
         dz_render_use_texture_program( &m_openglDesc );
 
-        glBindBuffer( GL_ARRAY_BUFFER, m_openglDesc.VBO );
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, m_openglDesc.IBO );
-
-        void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
-        void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
-
-        dz_effect_mesh_t mesh;
-        mesh.position_buffer = vertices;
-        mesh.position_offset = offsetof( gl_vertex_t, x );
-        mesh.position_stride = sizeof( gl_vertex_t );
-
-        mesh.color_buffer = vertices;
-        mesh.color_offset = offsetof( gl_vertex_t, c );
-        mesh.color_stride = sizeof( gl_vertex_t );
-
-        mesh.uv_buffer = vertices;
-        mesh.uv_offset = offsetof( gl_vertex_t, u );
-        mesh.uv_stride = sizeof( gl_vertex_t );
-
-        mesh.index_buffer = indices;
-
-        mesh.flags = DZ_EFFECT_MESH_FLAG_NONE;
-        mesh.r = 1.f;
-        mesh.g = 1.f;
-        mesh.b = 1.f;
-        mesh.a = 1.f;
-
-        dz_effect_mesh_chunk_t chunks[16];
-        uint32_t chunk_count;
-
-        dz_effect_compute_mesh( m_emitter, &mesh, chunks, 16, &chunk_count );
-
-        glUnmapBuffer( GL_ARRAY_BUFFER );
-        glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-
         glViewport( (GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y );
 
-        for( uint32_t index = 0; index != chunk_count; ++index )
-        {
-            dz_effect_mesh_chunk_t * chunk = chunks + index;
-
-            glDrawElements( GL_TRIANGLES, chunk->index_size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
-        }
+        dz_render_effect( &m_openglDesc, m_effect );
     }
 
     glViewport( 0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight );
@@ -1108,7 +1068,7 @@ const ImVec2 & editor::getDzWindowSize() const
 //////////////////////////////////////////////////////////////////////////
 int editor::resetEmitter()
 {
-    dz_effect_destroy( m_service, m_emitter );
+    dz_effect_destroy( m_service, m_effect );
 
     dz_shape_destroy( m_service, m_shapeData );
 
@@ -1127,7 +1087,7 @@ int editor::resetEmitter()
         }
     }
 
-    if( dz_effect_create( m_service, &m_emitter, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( m_service, &m_effect, DZ_NULLPTR, m_shapeData, m_emitterData, m_affectorData, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -1256,7 +1216,7 @@ int editor::showShapeData()
                 float min = 0.f, max = 0.f, default = 0.f;
                 dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default );
 
-                float life = dz_effect_get_life( m_emitter );
+                float life = dz_effect_get_life( m_effect );
                 if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
                 {
                     if( __reset_shape_timeline_linear_from_points( m_service, m_shapeData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
@@ -1298,7 +1258,7 @@ int editor::showAffectorData()
 
         if( headerFlags[index] == true )
         {
-            float life = dz_effect_get_life( m_emitter );
+            float life = dz_effect_get_life( m_effect );
             if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affectorData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
@@ -1339,7 +1299,7 @@ int editor::showEmitterData()
 
         if( headerFlags[index] == true )
         {
-            float life = dz_effect_get_life( m_emitter );
+            float life = dz_effect_get_life( m_effect );
             if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
                 if( __reset_emitter_timeline_linear_from_points( m_service, m_emitterData, data.type, data.param, data.maxValue ) == DZ_FAILURE )
@@ -1425,8 +1385,8 @@ int editor::showContentPane()
     ImGui::Separator();
     ImGui::Spacing();
 
-    float life = dz_effect_get_life( m_emitter );
-    float time = dz_effect_get_time( m_emitter );
+    float life = dz_effect_get_life( m_effect );
+    float time = dz_effect_get_time( m_effect );
 
     if( ImGui::Button( "Reset" ) )
     {
@@ -1447,7 +1407,7 @@ int editor::showContentPane()
         ImGui::Text( "Emitter states:" );
         ImGui::SameLine();
 
-        dz_effect_state_e emitter_state = dz_emitter_get_state( m_emitter );
+        dz_effect_state_e emitter_state = dz_emitter_get_state( m_effect );
 
         auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
         {
@@ -1471,7 +1431,7 @@ void editor::finalize()
 {
     // finalize emitter
     {
-        dz_effect_destroy( m_service, m_emitter );
+        dz_effect_destroy( m_service, m_effect );
         dz_emitter_destroy( m_service, m_emitterData );
         dz_affector_destroy( m_service, m_affectorData );
         dz_shape_destroy( m_service, m_shapeData );

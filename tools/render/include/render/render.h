@@ -36,9 +36,11 @@ void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _rig
 GLuint dz_render_make_texture( const char * _path );
 void dz_render_delete_texture( GLuint _id );
 //////////////////////////////////////////////////////////////////////////
-void dz_render_use_color_program( dz_render_desc_t * _handle );
-void dz_render_use_texture_program( dz_render_desc_t * _handle );
-void dz_render_set_camera( const dz_render_desc_t * _handle, float _offsetX, float _offsetY, float _scale );
+void dz_render_use_color_program( dz_render_desc_t * _desc );
+void dz_render_use_texture_program( dz_render_desc_t * _desc );
+void dz_render_set_camera( const dz_render_desc_t * _desc, float _offsetX, float _offsetY, float _scale );
+//////////////////////////////////////////////////////////////////////////
+void dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t * _effect );
 //////////////////////////////////////////////////////////////////////////
 
 #endif
