@@ -796,6 +796,7 @@ dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, c
     effect->particle_limit = ~1U;
 
     effect->loop = DZ_FALSE;
+    effect->spawn_pause = DZ_FALSE;
 
     effect->life = _life;
 
@@ -822,6 +823,42 @@ void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect )
 dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect )
 {
     return _effect->ud;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_material_t * dz_effect_set_material( dz_effect_t * _effect, const dz_material_t * _material )
+{
+    const dz_material_t * material = _effect->material;
+
+    _effect->material = _material;
+
+    return material;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_shape_t * dz_effect_set_shape( dz_effect_t * _effect, const dz_shape_t * _shape )
+{
+    const dz_shape_t * shape = _effect->shape;
+
+    _effect->shape = _shape;
+
+    return shape;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_emitter_t * dz_effect_set_emitter( dz_effect_t * _effect, const dz_emitter_t * _emitter )
+{
+    const dz_emitter_t * emitter = _effect->emitter;
+
+    _effect->emitter = _emitter;
+
+    return emitter;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_affector_t * dz_effect_set_affector( dz_effect_t * _effect, const dz_affector_t * _affector )
+{
+    const dz_affector_t * affector = _effect->affector;
+
+    _effect->affector = _affector;
+
+    return affector;
 }
 //////////////////////////////////////////////////////////////////////////
 uint32_t dz_effect_get_seed( const dz_effect_t * _effect )
@@ -1383,10 +1420,31 @@ float dz_effect_get_rotate( const dz_effect_t * _effect )
     return _effect->angle;
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_effect_reset( dz_effect_t * _effect )
+{
+    _effect->time = 0.f;
+    _effect->emitter_time = 0.f;
+
+    _effect->partices_count = 0;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_spawn_pause( dz_effect_t * _effect )
+{
+    _effect->spawn_pause = DZ_TRUE;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_spawn_resume( dz_effect_t * _effect )
+{
+    _effect->spawn_pause = DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_bool_t dz_effect_is_spawn_pause( const dz_effect_t * _effect )
+{
+    return _effect->spawn_pause;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time )
 {
-    _effect->time += _time;
-
     dz_particle_t * p = _effect->partices;
     dz_particle_t * p_end = _effect->partices + _effect->partices_count;
     while( p != p_end )
@@ -1402,6 +1460,13 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
             --_effect->partices_count;
         }
     }
+
+    if( _effect->spawn_pause == DZ_TRUE )
+    {
+        return DZ_SUCCESSFUL;
+    }
+
+    _effect->time += _time;
 
     for( ;;)
     {

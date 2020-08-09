@@ -235,6 +235,11 @@ void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect );
 
 dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect );
 
+const dz_material_t * dz_effect_set_material( dz_effect_t * _effect, const dz_material_t * _material );
+const dz_shape_t * dz_effect_set_shape( dz_effect_t * _effect, const dz_shape_t * _shape );
+const dz_emitter_t * dz_effect_set_emitter( dz_effect_t * _effect, const dz_emitter_t * _emitter );
+const dz_affector_t * dz_effect_set_affector( dz_effect_t * _effect, const dz_affector_t * _affector );
+
 void dz_effect_set_life( dz_effect_t * _effect, float _life );
 float dz_effect_get_life( const dz_effect_t * _effect );
 
@@ -254,6 +259,12 @@ void dz_effect_get_position( const dz_effect_t * _effect, float * _x, float * _y
 
 void dz_effect_set_rotate( dz_effect_t * _effect, float _angle );
 float dz_effect_get_rotate( const dz_effect_t * _effect );
+
+void dz_effect_reset( dz_effect_t * _effect );
+
+void dz_effect_spawn_pause( dz_effect_t * _effect );
+void dz_effect_spawn_resume( dz_effect_t * _effect );
+dz_bool_t dz_effect_is_spawn_pause( const dz_effect_t * _effect );
 
 dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time );
 

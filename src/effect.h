@@ -24,6 +24,7 @@ typedef struct dz_effect_t
     uint32_t particle_limit;
 
     dz_bool_t loop;
+    dz_bool_t spawn_pause;
 
     float life;
 

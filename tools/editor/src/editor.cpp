@@ -1085,25 +1085,8 @@ const ImVec2 & editor::getDzWindowSize() const
 //////////////////////////////////////////////////////////////////////////
 int editor::resetEmitter()
 {
-    dz_texture_destroy( m_service, m_texture );
-    dz_material_destroy( m_service, m_material );
-    dz_shape_destroy( m_service, m_shape );
-    dz_effect_destroy( m_service, m_effect );
-
-    if( dz_texture_create( m_service, &m_texture, &m_textureId ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
-
-    if( dz_material_create( m_service, &m_material, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
-
-    dz_material_set_blend( m_material, DZ_BLEND_ADD );
-    dz_material_set_texture( m_material, m_texture );
-
-    if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_shape_t * shape;
+    if( dz_shape_create( m_service, &shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -1112,16 +1095,17 @@ int editor::resetEmitter()
     {
         timeline_shape_t & data = m_timelineShapeData[index];
 
-        if( __set_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+        if( __set_shape_timeline_linear_from_points( m_service, shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
     }
 
-    if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    const dz_shape_t * old_shape = dz_effect_set_shape( m_effect, shape );
+
+    dz_shape_destroy( m_service, old_shape );
+
+    dz_effect_reset( m_effect );
 
     return EXIT_SUCCESS;
 }
