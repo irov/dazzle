@@ -17,6 +17,11 @@
 #include "math.h"
 
 //////////////////////////////////////////////////////////////////////////
+uint32_t dz_get_version( void )
+{
+    return 1;
+}
+//////////////////////////////////////////////////////////////////////////
 typedef struct dz_timeline_limits_t
 {
     dz_timeline_limit_status_e status;
@@ -1791,3 +1796,21 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
     *_count = 1;
 }
 //////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_header( const dz_effect_t * _effect, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _effect );
+    DZ_UNUSED( _write );
+    DZ_UNUSED( _ud );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_write_t _write, dz_userdata_t _ud )
+{
+    if( __write_header( _effect, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    return DZ_SUCCESSFUL;
+}

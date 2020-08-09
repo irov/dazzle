@@ -3,6 +3,8 @@
 
 #include "dazzle/config.h"
 
+uint32_t dz_get_version( void );
+
 typedef struct dz_service_t dz_service_t;
 
 typedef void * (*dz_malloc_t)(dz_size_t _size, dz_userdata_t _ud);
@@ -353,5 +355,9 @@ typedef struct dz_effect_mesh_t
 } dz_effect_mesh_t;
 
 void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _mesh, dz_effect_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count );
+
+typedef dz_result_t( *dz_write_t )(void * _data, dz_size_t _size, dz_userdata_t _ud);
+
+dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_write_t _write, dz_userdata_t _ud );
 
 #endif
