@@ -595,6 +595,8 @@ editor::editor()
     , m_emitter( nullptr )
     , m_affector( nullptr )
 
+    , m_loop( DZ_FALSE )
+
     , m_effect( nullptr )
     , m_fwWindow( nullptr )
 
@@ -838,9 +840,9 @@ int editor::init()
         {
             return EXIT_FAILURE;
         }
+
+        dz_effect_set_loop( m_effect, m_loop );
     }
-
-
 
     // init imgui
     {
@@ -1413,13 +1415,24 @@ int editor::showContentPane()
             return EXIT_FAILURE;
         }
     }
+    ImGui::SameLine();
+
+    static bool isLoop = m_loop == DZ_TRUE ? true : false;
+    if( ImGui::Checkbox( "Loop", &isLoop ) == true )
+    {
+        m_loop = isLoop == true ? DZ_TRUE : DZ_FALSE;
+
+        dz_effect_set_loop( m_effect, m_loop );
+    }
 
     ImGui::SameLine();
 
-    ImGui::Text( "Life: %.3f s", life );
-    ImGui::SameLine();
+    char label[100];
+    sprintf( label, "Life: %.3f "
+        , life
+    );
 
-    ImGui::SliderFloat( "", &time, 0.0f, life, "Time: %.3f s" );
+    ImGui::SliderFloat( label, &time, 0.0f, life, "Time: %.3f s" );
     ImGui::SameLine();
 
     ImGui::Spacing();

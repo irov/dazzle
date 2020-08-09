@@ -68,6 +68,8 @@ protected:
 
     dz_effect_t * m_effect;
 
+    dz_bool_t m_loop;
+
     GLuint m_textureId;
 
     dz_render_desc_t m_openglDesc;
