@@ -796,7 +796,7 @@ dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, c
     effect->particle_limit = ~1U;
 
     effect->loop = DZ_FALSE;
-    effect->spawn_pause = DZ_FALSE;
+    effect->emit_pause = DZ_FALSE;
 
     effect->life = _life;
 
@@ -1428,19 +1428,19 @@ void dz_effect_reset( dz_effect_t * _effect )
     _effect->partices_count = 0;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_spawn_pause( dz_effect_t * _effect )
+void dz_effect_emit_pause( dz_effect_t * _effect )
 {
-    _effect->spawn_pause = DZ_TRUE;
+    _effect->emit_pause = DZ_TRUE;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_spawn_resume( dz_effect_t * _effect )
+void dz_effect_emit_resume( dz_effect_t * _effect )
 {
-    _effect->spawn_pause = DZ_FALSE;
+    _effect->emit_pause = DZ_FALSE;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_bool_t dz_effect_is_spawn_pause( const dz_effect_t * _effect )
+dz_bool_t dz_effect_is_emit_pause( const dz_effect_t * _effect )
 {
-    return _effect->spawn_pause;
+    return _effect->emit_pause;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time )
@@ -1461,7 +1461,7 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
         }
     }
 
-    if( _effect->spawn_pause == DZ_TRUE )
+    if( _effect->emit_pause == DZ_TRUE )
     {
         return DZ_SUCCESSFUL;
     }

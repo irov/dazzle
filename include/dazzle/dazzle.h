@@ -262,9 +262,9 @@ float dz_effect_get_rotate( const dz_effect_t * _effect );
 
 void dz_effect_reset( dz_effect_t * _effect );
 
-void dz_effect_spawn_pause( dz_effect_t * _effect );
-void dz_effect_spawn_resume( dz_effect_t * _effect );
-dz_bool_t dz_effect_is_spawn_pause( const dz_effect_t * _effect );
+void dz_effect_emit_pause( dz_effect_t * _effect );
+void dz_effect_emit_resume( dz_effect_t * _effect );
+dz_bool_t dz_effect_is_emit_pause( const dz_effect_t * _effect );
 
 dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time );
 
