@@ -1467,20 +1467,31 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
         return DZ_SUCCESSFUL;
     }
 
-    _effect->time += _time;
+    if( _effect->time + _time > _effect->life )
+    {
+        if( _effect->loop == DZ_FALSE )
+        {
+            _effect->time = _effect->life;
+        }
+        else
+        {
+            _effect->time += _time - _effect->life;
+            _effect->emitter_time -= _effect->life;
+        }
+    }
+    else
+    {
+        _effect->time += _time;
+    }
 
     for( ;;)
     {
-        if( _effect->loop == DZ_FALSE && _effect->emitter_time > _effect->life )
+        float delay = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_DELAY, _effect->life, _effect->emitter_time );
+
+        if( _effect->loop == DZ_FALSE && _effect->emitter_time + delay > _effect->life )
         {
             break;
         }
-        else if( _effect->loop == DZ_TRUE )
-        {
-            for( ; _effect->emitter_time > _effect->life; _effect->emitter_time -= _effect->life );
-        }
-
-        float delay = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_DELAY, _effect->life, _effect->emitter_time );
 
         if( _effect->time - _effect->emitter_time < delay )
         {
