@@ -899,6 +899,7 @@ dz_bool_t dz_effect_get_loop( const dz_effect_t * _effect )
 void dz_effect_set_time( dz_effect_t * _effect, float _time )
 {
     _effect->time = _time;
+    _effect->emitter_time = _time;
 }
 //////////////////////////////////////////////////////////////////////////
 float dz_effect_get_time( const dz_effect_t * _effect )
