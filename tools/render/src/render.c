@@ -393,7 +393,7 @@ dz_result_t dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t 
     {
         dz_effect_mesh_chunk_t * chunk = chunks + index;
 
-        GLuint textureId = *(GLuint *)dz_texture_get_ud( chunk->texture );
+        GLuint textureId = *(GLuint *)chunk->atlas_ud;
 
         glActiveTexture( GL_TEXTURE0 );
         glBindTexture( GL_TEXTURE_2D, textureId );

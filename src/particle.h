@@ -29,6 +29,8 @@ typedef struct dz_particle_t
     float color_g;
     float color_b;
     float color_a;
+
+    const dz_texture_t * texture;
 } dz_particle_t;
 
 #endif

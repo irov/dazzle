@@ -316,11 +316,19 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
-    dz_texture_t * texture;
-    if( dz_texture_create( service, &texture, &textureId ) == DZ_FAILURE )
+    dz_atlas_t * atlas;
+    if( dz_atlas_create( service, &atlas, &textureId ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
+
+    dz_texture_t * texture;
+    if( dz_texture_create( service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_atlas_add_texture( atlas, texture );
 
     dz_material_t * material;
     if( dz_material_create( service, &material, DZ_NULLPTR ) == DZ_FAILURE )
@@ -329,7 +337,7 @@ int main( int argc, char ** argv )
     }
 
     dz_material_set_blend( material, DZ_BLEND_ADD );
-    dz_material_set_texture( material, texture );
+    dz_material_set_atlas( material, atlas );
 
     dz_shape_t * shape;
     if( dz_shape_create( service, &shape, DZ_SHAPE_POINT, DZ_NULLPTR ) == DZ_FAILURE )

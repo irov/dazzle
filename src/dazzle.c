@@ -8,6 +8,7 @@
 #include "emitter.h"
 #include "particle.h"
 #include "texture.h"
+#include "atlas.h"
 #include "material.h"
 #include "emitter.h"
 #include "effect.h"
@@ -98,6 +99,15 @@ dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture
     texture->u[3] = 1.f;
     texture->v[3] = 0.f;
 
+    texture->trim_offset_x = 0.f;
+    texture->trim_offset_y = 0.f;
+
+    texture->trim_width = 1.f;
+    texture->trim_height = 1.f;
+
+    texture->random_weight = 1.f;
+    texture->sequence_delay = 1.f;
+
     texture->ud = _ud;
 
     *_texture = texture;
@@ -139,6 +149,94 @@ void dz_texture_get_uv( const dz_texture_t * _texture, float * _u, float * _v )
     _v[3] = _texture->v[3];
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_texture_set_trim_offset( dz_texture_t * _texture, float _x, float _y )
+{
+    _texture->trim_offset_x = _x;
+    _texture->trim_offset_y = _y;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * _x, float * _y )
+{
+    *_x = _texture->trim_offset_x;
+    *_y = _texture->trim_offset_y;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_trim_width( dz_texture_t * _texture, float _width, float _height )
+{
+    _texture->trim_width = _width;
+    _texture->trim_height = _height;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_get_trim_width( const dz_texture_t * _texture, float * _width, float * _height )
+{
+    *_width = _texture->trim_width;
+    *_height = _texture->trim_height;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_random_weight( dz_texture_t * _texture, float _weight )
+{
+    _texture->random_weight = _weight;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_texture_get_random_weight( const dz_texture_t * _texture )
+{
+    return _texture->random_weight;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_sequence_delay( dz_texture_t * _texture, float _delay )
+{
+    _texture->sequence_delay = _delay;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_texture_get_sequence_delay( const dz_texture_t * _texture )
+{
+    return _texture->sequence_delay;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _ud )
+{
+    dz_atlas_t * atlas = DZ_NEW( _service, dz_atlas_t );
+
+    atlas->texture_count = 0;
+
+    atlas->ud = _ud;
+
+    *_atlas = atlas;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_atlas_destroy( dz_service_t * _service, const dz_atlas_t * _atlas )
+{
+    DZ_FREE( _service, _atlas );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas )
+{
+    return _atlas->ud;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_atlas_add_texture( dz_atlas_t * _atlas, const dz_texture_t * _texture )
+{
+    _atlas->textures[_atlas->texture_count++] = _texture;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture )
+{
+    const dz_texture_t * texture = _atlas->textures[_index];
+
+    *_texture = texture;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
+{
+    return _atlas->texture_count;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud )
 {
     dz_material_t * material = DZ_NEW( _service, dz_material_t );
@@ -150,7 +248,7 @@ dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _mater
     material->b = 1.f;
     material->a = 1.f;
 
-    material->texture = DZ_NULLPTR;
+    material->texture_count = 0;
 
     material->ud = _ud;
 
@@ -195,14 +293,24 @@ void dz_material_get_color( const dz_material_t * _material, float * _r, float *
     *_a = _material->a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_set_texture( dz_material_t * _material, const dz_texture_t * _texture )
+void dz_material_set_atlas( dz_material_t * _material, const dz_atlas_t * _atlas )
 {
-    _material->texture = _texture;
+    _material->atlas = _atlas;
 }
 //////////////////////////////////////////////////////////////////////////
-const dz_texture_t * dz_material_get_texture( dz_material_t * _material )
+const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material )
 {
-    return _material->texture;
+    return _material->atlas;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_set_mode( dz_material_t * _material, dz_material_mode_e _mode )
+{
+    _material->mode = _mode;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_material_mode_e dz_material_get_mode( const dz_material_t * _material )
+{
+    return _material->mode;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud )
@@ -1678,7 +1786,7 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
     const dz_material_t * material = _effect->material;
 
     chunk->blend_type = material->blend_type;
-    chunk->texture = material->texture;
+    chunk->atlas_ud = material->atlas->ud;
 
     *_count = 1;
 }

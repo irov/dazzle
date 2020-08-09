@@ -60,6 +60,7 @@ protected:
 
     dz_service_t * m_service;
 
+    dz_atlas_t * m_atlas;
     dz_texture_t * m_texture;
     dz_material_t * m_material;
     dz_shape_t * m_shape;

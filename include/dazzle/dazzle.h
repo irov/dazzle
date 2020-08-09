@@ -47,6 +47,30 @@ dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture );
 void dz_texture_set_uv( dz_texture_t * _texture, const float * _u, const float * _v );
 void dz_texture_get_uv( const dz_texture_t * _texture, float * _u, float * _v );
 
+void dz_texture_set_trim_offset( dz_texture_t * _texture, float _x, float _y );
+void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * _x, float * _y );
+
+void dz_texture_set_trim_width( dz_texture_t * _texture, float _width, float _height );
+void dz_texture_get_trim_width( const dz_texture_t * _texture, float * _width, float * _height );
+
+void dz_texture_set_random_weight( dz_texture_t * _texture, float _weight );
+float dz_texture_get_random_weight( const dz_texture_t * _texture );
+
+void dz_texture_set_sequence_delay( dz_texture_t * _texture, float _delay );
+float dz_texture_get_sequence_delay( const dz_texture_t * _texture );
+
+typedef struct dz_atlas_t dz_atlas_t;
+
+dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _ud );
+void dz_atlas_destroy( dz_service_t * _service, const dz_atlas_t * _atlas );
+
+dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas );
+
+dz_result_t dz_atlas_add_texture( dz_atlas_t * _material, const dz_texture_t * _texture );
+dz_result_t dz_atlas_get_texture( const dz_atlas_t * _material, uint32_t _index, const dz_texture_t ** _texture );
+
+uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _material );
+
 typedef struct dz_material_t dz_material_t;
 
 dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud );
@@ -60,8 +84,17 @@ dz_blend_type_e dz_material_get_blend( const dz_material_t * _material );
 void dz_material_set_color( dz_material_t * _material, float _r, float _g, float _b, float _a );
 void dz_material_get_color( const dz_material_t * _material, float * _r, float * _g, float * _b, float * _a );
 
-void dz_material_set_texture( dz_material_t * _material, const dz_texture_t * _texture );
-const dz_texture_t * dz_material_get_texture( dz_material_t * _material );
+void dz_material_set_atlas( dz_material_t * _material, const dz_atlas_t * _atlas );
+const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material );
+
+typedef enum dz_material_mode_e
+{
+    DZ_MATERIAL_MODE_TEXURE,
+    DZ_MATERIAL_MODE_SEQUENCE
+} dz_material_mode_e;
+
+void dz_material_set_mode( dz_material_t * _material, dz_material_mode_e _mode );
+dz_material_mode_e dz_material_get_mode( const dz_material_t * _material );
 
 typedef enum dz_timeline_key_type_e
 {
@@ -291,7 +324,7 @@ typedef struct dz_effect_mesh_chunk_t
 
     dz_blend_type_e blend_type;
 
-    const dz_texture_t * texture;
+    const dz_userdata_t * atlas_ud;
 } dz_effect_mesh_chunk_t;
 
 typedef struct dz_effect_mesh_t

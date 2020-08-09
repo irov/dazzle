@@ -588,6 +588,7 @@ editor::editor()
     , m_showDebugInfo( false )
 
     , m_service( nullptr )
+    , m_atlas( nullptr )
     , m_texture( nullptr )
     , m_material( nullptr )
     
@@ -753,10 +754,17 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
+        if( dz_atlas_create( m_service, &m_atlas, &m_textureId ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
+
         if( dz_texture_create( m_service, &m_texture, &m_textureId ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
+
+        dz_atlas_add_texture( m_atlas, m_texture );
 
         if( dz_material_create( m_service, &m_material, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -764,7 +772,7 @@ int editor::init()
         }
 
         dz_material_set_blend( m_material, DZ_BLEND_ADD );
-        dz_material_set_texture( m_material, m_texture );
+        dz_material_set_atlas( m_material, m_atlas );
 
         // shape data
         if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )

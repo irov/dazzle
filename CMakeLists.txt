@@ -68,6 +68,7 @@ SET(DAZZLE_TOOLS_DIR ${DAZZLE_ROOT_DIR}/tools)
 set(DAZZLE_SOURCES
     ${DAZZLE_SOURCE_DIR}/affector.h
     ${DAZZLE_SOURCE_DIR}/alloc.h
+    ${DAZZLE_SOURCE_DIR}/atlas.h
     ${DAZZLE_SOURCE_DIR}/dazzle.c
     ${DAZZLE_SOURCE_DIR}/effect.h
     ${DAZZLE_SOURCE_DIR}/emitter.h
