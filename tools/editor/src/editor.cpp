@@ -1117,6 +1117,8 @@ int editor::resetEmitter()
 
     dz_effect_reset( m_effect );
 
+    dz_effect_emit_resume( m_effect );
+
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -1425,6 +1427,18 @@ int editor::showContentPane()
     }
     ImGui::SameLine();
 
+    if( ImGui::Button( "Pause" ) )
+    {
+        dz_effect_emit_pause( m_effect );
+    }
+    ImGui::SameLine();
+
+    if( ImGui::Button( "Resume" ) )
+    {
+        dz_effect_emit_resume( m_effect );
+    }
+    ImGui::SameLine();
+
     static bool isLoop = m_loop == DZ_TRUE ? true : false;
     if( ImGui::Checkbox( "Loop", &isLoop ) == true )
     {
@@ -1436,11 +1450,15 @@ int editor::showContentPane()
     ImGui::SameLine();
 
     char label[100];
-    sprintf( label, "Life: %.3f "
+    sprintf( label, "Time: %%.3f s / %.3f s"
         , life
     );
 
-    ImGui::SliderFloat( label, &time, 0.0f, life, "Time: %.3f s" );
+    if( ImGui::SliderFloat( "", &time, 0.0f, life, label ) == true )
+    {
+        dz_effect_set_time( m_effect, time );
+    }
+
     ImGui::SameLine();
 
     ImGui::Spacing();
