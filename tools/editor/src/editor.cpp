@@ -854,7 +854,6 @@ int editor::init()
 
     // init imgui
     {
-
         ImGuiContext * context = ImGui::CreateContext();
         (void)context;
 
@@ -1345,7 +1344,6 @@ static void __draw_callback( const ImDrawList * parent_list, const ImDrawCmd * c
 void editor::showDazzleCanvas()
 {
     // render dazzle
-
     dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
 
     dz_render_use_texture_program( &m_openglDesc );
@@ -1378,7 +1376,7 @@ int editor::showContentPane()
 
     m_dzWindowPos = ImVec2( cursorPos.x, m_windowHeight - cursorPos.y - m_dzWindowSize.y );
 
-    ImGui::BeginChild( "Another Window" );
+    ImGui::BeginChild( "Another Window", m_dzWindowSize );
 
     ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
     ImGui::GetWindowDrawList()->AddCallback( ImDrawCallback_ResetRenderState, nullptr );
