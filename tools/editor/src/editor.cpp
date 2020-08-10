@@ -1367,8 +1367,8 @@ int editor::showContentPane()
     float columnWidth = ImGui::GetColumnWidth();
     float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * 3;
 
-        m_dzWindowSize.x = columnWidth;
-        m_dzWindowSize.y = columnHeight;
+    m_dzWindowSize.x = columnWidth;
+    m_dzWindowSize.y = columnHeight;
 
     ImGuiWindow * window = ImGui::GetCurrentWindow();
     const ImGuiID id = window->GetID( "testrender" );
