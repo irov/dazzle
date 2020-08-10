@@ -1151,8 +1151,6 @@ int editor::showMenuBar()
 //////////////////////////////////////////////////////////////////////////
 int editor::showShapeData()
 {
-    dz_shape_type_e current_shape_type = dz_shape_get_type( m_shape );
-
     const char * shape_type_names[] = {
         "Point",
         "Segment",
@@ -1162,11 +1160,12 @@ int editor::showShapeData()
         //"Polygon",
         //"Mask",
     };
-    static int selected_type = current_shape_type;
+
+    static int selected_type = m_shapeType;
 
     ImGui::Combo( "Shape type", &selected_type, shape_type_names, IM_ARRAYSIZE( shape_type_names ), IM_ARRAYSIZE( shape_type_names ) );
 
-    if( selected_type != current_shape_type )
+    if( selected_type != m_shapeType )
     {
         m_shapeType = static_cast<dz_shape_type_e>(selected_type);
 
