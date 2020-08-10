@@ -1351,14 +1351,14 @@ void editor::showDazzleCanvas()
 
     dz_render_use_texture_program( &m_openglDesc );
 
-    glActiveTexture( GL_TEXTURE0 );
-    glBindTexture( GL_TEXTURE_2D, m_textureId );
+    GLint oldViewport[4];
+    glGetIntegerv( GL_VIEWPORT, oldViewport );
 
     glViewport( (GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y );
-    glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w );
-    glClear( GL_COLOR_BUFFER_BIT );
 
     dz_render_effect( &m_openglDesc, m_effect );
+
+    glViewport( oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3] );
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showContentPane()
@@ -1382,6 +1382,7 @@ int editor::showContentPane()
     ImGui::BeginChild( "Another Window" );
 
     ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
+    ImGui::GetWindowDrawList()->AddCallback( ImDrawCallback_ResetRenderState, nullptr );
 
     ImGui::EndChild();
 
