@@ -324,6 +324,17 @@ void dz_render_use_color_program( dz_render_desc_t * _desc )
     _desc->shaderCurrentProgram = _desc->shaderColorProgram;
 
     glUseProgram( _desc->shaderCurrentProgram );
+
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _desc->IBO );
+    glBindBuffer( GL_ARRAY_BUFFER, _desc->VBO );
+
+    glEnableVertexAttribArray( 0 );
+    glEnableVertexAttribArray( 1 );
+    glEnableVertexAttribArray( 2 );
+
+    glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x ) );
+    glVertexAttribPointer( 1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c ) );
+    glVertexAttribPointer( 2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u ) );
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_render_use_texture_program( dz_render_desc_t * _desc )
@@ -331,6 +342,17 @@ void dz_render_use_texture_program( dz_render_desc_t * _desc )
     _desc->shaderCurrentProgram = _desc->shaderTextureProgram;
 
     glUseProgram( _desc->shaderCurrentProgram );
+
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _desc->IBO );
+    glBindBuffer( GL_ARRAY_BUFFER, _desc->VBO );
+
+    glEnableVertexAttribArray( 0 );
+    glEnableVertexAttribArray( 1 );
+    glEnableVertexAttribArray( 2 );
+
+    glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x ) );
+    glVertexAttribPointer( 1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c ) );
+    glVertexAttribPointer( 2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u ) );
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_render_set_camera( const dz_render_desc_t * _desc, float _offsetX, float _offsetY, float _scale )

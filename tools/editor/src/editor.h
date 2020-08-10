@@ -47,7 +47,10 @@ protected:
 
     int showContentPane();
 
-protected:
+public:
+    void showDazzleCanvas();
+
+public:
     float m_windowWidth;
     float m_windowHeight;
 

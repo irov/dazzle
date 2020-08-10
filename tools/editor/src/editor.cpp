@@ -937,13 +937,13 @@ int editor::update()
             {
                 ImGui::BeginChild( "left pane", ImVec2( 150, 0 ), true );
 
-                if( ImGui::Selectable( "Shape data", selected == SelectedType::SELECTED_SHAPE_DATA ) )
+                if( ImGui::Selectable( "Shape", selected == SelectedType::SELECTED_SHAPE_DATA ) )
                     selected = SelectedType::SELECTED_SHAPE_DATA;
 
-                if( ImGui::Selectable( "Affector data", selected == SelectedType::SELECTED_AFFECTOR_DATA ) )
+                if( ImGui::Selectable( "Affector", selected == SelectedType::SELECTED_AFFECTOR_DATA ) )
                     selected = SelectedType::SELECTED_AFFECTOR_DATA;
 
-                if( ImGui::Selectable( "Emitter data", selected == SelectedType::SELECTED_EMITTER_DATA ) )
+                if( ImGui::Selectable( "Emitter", selected == SelectedType::SELECTED_EMITTER_DATA ) )
                     selected = SelectedType::SELECTED_EMITTER_DATA;
 
                 ImGui::EndChild();
@@ -1028,26 +1028,13 @@ int editor::render()
 {
     // render background
     {
+        glViewport( 0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight );
         glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w );
         glClear( GL_COLOR_BUFFER_BIT );
     }
 
     // render imgui
     ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
-
-    // render dazzle
-    {
-        glActiveTexture( GL_TEXTURE0 );
-        glBindTexture( GL_TEXTURE_2D, m_textureId );
-
-        dz_render_use_texture_program( &m_openglDesc );
-
-        glViewport( (GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y );
-
-        dz_render_effect( &m_openglDesc, m_effect );
-    }
-
-    glViewport( 0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight );
 
     //// render imgui
     //ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
@@ -1345,25 +1332,43 @@ int editor::showEmitterData()
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
+static void __draw_callback( const ImDrawList * parent_list, const ImDrawCmd * cmd )
+{
+    DZ_UNUSED( parent_list );
+ 
+    editor * e = reinterpret_cast<editor *>(cmd->UserCallbackData);
+
+    e->showDazzleCanvas();
+}
+//////////////////////////////////////////////////////////////////////////
+void editor::showDazzleCanvas()
+{
+    // render dazzle
+
+    dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
+
+    dz_render_use_texture_program( &m_openglDesc );
+
+    glActiveTexture( GL_TEXTURE0 );
+    glBindTexture( GL_TEXTURE_2D, m_textureId );
+
+    glViewport( (GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y );
+    glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w );
+    glClear( GL_COLOR_BUFFER_BIT );
+
+    dz_render_effect( &m_openglDesc, m_effect );
+}
+//////////////////////////////////////////////////////////////////////////
 int editor::showContentPane()
 {
     // content
     float columnWidth = ImGui::GetColumnWidth();
     float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * 3;
 
-    if( m_dzWindowSize.x != columnWidth || m_dzWindowSize.y != columnHeight )
-    {
         m_dzWindowSize.x = columnWidth;
         m_dzWindowSize.y = columnHeight;
 
-        // init opengl
-
-        dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
-    }
-
     ImGuiWindow * window = ImGui::GetCurrentWindow();
-    ImGuiContext & g = *GImGui;
-    const ImGuiStyle & style = g.Style;
     const ImGuiID id = window->GetID( "testrender" );
     if( window->SkipItems )
         return EXIT_FAILURE;
@@ -1372,42 +1377,41 @@ int editor::showContentPane()
 
     m_dzWindowPos = ImVec2( cursorPos.x, m_windowHeight - cursorPos.y - m_dzWindowSize.y );
 
-    ImRect bb( cursorPos, cursorPos + m_dzWindowSize );
-    ImGui::ItemSize( bb );
-    if( !ImGui::ItemAdd( bb, NULL ) )
-        return 0;
+    ImGui::BeginChild( "Another Window" );
 
-    ImGui::RenderFrame( bb.Min, bb.Max, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
+    ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
 
-    if( m_showDebugInfo == true )
-    {
-        char buf[500];
+    ImGui::EndChild();
 
-        sprintf( buf,
-            "Application average %.3f ms/frame (%.1f FPS)\n\n"
-            "      window size: (%.2f, %.2f)\n"
-            "     camera_scale: %.2f\n"
-            " camera_scale_min: %.2f\n"
-            " camera_scale_max: %.2f\n"
-            "camera_scale_step: %.2f\n"
-            "  camera_offset_x: %.2f\n"
-            "  camera_offset_y: %.2f\n"
-            "      mouse_pos_x: %.2f\n"
-            "      mouse_pos_y: %.2f\n"
-            , 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate
-            , m_dzWindowSize.x, m_dzWindowSize.y
-            , camera_scale
-            , camera_scale_min
-            , camera_scale_max
-            , camera_scale_step
-            , camera_offset_x
-            , camera_offset_y
-            , mouse_pos_x
-            , mouse_pos_y
-        );
+    //if( m_showDebugInfo == true )
+    //{
+    //    char buf[500];
 
-        window->DrawList->AddText( ImVec2( bb.Min.x + style.FramePadding.x, bb.Min.y + style.FramePadding.y ), ImGui::GetColorU32( ImGuiCol_Text, 0.7f ), buf );
-    }
+    //    sprintf( buf,
+    //        "Application average %.3f ms/frame (%.1f FPS)\n\n"
+    //        "      window size: (%.2f, %.2f)\n"
+    //        "     camera_scale: %.2f\n"
+    //        " camera_scale_min: %.2f\n"
+    //        " camera_scale_max: %.2f\n"
+    //        "camera_scale_step: %.2f\n"
+    //        "  camera_offset_x: %.2f\n"
+    //        "  camera_offset_y: %.2f\n"
+    //        "      mouse_pos_x: %.2f\n"
+    //        "      mouse_pos_y: %.2f\n"
+    //        , 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate
+    //        , m_dzWindowSize.x, m_dzWindowSize.y
+    //        , camera_scale
+    //        , camera_scale_min
+    //        , camera_scale_max
+    //        , camera_scale_step
+    //        , camera_offset_x
+    //        , camera_offset_y
+    //        , mouse_pos_x
+    //        , mouse_pos_y
+    //    );
+
+    //    window->DrawList->AddText( ImVec2( bb.Min.x + style.FramePadding.x, bb.Min.y + style.FramePadding.y ), ImGui::GetColorU32( ImGuiCol_Text, 0.7f ), buf );
+    //}
 
     // controls
     ImGui::Separator();
