@@ -89,30 +89,29 @@ namespace ImGui
         int max = 0;
         while( max < _maxpoints && _points[max].x >= 0 ) max++;
 
-        int kill = 0;
-        do
-        {
-            if( kill )
-            {
-                modified = 1;
-                for( i = kill + 1; i < max; i++ )
-                {
-                    _points[i - 1] = _points[i];
-                }
-                max--;
-                _points[max].x = -1;
-                kill = 0;
-            }
+        //int kill = 0;
+        //do
+        //{
+        //    if( kill )
+        //    {
+        //        modified = 1;
+        //        for( i = kill + 1; i < max; i++ )
+        //        {
+        //            _points[i - 1] = _points[i];
+        //        }
+        //        max--;
+        //        _points[max].x = -1;
+        //        kill = 0;
+        //    }
 
-            for( i = 1; i < max - 1; i++ )
-            {
-                if( abs( _points[i].x - _points[i - 1].x ) < 1.f / 128.f )
-                {
-                    kill = i;
-                }
-            }
-        } while( kill );
-
+        //    for( i = 1; i < max - 1; i++ )
+        //    {
+        //        if( abs( _points[i].x - _points[i - 1].x ) < 1.f / 128.f )
+        //        {
+        //            kill = i;
+        //        }
+        //    }
+        //} while( kill );
 
         RenderFrame( bb.Min, bb.Max, GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
 
@@ -122,7 +121,7 @@ namespace ImGui
         if( hovered )
         {
             SetHoveredID( id );
-            if( g.IO.MouseDown[0] && g.IO.KeyCtrl )
+            if( g.IO.MouseDown[0] /*&& g.IO.KeyCtrl*/ )
             {
                 modified = 1;
                 ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
@@ -142,10 +141,25 @@ namespace ImGui
 
                 if( sel != -1 )
                 {
-                    _points[sel] = pos;
+                    if( g.IO.KeyAlt && max > 1 )
+                    {
+                        // kill selected
+                        modified = 1;
+                        for( i = sel + 1; i < max; i++ )
+                        {
+                            _points[i - 1] = _points[i];
+                        }
+                        max--;
+                        _points[max].x = -1;
+                    }
+                    else
+                    {
+                        _points[sel] = pos;
+                    }
                 }
-                else
+                else if ( g.IO.KeyCtrl )
                 {
+                    // add new point
                     if( max < _maxpoints )
                     {
                         max++;
@@ -158,6 +172,7 @@ namespace ImGui
                     if( max < _maxpoints )
                         _points[max].x = -1;
                 }
+                
 
                 // snap first/last to min/max
                 if( _points[0].x < _points[max - 1].x )
@@ -173,7 +188,7 @@ namespace ImGui
             }
         }
 
-        // bg grid
+        // horizontal grid lines
         window->DrawList->AddLine(
             ImVec2( bb.Min.x, bb.Min.y + ht / 2.f ),
             ImVec2( bb.Max.x, bb.Min.y + ht / 2.f ),
@@ -189,6 +204,7 @@ namespace ImGui
             ImVec2( bb.Max.x, bb.Min.y + ht / 4.f * 3.f ),
             GetColorU32( ImGuiCol_TextDisabled ) );
 
+        // vertical grid lines
         for( i = 0; i < 9; i++ )
         {
             window->DrawList->AddLine(
@@ -198,7 +214,7 @@ namespace ImGui
         }
 
         // lines
-        if( max == 1 )
+        if( max == 1 )  // draw line when 1 point
         {
             ImVec2 a( 0.f, _points[0].y );
             ImVec2 b( 1.f, _points[0].y );
@@ -236,6 +252,7 @@ namespace ImGui
             }
         }
 
+        // labels
         {
             char buf[128];
             const char * str = _label;

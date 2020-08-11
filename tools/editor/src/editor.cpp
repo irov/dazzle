@@ -21,6 +21,8 @@ static constexpr float WINDOW_WIDTH = 1280.f;
 static constexpr float WINDOW_HEIGHT = 720.f; 
 static constexpr float TIMELINE_PANEL_WIDTH = 350.f;
 //////////////////////////////////////////////////////////////////////////
+static const char * CURVE_LABEL = "Add with <Ctrl> | Delete with <Alt>";
+//////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -1232,7 +1234,7 @@ int editor::showShapeData()
                 dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default );
 
                 float life = dz_effect_get_life( m_effect );
-                if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+                if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
                 {
                     if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                     {
@@ -1274,7 +1276,7 @@ int editor::showAffectorData()
         if( headerFlags[index] == true )
         {
             float life = dz_effect_get_life( m_effect );
-            if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                 {
@@ -1315,7 +1317,7 @@ int editor::showEmitterData()
         if( headerFlags[index] == true )
         {
             float life = dz_effect_get_life( m_effect );
-            if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
                 if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                 {
@@ -1458,7 +1460,10 @@ int editor::showContentPane()
 
     if( ImGui::SliderFloat( "", &time, 0.0f, life, label ) == true )
     {
-        dz_effect_set_time( m_effect, time );
+        this->resetEmitter();
+
+        dz_effect_update( m_service, m_effect, time );
+        //dz_effect_set_time( m_effect, time );
     }
 
     ImGui::SameLine();
