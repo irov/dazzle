@@ -588,6 +588,7 @@ editor::editor()
     , m_backgroundColor( 0.f, 0.f, 0.f, 1.f )
 
     , m_showDebugInfo( false )
+    , m_pause( false )
 
     , m_service( nullptr )
     , m_atlas( nullptr )
@@ -1016,8 +1017,11 @@ int editor::update()
         ImGui::Render();
     }
 
-    // update and render dazzle
-    dz_effect_update( m_service, m_effect, 0.005f );
+    if( m_pause == false )
+    {
+        // update and render dazzle
+        dz_effect_update( m_service, m_effect, 0.005f );
+    }
 
     // update camera
     dz_render_set_camera( &m_openglDesc, camera_offset_x, camera_offset_y, camera_scale );
@@ -1433,13 +1437,15 @@ int editor::showContentPane()
 
     if( ImGui::Button( "Pause" ) )
     {
-        dz_effect_emit_pause( m_effect );
+        m_pause = true;
+        //dz_effect_emit_pause( m_effect );
     }
     ImGui::SameLine();
 
     if( ImGui::Button( "Resume" ) )
     {
-        dz_effect_emit_resume( m_effect );
+        m_pause = false;
+        //dz_effect_emit_resume( m_effect );
     }
     ImGui::SameLine();
 
