@@ -1651,7 +1651,7 @@ dz_effect_state_e dz_emitter_get_state( const dz_effect_t * _effect )
         return state;
     }
 
-    if( _effect->emitter_time < _effect->life )
+    if( _effect->time < _effect->life )
     {
         return state;
     }
