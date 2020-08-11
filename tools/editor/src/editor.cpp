@@ -577,6 +577,21 @@ static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
     mouse_pos_y = (float)_y;
 }
 //////////////////////////////////////////////////////////////////////////
+static void glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, int _action, int _mods )
+{
+    DZ_UNUSED( _key );
+    DZ_UNUSED( _scancode );
+    DZ_UNUSED( _action );
+    DZ_UNUSED( _mods );
+    
+    if( glfwGetKey( _window, GLFW_KEY_ESCAPE ) == GLFW_PRESS )
+    {
+        camera_scale = 1.f;
+        camera_offset_x = 0.f;
+        camera_offset_y = 0.f;
+    }
+}
+//////////////////////////////////////////////////////////////////////////
 editor::editor()
     : m_windowWidth( WINDOW_WIDTH )
     , m_windowHeight( WINDOW_HEIGHT )
@@ -704,6 +719,7 @@ int editor::init()
         glfwSetFramebufferSizeCallback( m_fwWindow, &glfw_framebufferSizeCallback );
         glfwSetScrollCallback( m_fwWindow, &glfw_scrollCallback );
         glfwSetCursorPosCallback( m_fwWindow, &glfw_cursorPosCallback );
+        glfwSetKeyCallback( m_fwWindow, &glfw_keyCallback );
 
         double cursorPosX;
         double cursorPosY;
@@ -1421,6 +1437,7 @@ int editor::showContentPane()
 
     // controls
     ImGui::Separator();
+
     ImGui::Spacing();
 
     float life = dz_effect_get_life( m_effect );
@@ -1472,32 +1489,42 @@ int editor::showContentPane()
         //dz_effect_set_time( m_effect, time );
     }
 
-    ImGui::SameLine();
-
-    ImGui::Spacing();
+    //ImGui::Spacing();
 
     // emitter states
+    //{
+    //    ImGui::Text( "Emitter states:" );
+    //    ImGui::SameLine();
+
+    //    dz_effect_state_e emitter_state = dz_emitter_get_state( m_effect );
+
+    //    auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
+    //    {
+    //        ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
+    //        ImVec4 colorRed( ImColor( 255, 0, 0 ) );
+
+    //        ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
+    //        ImGui::Text( _msg );
+    //        ImGui::PopStyleColor( 1 );
+    //        ImGui::SameLine();
+    //    };
+
+    //    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
+    //    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
+    //}
+
+    //ImGui::SameLine();
+
+    ImGui::Text( "Move & scroll camera with <Space> + mouse" );
+    ImGui::SameLine();
+
+    if( ImGui::Button( "Reset camera" ) )
     {
-        ImGui::Text( "Emitter states:" );
-        ImGui::SameLine();
-
-        dz_effect_state_e emitter_state = dz_emitter_get_state( m_effect );
-
-        auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
-        {
-            ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
-            ImVec4 colorRed( ImColor( 255, 0, 0 ) );
-
-            ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
-            ImGui::Text( _msg );
-            ImGui::PopStyleColor( 1 );
-            ImGui::SameLine();
-        };
-
-        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
-        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
+        camera_scale = 1.f;
+        camera_offset_x = 0.f;
+        camera_offset_y = 0.f;
     }
-
+    
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
