@@ -21,6 +21,8 @@ static constexpr float WINDOW_WIDTH = 1280.f;
 static constexpr float WINDOW_HEIGHT = 720.f; 
 static constexpr float TIMELINE_PANEL_WIDTH = 350.f;
 //////////////////////////////////////////////////////////////////////////
+static const char * CURVE_LABEL = "Add with <Ctrl> | Delete with <Alt>";
+//////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -586,6 +588,7 @@ editor::editor()
     , m_backgroundColor( 0.f, 0.f, 0.f, 1.f )
 
     , m_showDebugInfo( false )
+    , m_pause( false )
 
     , m_service( nullptr )
     , m_atlas( nullptr )
@@ -854,7 +857,6 @@ int editor::init()
 
     // init imgui
     {
-
         ImGuiContext * context = ImGui::CreateContext();
         (void)context;
 
@@ -1015,8 +1017,11 @@ int editor::update()
         ImGui::Render();
     }
 
-    // update and render dazzle
-    dz_effect_update( m_service, m_effect, 0.005f );
+    if( m_pause == false )
+    {
+        // update and render dazzle
+        dz_effect_update( m_service, m_effect, 0.005f );
+    }
 
     // update camera
     dz_render_set_camera( &m_openglDesc, camera_offset_x, camera_offset_y, camera_scale );
@@ -1233,7 +1238,7 @@ int editor::showShapeData()
                 dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
                 float life = dz_effect_get_life( m_effect );
-                if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+                if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
                 {
                     if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                     {
@@ -1275,7 +1280,7 @@ int editor::showAffectorData()
         if( headerFlags[index] == true )
         {
             float life = dz_effect_get_life( m_effect );
-            if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                 {
@@ -1316,7 +1321,7 @@ int editor::showEmitterData()
         if( headerFlags[index] == true )
         {
             float life = dz_effect_get_life( m_effect );
-            if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
             {
                 if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.param, data.maxValue ) == DZ_FAILURE )
                 {
@@ -1345,7 +1350,6 @@ static void __draw_callback( const ImDrawList * parent_list, const ImDrawCmd * c
 void editor::showDazzleCanvas()
 {
     // render dazzle
-
     dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
 
     dz_render_use_texture_program( &m_openglDesc );
@@ -1378,7 +1382,7 @@ int editor::showContentPane()
 
     m_dzWindowPos = ImVec2( cursorPos.x, m_windowHeight - cursorPos.y - m_dzWindowSize.y );
 
-    ImGui::BeginChild( "Another Window" );
+    ImGui::BeginChild( "Another Window", m_dzWindowSize );
 
     ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
     ImGui::GetWindowDrawList()->AddCallback( ImDrawCallback_ResetRenderState, nullptr );
@@ -1433,13 +1437,15 @@ int editor::showContentPane()
 
     if( ImGui::Button( "Pause" ) )
     {
-        dz_effect_emit_pause( m_effect );
+        m_pause = true;
+        //dz_effect_emit_pause( m_effect );
     }
     ImGui::SameLine();
 
     if( ImGui::Button( "Resume" ) )
     {
-        dz_effect_emit_resume( m_effect );
+        m_pause = false;
+        //dz_effect_emit_resume( m_effect );
     }
     ImGui::SameLine();
 
@@ -1460,7 +1466,10 @@ int editor::showContentPane()
 
     if( ImGui::SliderFloat( "", &time, 0.0f, life, label ) == true )
     {
-        dz_effect_set_time( m_effect, time );
+        this->resetEmitter();
+
+        dz_effect_update( m_service, m_effect, time );
+        //dz_effect_set_time( m_effect, time );
     }
 
     ImGui::SameLine();

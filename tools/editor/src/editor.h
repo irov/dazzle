@@ -61,6 +61,8 @@ public:
 
     bool m_showDebugInfo;
 
+    bool m_pause;
+
     dz_service_t * m_service;
 
     dz_atlas_t * m_atlas;

@@ -1538,6 +1538,8 @@ float dz_effect_get_rotate( const dz_effect_t * _effect )
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_reset( dz_effect_t * _effect )
 {
+    _effect->seed = _effect->init_seed;
+
     _effect->time = 0.f;
     _effect->emitter_time = 0.f;
 
