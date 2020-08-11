@@ -1438,7 +1438,7 @@ int editor::showContentPane()
     // controls
     ImGui::Separator();
 
-    ImGui::Spacing();
+    //ImGui::Spacing();
 
     float life = dz_effect_get_life( m_effect );
     float time = dz_effect_get_time( m_effect );
