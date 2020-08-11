@@ -578,6 +578,11 @@ dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape )
     return _shape->ud;
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_shape_set_type( dz_shape_t * _shape, dz_shape_type_e _type )
+{
+    _shape->type = _type;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape )
 {
     return _shape->type;

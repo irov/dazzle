@@ -201,6 +201,8 @@ dz_result_t dz_shape_create( dz_service_t * _service, dz_shape_t ** _shape, dz_s
 void dz_shape_destroy( dz_service_t * _service, const dz_shape_t * _shape );
 
 dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape );
+
+void dz_shape_set_type( dz_shape_t * _shape, dz_shape_type_e _type );
 dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape );
 
 typedef enum dz_shape_timeline_type_e

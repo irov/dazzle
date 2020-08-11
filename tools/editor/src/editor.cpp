@@ -132,54 +132,54 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
 //
 //    return DZ_SUCCESSFUL;
 //}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
-{
-    // first create new timeline
-    dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key0, _points[0].y * _y_multiplier ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    int32_t max = 0;
-    while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
-
-    dz_timeline_key_t * prevKey = key0;
-    for( int32_t i = 1; i < max; i++ )
-    {
-        dz_timeline_interpolate_t * interpolate;
-        if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        dz_timeline_key_t * nextKey;
-        if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        if( dz_timeline_key_const_set_value( nextKey, _points[i].y * _y_multiplier ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
-
-        prevKey = nextKey;
-    }
-
-    // set new timeline to affector
-    dz_shape_set_timeline( _shape, _type, key0 );
-
-    return DZ_SUCCESSFUL;
-}
+////////////////////////////////////////////////////////////////////////////
+//static dz_result_t __set_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
+//{
+//    // first create new timeline
+//    dz_timeline_key_t * key0;
+//    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    if( dz_timeline_key_const_set_value( key0, _points[0].y * _y_multiplier ) == DZ_FAILURE )
+//    {
+//        return DZ_FAILURE;
+//    }
+//
+//    int32_t max = 0;
+//    while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
+//
+//    dz_timeline_key_t * prevKey = key0;
+//    for( int32_t i = 1; i < max; i++ )
+//    {
+//        dz_timeline_interpolate_t * interpolate;
+//        if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
+//        {
+//            return DZ_FAILURE;
+//        }
+//
+//        dz_timeline_key_t * nextKey;
+//        if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+//        {
+//            return DZ_FAILURE;
+//        }
+//
+//        if( dz_timeline_key_const_set_value( nextKey, _points[i].y * _y_multiplier ) == DZ_FAILURE )
+//        {
+//            return DZ_FAILURE;
+//        }
+//
+//        dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
+//
+//        prevKey = nextKey;
+//    }
+//
+//    // set new timeline to affector
+//    dz_shape_set_timeline( _shape, _type, key0 );
+//
+//    return DZ_SUCCESSFUL;
+//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
@@ -1098,24 +1098,7 @@ const ImVec2 & editor::getDzWindowSize() const
 //////////////////////////////////////////////////////////////////////////
 int editor::resetEmitter()
 {
-    if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
-
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
-    {
-        timeline_shape_t & data = m_timelineShapeData[index];
-
-        if( __set_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
-        {
-            return EXIT_FAILURE;
-        }
-    }
-
-    const dz_shape_t * old_shape = dz_effect_set_shape( m_effect, m_shape );
-
-    dz_shape_destroy( m_service, old_shape );
+    dz_shape_set_type( m_shape, m_shapeType );
 
     dz_effect_reset( m_effect );
 
