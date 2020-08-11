@@ -603,8 +603,7 @@ editor::editor()
     , m_windowHeight( WINDOW_HEIGHT )
 
     , m_dzWindowPos( 0.f, 0.f )
-    //, m_dzWindowSize( 500.f, 500.f )
-    , m_dzWindowSize( 732.f, 616.f )
+    , m_dzWindowSize( 500.f, 500.f )
 
     , m_backgroundColor( 0.f, 0.f, 0.f, 1.f )
 
@@ -943,11 +942,6 @@ int editor::update()
             }
 
             // Left
-            //ImGui::BeginGroup();
-
-            //ImGui::EndGroup();
-
-            // data type
             enum SelectedType
             {
                 SELECTED_SHAPE_DATA,
@@ -1054,17 +1048,12 @@ int editor::update()
 int editor::render()
 {
     // render background
-    {
-        glViewport( 0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight );
-        glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w );
-        glClear( GL_COLOR_BUFFER_BIT );
-    }
+    glViewport( 0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight );
+    glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w );
+    glClear( GL_COLOR_BUFFER_BIT );
 
     // render imgui
     ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
-
-    //// render imgui
-    //ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 
     glfwSwapBuffers( m_fwWindow );
 
@@ -1406,6 +1395,8 @@ int editor::showContentPane()
 
     ImGui::BeginChild( "Another Window", m_dzWindowSize );
 
+    window->DrawList->AddRectFilled( cursorPos, cursorPos + m_dzWindowSize, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ) );
+
     ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
     ImGui::GetWindowDrawList()->AddCallback( ImDrawCallback_ResetRenderState, nullptr );
 
@@ -1493,8 +1484,6 @@ int editor::showContentPane()
         //dz_effect_set_time( m_effect, time );
     }
 
-    //ImGui::Spacing();
-
     // emitter states
     {
         ImGui::Text( "Emitter states:" );
@@ -1516,7 +1505,6 @@ int editor::showContentPane()
         lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
         lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
     }
-
     ImGui::SameLine();
 
     if( ImGui::Button( "Reset camera" ) )
@@ -1528,9 +1516,6 @@ int editor::showContentPane()
     ImGui::SameLine();
 
     ImGui::Text( "Camera move/scroll: <Space> + Mouse" );
-    //ImGui::SameLine();
-
-    
     
     return EXIT_SUCCESS;
 }
