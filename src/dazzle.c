@@ -29,25 +29,26 @@ typedef struct dz_timeline_limits_t
     float min_value;
     float max_value;
     float default_value;
+    float factor_value;
 } dz_timeline_limits_t;
 //////////////////////////////////////////////////////////////////////////
 static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELINE_MAX__] = {
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_AFFECTOR_TIMELINE_LIFE
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_AFFECTOR_TIMELINE_MOVE_SPEED
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_ROTATE_SPEED
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_SPIN_SPEED
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SPEED
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
-    {DZ_TIMELINE_LIMIT_MINMAX, DZ_PI2N, DZ_PI2, 0.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_AFFECTOR_TIMELINE_SIZE
-    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_R
-    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_G
-    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_B
-    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f} //DZ_AFFECTOR_TIMELINE_COLOR_A
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 0.f}, //DZ_AFFECTOR_TIMELINE_LIFE
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_MOVE_SPEED
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 1.f}, //DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 1.f}, //DZ_AFFECTOR_TIMELINE_ROTATE_SPEED
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 1.f}, //DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, DZ_PI2}, //DZ_AFFECTOR_TIMELINE_SPIN_SPEED
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, DZ_PI2}, //DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 1.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SPEED
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, DZ_PI2}, //DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 10.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_PI2N, DZ_PI2, 0.f, 0.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_AFFECTOR_TIMELINE_SIZE
+    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_R
+    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_G
+    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_B
+    {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f} //DZ_AFFECTOR_TIMELINE_COLOR_A
 };
 //////////////////////////////////////////////////////////////////////////
 void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default )
@@ -595,21 +596,21 @@ const dz_timeline_key_t * dz_shape_get_timeline( const dz_shape_t * _shape, dz_s
 }
 //////////////////////////////////////////////////////////////////////////
 static const dz_timeline_limits_t shape_timeline_limits[__DZ_SHAPE_TIMELINE_MAX__] = {
-    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, -DZ_PI * 0.25f}, //DZ_SHAPE_SEGMENT_ANGLE_MIN
-    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, DZ_PI * 0.25f}, //DZ_SHAPE_SEGMENT_ANGLE_MAX
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f}, //DZ_SHAPE_CIRCLE_RADIUS_MIN
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_SHAPE_CIRCLE_RADIUS_MAX
-    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, -DZ_PI * 0.05f}, //DZ_SHAPE_CIRCLE_ANGLE_MIN
-    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, DZ_PI * 0.05f}, //DZ_SHAPE_CIRCLE_ANGLE_MAX
-    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, 0.f}, //DZ_SHAPE_LINE_ANGLE
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_SHAPE_LINE_SIZE
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f}, //DZ_SHAPE_RECT_WIDTH_MIN
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_SHAPE_RECT_WIDTH_MAX
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f}, //DZ_SHAPE_RECT_HEIGHT_MIN
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_SHAPE_RECT_HEIGHT_MAX
+    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, -DZ_PI * 0.25f, DZ_PI2}, //DZ_SHAPE_SEGMENT_ANGLE_MIN
+    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, DZ_PI * 0.25f, DZ_PI2}, //DZ_SHAPE_SEGMENT_ANGLE_MAX
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f, 100.f}, //DZ_SHAPE_CIRCLE_RADIUS_MIN
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_CIRCLE_RADIUS_MAX
+    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, -DZ_PI * 0.05f, DZ_PI2}, //DZ_SHAPE_CIRCLE_ANGLE_MIN
+    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, DZ_PI * 0.05f, DZ_PI2}, //DZ_SHAPE_CIRCLE_ANGLE_MAX
+    {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, 0.f, DZ_PI2}, //DZ_SHAPE_LINE_ANGLE
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_LINE_SIZE
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f, 100.f}, //DZ_SHAPE_RECT_WIDTH_MIN
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_RECT_WIDTH_MAX
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f, 100.f}, //DZ_SHAPE_RECT_HEIGHT_MIN
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_RECT_HEIGHT_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default )
+void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor )
 {
     const dz_timeline_limits_t * limit = shape_timeline_limits + _timeline;
 
@@ -617,6 +618,7 @@ void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timelin
     *_min = limit->min_value;
     *_max = limit->max_value;
     *_default = limit->default_value;
+    *_factor = limit->factor_value;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_shape_timeline_default( dz_shape_timeline_type_e _timeline )

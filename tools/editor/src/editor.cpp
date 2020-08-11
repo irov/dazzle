@@ -1229,8 +1229,8 @@ int editor::showShapeData()
             if( headerFlags[index] == true )
             {
                 dz_timeline_limit_status_e status;
-                float min = 0.f, max = 0.f, default = 0.f;
-                dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default );
+                float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+                dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
                 float life = dz_effect_get_life( m_effect );
                 if( ImGui::Curve( "Edit with <Ctrl>", size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
