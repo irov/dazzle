@@ -590,6 +590,12 @@ static void glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, int
         camera_offset_x = 0.f;
         camera_offset_y = 0.f;
     }
+    else if( glfwGetKey( _window, GLFW_KEY_GRAVE_ACCENT ) == GLFW_PRESS )
+    {
+        editor * p_editor = reinterpret_cast<editor *>(glfwGetWindowUserPointer( _window ));
+
+        p_editor->m_showDebugInfo = !p_editor->m_showDebugInfo;
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 editor::editor()
@@ -1403,42 +1409,40 @@ int editor::showContentPane()
     ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
     ImGui::GetWindowDrawList()->AddCallback( ImDrawCallback_ResetRenderState, nullptr );
 
+    if( m_showDebugInfo == true )
+    {
+        char buf[500];
+
+        sprintf( buf,
+            "Application average %.3f ms/frame (%.1f FPS)\n\n"
+            "      window size: (%.2f, %.2f)\n"
+            "     camera_scale: %.2f\n"
+            " camera_scale_min: %.2f\n"
+            " camera_scale_max: %.2f\n"
+            "camera_scale_step: %.2f\n"
+            "  camera_offset_x: %.2f\n"
+            "  camera_offset_y: %.2f\n"
+            "      mouse_pos_x: %.2f\n"
+            "      mouse_pos_y: %.2f\n"
+            , 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate
+            , m_dzWindowSize.x, m_dzWindowSize.y
+            , camera_scale
+            , camera_scale_min
+            , camera_scale_max
+            , camera_scale_step
+            , camera_offset_x
+            , camera_offset_y
+            , mouse_pos_x
+            , mouse_pos_y
+        );
+
+        window->DrawList->AddText( cursorPos, ImGui::GetColorU32( ImGuiCol_Text, 0.7f ), buf );
+    }
+
     ImGui::EndChild();
-
-    //if( m_showDebugInfo == true )
-    //{
-    //    char buf[500];
-
-    //    sprintf( buf,
-    //        "Application average %.3f ms/frame (%.1f FPS)\n\n"
-    //        "      window size: (%.2f, %.2f)\n"
-    //        "     camera_scale: %.2f\n"
-    //        " camera_scale_min: %.2f\n"
-    //        " camera_scale_max: %.2f\n"
-    //        "camera_scale_step: %.2f\n"
-    //        "  camera_offset_x: %.2f\n"
-    //        "  camera_offset_y: %.2f\n"
-    //        "      mouse_pos_x: %.2f\n"
-    //        "      mouse_pos_y: %.2f\n"
-    //        , 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate
-    //        , m_dzWindowSize.x, m_dzWindowSize.y
-    //        , camera_scale
-    //        , camera_scale_min
-    //        , camera_scale_max
-    //        , camera_scale_step
-    //        , camera_offset_x
-    //        , camera_offset_y
-    //        , mouse_pos_x
-    //        , mouse_pos_y
-    //    );
-
-    //    window->DrawList->AddText( ImVec2( bb.Min.x + style.FramePadding.x, bb.Min.y + style.FramePadding.y ), ImGui::GetColorU32( ImGuiCol_Text, 0.7f ), buf );
-    //}
 
     // controls
     ImGui::Separator();
-
-    //ImGui::Spacing();
 
     float life = dz_effect_get_life( m_effect );
     float time = dz_effect_get_time( m_effect );
@@ -1492,30 +1496,27 @@ int editor::showContentPane()
     //ImGui::Spacing();
 
     // emitter states
-    //{
-    //    ImGui::Text( "Emitter states:" );
-    //    ImGui::SameLine();
+    {
+        ImGui::Text( "Emitter states:" );
+        ImGui::SameLine();
 
-    //    dz_effect_state_e emitter_state = dz_emitter_get_state( m_effect );
+        dz_effect_state_e emitter_state = dz_emitter_get_state( m_effect );
 
-    //    auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
-    //    {
-    //        ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
-    //        ImVec4 colorRed( ImColor( 255, 0, 0 ) );
+        auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
+        {
+            ImVec4 colorGreen( ImColor( 0, 255, 0 ) );
+            ImVec4 colorRed( ImColor( 255, 0, 0 ) );
 
-    //        ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
-    //        ImGui::Text( _msg );
-    //        ImGui::PopStyleColor( 1 );
-    //        ImGui::SameLine();
-    //    };
+            ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
+            ImGui::Text( _msg );
+            ImGui::PopStyleColor( 1 );
+            ImGui::SameLine();
+        };
 
-    //    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
-    //    lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
-    //}
+        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
+        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
+    }
 
-    //ImGui::SameLine();
-
-    ImGui::Text( "Move & scroll camera with <Space> + mouse" );
     ImGui::SameLine();
 
     if( ImGui::Button( "Reset camera" ) )
@@ -1524,6 +1525,12 @@ int editor::showContentPane()
         camera_offset_x = 0.f;
         camera_offset_y = 0.f;
     }
+    ImGui::SameLine();
+
+    ImGui::Text( "Camera move/scroll: <Space> + Mouse" );
+    //ImGui::SameLine();
+
+    
     
     return EXIT_SUCCESS;
 }
