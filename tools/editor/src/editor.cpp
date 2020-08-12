@@ -20,6 +20,7 @@ namespace ImGui
 static constexpr float WINDOW_WIDTH = 1280.f;
 static constexpr float WINDOW_HEIGHT = 720.f; 
 static constexpr float TIMELINE_PANEL_WIDTH = 350.f;
+static constexpr int32_t CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
 //////////////////////////////////////////////////////////////////////////
 static const char * CURVE_LABEL = "Add with <Ctrl> | Delete with <Alt>";
 //////////////////////////////////////////////////////////////////////////
@@ -1096,7 +1097,7 @@ const ImVec2 & editor::getDzWindowSize() const
     return m_dzWindowSize;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::resetEmitter()
+int editor::resetEffect()
 {
     dz_shape_set_type( m_shape, m_shapeType );
 
@@ -1167,7 +1168,7 @@ int editor::showShapeData()
     {
         m_shapeType = static_cast<dz_shape_type_e>(selected_type);
 
-        if( this->resetEmitter() == EXIT_FAILURE )
+        if( this->resetEffect() == EXIT_FAILURE )
         {
             return EXIT_FAILURE;
         }
@@ -1361,7 +1362,7 @@ int editor::showContentPane()
 {
     // content
     float columnWidth = ImGui::GetColumnWidth();
-    float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * 3;
+    float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * (CONTENT_CONTROLS_PANE_LINES_COUNT + 1);
 
     m_dzWindowSize.x = columnWidth;
     m_dzWindowSize.y = columnHeight;
@@ -1414,15 +1415,34 @@ int editor::showContentPane()
 
     ImGui::EndChild();
 
-    // controls
     ImGui::Separator();
 
+    // controls
+    ImGui::BeginGroup();
+    ImGui::BeginChild( "ContentPaneControlls" );
+
+    ImGui::Spacing();
+
+    if (this->showContentPaneControls() == EXIT_FAILURE)
+    {
+        return EXIT_FAILURE;
+    }
+
+    ImGui::EndChild();
+    ImGui::EndGroup();
+    
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::showContentPaneControls()
+{
     float life = dz_effect_get_life( m_effect );
     float time = dz_effect_get_time( m_effect );
 
+    // buttons
     if( ImGui::Button( "Reset" ) )
     {
-        if( this->resetEmitter() == EXIT_FAILURE )
+        if( this->resetEffect() == EXIT_FAILURE )
         {
             return EXIT_FAILURE;
         }
@@ -1432,17 +1452,16 @@ int editor::showContentPane()
     if( ImGui::Button( "Pause" ) )
     {
         m_pause = true;
-        //dz_effect_emit_pause( m_effect );
     }
     ImGui::SameLine();
 
     if( ImGui::Button( "Resume" ) )
     {
         m_pause = false;
-        //dz_effect_emit_resume( m_effect );
     }
     ImGui::SameLine();
 
+    // loop
     static bool isLoop = m_loop == DZ_TRUE ? true : false;
     if( ImGui::Checkbox( "Loop", &isLoop ) == true )
     {
@@ -1450,9 +1469,9 @@ int editor::showContentPane()
 
         dz_effect_set_loop( m_effect, m_loop );
     }
-
     ImGui::SameLine();
 
+    // time
     char label[100];
     sprintf( label, "Time: %%.3f s / %.3f s"
         , life
@@ -1460,11 +1479,30 @@ int editor::showContentPane()
 
     if( ImGui::SliderFloat( "", &time, 0.0f, life, label ) == true )
     {
-        this->resetEmitter();
+        this->resetEffect();
 
         dz_effect_update( m_service, m_effect, time );
-        //dz_effect_set_time( m_effect, time );
     }
+    
+    // life
+    if( ImGui::InputFloat( "Life", &life, 0.f, 0.f, NULL, ImGuiInputTextFlags_None ) == true )
+    {
+        dz_effect_set_life( m_effect, life );
+
+        this->resetEffect();
+    }
+    //ImGui::SameLine();
+
+    // camera
+    if( ImGui::Button( "Reset camera" ) )
+    {
+        camera_scale = 1.f;
+        camera_offset_x = 0.f;
+        camera_offset_y = 0.f;
+    }
+    ImGui::SameLine();
+
+    ImGui::Text( "Camera move/scroll: <Space> + Mouse" );
 
     // emitter states
     {
@@ -1487,18 +1525,7 @@ int editor::showContentPane()
         lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
         lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
     }
-    ImGui::SameLine();
 
-    if( ImGui::Button( "Reset camera" ) )
-    {
-        camera_scale = 1.f;
-        camera_offset_x = 0.f;
-        camera_offset_y = 0.f;
-    }
-    ImGui::SameLine();
-
-    ImGui::Text( "Camera move/scroll: <Space> + Mouse" );
-    
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////

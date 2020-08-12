@@ -37,7 +37,7 @@ public:
     const ImVec2 & getDzWindowSize() const;
 
 protected:
-    int resetEmitter();
+    int resetEffect();
 
     int showMenuBar();
 
@@ -46,6 +46,7 @@ protected:
     int showEmitterData();
 
     int showContentPane();
+    int showContentPaneControls();
 
 public:
     void showDazzleCanvas();
