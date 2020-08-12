@@ -51,7 +51,7 @@ static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELIN
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f} //DZ_AFFECTOR_TIMELINE_COLOR_A
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default )
+void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor )
 {
     const dz_timeline_limits_t * limit = affector_timeline_limits + _timeline;
 
@@ -59,6 +59,7 @@ void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_t
     *_min = limit->min_value;
     *_max = limit->max_value;
     *_default = limit->default_value;
+    *_factor = limit->factor_value;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_affector_timeline_default( dz_affector_timeline_type_e _timeline )
@@ -759,13 +760,13 @@ const dz_timeline_key_t * dz_emitter_get_timeline( const dz_emitter_t * _emitter
 }
 //////////////////////////////////////////////////////////////////////////
 static const dz_timeline_limits_t emitter_timeline_limits[__DZ_EMITTER_TIMELINE_MAX__] = {
-    {DZ_TIMELINE_LIMIT_MAX, 0.0009765625f, DZ_FLT_MAX, 1.f}, //DZ_EMITTER_SPAWN_DELAY
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_EMITTER_SPAWN_COUNT
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f}, //DZ_EMITTER_SPAWN_SPIN_MIN
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f}, //DZ_EMITTER_SPAWN_SPIN_MAX
+    {DZ_TIMELINE_LIMIT_MAX, 0.0009765625f, DZ_FLT_MAX, 1.f, 2.f}, //DZ_EMITTER_SPAWN_DELAY
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 10.f}, //DZ_EMITTER_SPAWN_COUNT
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f, 10.f}, //DZ_EMITTER_SPAWN_SPIN_MIN
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 10.f}, //DZ_EMITTER_SPAWN_SPIN_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default )
+void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor )
 {
     const dz_timeline_limits_t * limit = emitter_timeline_limits + _timeline;
 
@@ -773,6 +774,7 @@ void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_tim
     *_min = limit->min_value;
     *_max = limit->max_value;
     *_default = limit->default_value;
+    *_factor = limit->factor_value;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_emitter_timeline_default( dz_emitter_timeline_type_e _timeline )

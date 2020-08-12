@@ -87,11 +87,14 @@ public:
         dz_shape_timeline_type_e type;
         const char * name;
 
-        float startValue;
-
+        float minValue;
         float maxValue;
 
-        PointsArray param;
+        float startValue;
+
+        int32_t zoom;
+
+        PointsArray points;
     } timeline_shape_t;
 
     timeline_shape_t m_timelineShapeData[__DZ_SHAPE_TIMELINE_MAX__];
@@ -101,18 +104,14 @@ public:
         dz_affector_timeline_type_e type;
         const char * name;
 
-        float time0;
-        float time1;
-        float value0;
-        //float startValue;
-        float value1;
-        float value2;
-
-        //float endValue;
-
+        float minValue;
         float maxValue;
 
-        PointsArray param;
+        float startValue;
+
+        int32_t zoom;
+
+        PointsArray points;
     } timeline_affector_t;
 
     timeline_affector_t m_timelineAffectorData[__DZ_AFFECTOR_TIMELINE_MAX__];
@@ -122,11 +121,14 @@ public:
         dz_emitter_timeline_type_e type;
         const char * name;
 
-        float startValue;
-
+        float minValue;
         float maxValue;
 
-        PointsArray param;
+        float startValue;
+
+        int32_t zoom;
+
+        PointsArray points;
     } timeline_emitter_t;
 
     timeline_emitter_t m_timelineEmitterData[__DZ_EMITTER_TIMELINE_MAX__];

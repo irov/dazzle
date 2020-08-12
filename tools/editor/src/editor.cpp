@@ -19,7 +19,7 @@ namespace ImGui
 // aspect ratio HD 720p
 static constexpr float WINDOW_WIDTH = 1280.f;
 static constexpr float WINDOW_HEIGHT = 720.f; 
-static constexpr float TIMELINE_PANEL_WIDTH = 350.f;
+static constexpr float TIMELINE_PANEL_WIDTH = 330.f;
 static constexpr int32_t CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
 //////////////////////////////////////////////////////////////////////////
 static const char * CURVE_LABEL = "Add with <Ctrl> | Delete with <Alt>";
@@ -96,91 +96,6 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
 
     return DZ_SUCCESSFUL;
 }
-////////////////////////////////////////////////////////////////////////////
-//static dz_result_t __set_shape_timeline_linear( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _time0, float _value0, float _value1 )
-//{
-//    dz_timeline_key_t * key0;
-//    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_interpolate_t * interpolate0;
-//    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_key_t * key1;
-//    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-//
-//    dz_shape_set_timeline( _shape, _type, key0 );
-//
-//    return DZ_SUCCESSFUL;
-//}
-////////////////////////////////////////////////////////////////////////////
-//static dz_result_t __set_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
-//{
-//    // first create new timeline
-//    dz_timeline_key_t * key0;
-//    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( key0, _points[0].y * _y_multiplier ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    int32_t max = 0;
-//    while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
-//
-//    dz_timeline_key_t * prevKey = key0;
-//    for( int32_t i = 1; i < max; i++ )
-//    {
-//        dz_timeline_interpolate_t * interpolate;
-//        if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-//        {
-//            return DZ_FAILURE;
-//        }
-//
-//        dz_timeline_key_t * nextKey;
-//        if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//        {
-//            return DZ_FAILURE;
-//        }
-//
-//        if( dz_timeline_key_const_set_value( nextKey, _points[i].y * _y_multiplier ) == DZ_FAILURE )
-//        {
-//            return DZ_FAILURE;
-//        }
-//
-//        dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
-//
-//        prevKey = nextKey;
-//    }
-//
-//    // set new timeline to affector
-//    dz_shape_set_timeline( _shape, _type, key0 );
-//
-//    return DZ_SUCCESSFUL;
-//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
@@ -252,43 +167,6 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
 
     return DZ_SUCCESSFUL;
 }
-////////////////////////////////////////////////////////////////////////////
-//static dz_result_t __set_emitter_timeline_linear( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _time0, float _value0, float _value1 )
-//{
-//    dz_timeline_key_t * key0;
-//    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_interpolate_t * interpolate0;
-//    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_key_t * key1;
-//    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-//
-//    dz_emitter_set_timeline( _emitter, _type, key0 );
-//
-//    return DZ_SUCCESSFUL;
-//}
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, PointsArray _points, float _y_multiplier )
 {
@@ -342,114 +220,21 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 
     return DZ_SUCCESSFUL;
 }
-////////////////////////////////////////////////////////////////////////////
-//static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
-//{
-//    dz_timeline_key_t * timeline;
-//    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_affector_set_timeline( _affector, _type, timeline );
-//
-//    return DZ_SUCCESSFUL;
-//}
-////////////////////////////////////////////////////////////////////////////
-//static dz_result_t __set_affector_timeline_linear( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _value0, float _value1 )
-//{
-//    dz_timeline_key_t * key0;
-//    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_interpolate_t * interpolate0;
-//    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_key_t * key1;
-//    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
-//
-//    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-//
-//    dz_affector_set_timeline( _affector, _type, key0 );
-//
-//    return DZ_SUCCESSFUL;
-//}
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
+static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
 {
-    dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_timeline_key_t * timeline;
+    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
 
-    if( dz_timeline_key_const_set_value( key0, _value0 ) == DZ_FAILURE )
+    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
 
-    dz_timeline_interpolate_t * interpolate0;
-    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key1, _value1 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_set_interpolate( key0, interpolate0, key1 );
-
-    dz_timeline_interpolate_t * interpolate1;
-    if( dz_timeline_interpolate_create( _service, &interpolate1, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_t * key2;
-    if( dz_timeline_key_create( _service, &key2, _time1, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( dz_timeline_key_const_set_value( key2, _value2 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    dz_timeline_key_set_interpolate( key1, interpolate1, key2 );
-
-    dz_affector_set_timeline( _affector, _type, key0 );
+    dz_affector_set_timeline( _affector, _type, timeline );
 
     return DZ_SUCCESSFUL;
 }
@@ -625,67 +410,32 @@ editor::editor()
     , m_effect( nullptr )
     , m_fwWindow( nullptr )
 
-    , m_timelineShapeData{
-        {DZ_SHAPE_SEGMENT_ANGLE_MIN, "Segment angle min", -DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_SEGMENT_ANGLE_MAX, "Segment angle max", DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_CIRCLE_RADIUS_MIN, "Circle radius min", 50.f, 200.f},
-        {DZ_SHAPE_CIRCLE_RADIUS_MAX, "Circle radius max", 100.f, 200.f},
-        {DZ_SHAPE_CIRCLE_ANGLE_MIN, "Circle angle min", -DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_CIRCLE_ANGLE_MAX, "Circle angle max", DZ_PI * 0.25f, 100.f},
-        {DZ_SHAPE_LINE_ANGLE, "Line angle", 0.f, 100.f},
-        {DZ_SHAPE_LINE_SIZE, "Line size", 200.f, 500.f},
-        {DZ_SHAPE_RECT_WIDTH_MIN, "Rect width min", 0.f, 500.f},
-        {DZ_SHAPE_RECT_WIDTH_MAX, "Rect width max", 300.f, 500.f},
-        {DZ_SHAPE_RECT_HEIGHT_MIN, "Rect height min", 0.f, 500.f},
-        {DZ_SHAPE_RECT_HEIGHT_MAX, "Rect height max", 200.f, 500.f},
-    }
-
-    , m_timelineAffectorData{
-        {DZ_AFFECTOR_TIMELINE_LIFE, "Life", 0.5f, 1.f, 3.f, 5.f, 2.f, 10.f},
-
-        {DZ_AFFECTOR_TIMELINE_MOVE_SPEED, "Speed", 0.5f, 1.f, 100.f, 50.f, 0.f, 200.f},
-        {DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, "Accelerate", 0.5f, 1.f, 0.1f, 0.5f, 0.f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, "Rotate speed", 0.5f, 1.f, 0.0f, 0.1f, 0.f, 0.5f},
-        {DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, "Rotate accelerate", 0.5f, 1.f, 0.0f, 0.f, 0.f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_SPIN_SPEED, "Spin speed", 0.5f, 1.f, 0.01f, 0.1f, 0.f, 0.5f},
-        {DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, "Spin accelerate", 0.5f, 1.f, 0.001f, 0.f, 0.f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, "Strafe speed", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, "Strafe frequence", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, "Strafe size", 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, "Strafe shift", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_SIZE, "Size", 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_R, "Color Red", 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_G, "Color Green", 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_B, "Color Blue", 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_A, "Color Alpha", 0.05f, 1.f, 0.f, 1.f, 0.f, 1.f},
-    }
-
     //, m_timelineAffectorData{
-    //    { DZ_AFFECTOR_TIMELINE_LIFE, "Life", 3.f, 2.f, 10.f },
+    //    {DZ_AFFECTOR_TIMELINE_LIFE, "Life", 0.5f, 1.f, 3.f, 5.f, 2.f, 10.f},
 
-    //    { DZ_AFFECTOR_TIMELINE_MOVE_SPEED, "Speed", 100.f, 0.f, 200.f },
-    //    { DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, "Accelerate", 0.1f, 0.f,  1.f },
-    //    { DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, "Rotate speed", 0.0f, 0.f, 0.5f },
-    //    { DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, "Rotate accelerate", 0.0f, 0.f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_SPIN_SPEED, "Spin speed", 0.01f, 0.f, 0.5f },
-    //    { DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, "Spin accelerate", 0.001f, 0.f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, "Strafe speed", 0.f, 0.f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, "Strafe frequence", 0.f, 0.f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, "Strafe size", 50.f, 0.f, 200.f },
-    //    { DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, "Strafe shift", 0.f, 0.f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_SIZE, "Size", 25.f, 0.f, 200.f },
-    //    { DZ_AFFECTOR_TIMELINE_COLOR_R, "Color Red", 0.75f, 0.4f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_COLOR_G, "Color Green", 0.5f, 0.4f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_COLOR_B, "Color Blue", 0.25f, 0.4f, 1.f },
-    //    { DZ_AFFECTOR_TIMELINE_COLOR_A, "Color Alpha", 1.f, 0.f, 1.f },
+    //    {DZ_AFFECTOR_TIMELINE_MOVE_SPEED, "Speed", 0.5f, 1.f, 100.f, 50.f, 0.f, 200.f},
+    //    {DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, "Accelerate", 0.5f, 1.f, 0.1f, 0.5f, 0.f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, "Rotate speed", 0.5f, 1.f, 0.0f, 0.1f, 0.f, 0.5f},
+    //    {DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, "Rotate accelerate", 0.5f, 1.f, 0.0f, 0.f, 0.f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_SPIN_SPEED, "Spin speed", 0.5f, 1.f, 0.01f, 0.1f, 0.f, 0.5f},
+    //    {DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, "Spin accelerate", 0.5f, 1.f, 0.001f, 0.f, 0.f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, "Strafe speed", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, "Strafe frequence", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, "Strafe size", 0.5f, 1.f, 50.f, 100.f, 0.f, 200.f},
+    //    {DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, "Strafe shift", 0.5f, 1.f, 0.f, 0.f, 0.f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_SIZE, "Size", 0.5f, 1.f, 25.f, 75.f, 0.f, 200.f},
+    //    {DZ_AFFECTOR_TIMELINE_COLOR_R, "Color Red", 0.5f, 1.f, 0.75f, 0.25f, 0.4f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_COLOR_G, "Color Green", 0.5f, 1.f, 0.5f, 0.1f, 0.4f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_COLOR_B, "Color Blue", 0.5f, 1.f, 0.25f, 0.9f, 0.4f, 1.f},
+    //    {DZ_AFFECTOR_TIMELINE_COLOR_A, "Color Alpha", 0.05f, 1.f, 0.f, 1.f, 0.f, 1.f},
     //}
 
-    , m_timelineEmitterData{
-        {DZ_EMITTER_SPAWN_DELAY, "Spawn delay", 0.1f, 1.f},
-        {DZ_EMITTER_SPAWN_COUNT, "Spawn count", 1.f, 10.f},
-        {DZ_EMITTER_SPAWN_SPIN_MIN, "Spawn spin min", 0.f, 10.f},
-        {DZ_EMITTER_SPAWN_SPIN_MAX, "Spawn spin max", 0.f, 10.f},
-    }
+    //, m_timelineEmitterData{
+    //    {DZ_EMITTER_SPAWN_DELAY, "Spawn delay", 0.1f, 1.f},
+    //    {DZ_EMITTER_SPAWN_COUNT, "Spawn count", 1.f, 10.f},
+    //    {DZ_EMITTER_SPAWN_SPIN_MIN, "Spawn spin min", 0.f, 10.f},
+    //    {DZ_EMITTER_SPAWN_SPIN_MAX, "Spawn spin max", 0.f, 10.f},
+    //}
 
     , m_shapeType( DZ_SHAPE_RECT )
 {
@@ -805,19 +555,57 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
+        const char * shapeTypeNames[] = {
+            "Segment angle min",
+            "Segment angle max",
+            "Circle radius min",
+            "Circle radius max",
+            "Circle angle min",
+            "Circle angle max",
+            "Line angle",
+            "Line size",
+            "Rect width min",
+            "Rect width max",
+            "Rect height min",
+            "Rect height max",
+        };
+
         for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
         {
             timeline_shape_t & data = m_timelineShapeData[index];
+
+            data.type = static_cast<dz_shape_timeline_type_e>(index);
+            data.name = shapeTypeNames[index];
+
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+            dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            
+            data.startValue = default;
+            data.maxValue = factor;
+            data.minValue = 0.f;
+            data.zoom = 1;
+
+            if( status == DZ_TIMELINE_LIMIT_MAX )
+            {
+                data.minValue = min;
+            }
+            else if( status == DZ_TIMELINE_LIMIT_NORMAL )
+            {
+                data.minValue = -factor;
+            }
 
             if( __set_shape_timeline_const( m_service, m_shape, data.type, data.startValue ) == DZ_FAILURE )
             {
                 return EXIT_FAILURE;
             }
 
-            data.param[0].x = 0.f;
-            data.param[0].y = data.startValue / data.maxValue;
+            float range = data.maxValue - data.minValue;
+            float value = data.startValue - data.minValue;
 
-            data.param[1].x = -1.f; // init data so editor knows to take it from here
+            data.points[0].x = 0.f;
+            data.points[0].y = value / range;
+
+            data.points[1].x = -1.f; // init data so editor knows to take it from here
         }
 
         // emitter data
@@ -828,19 +616,40 @@ int editor::init()
 
         dz_emitter_set_life( m_emitter, 1000.f );
 
+        const char * emitterTypeNames[] = {
+            "Spawn delay",
+            "Spawn count",
+            "Spawn spin min",
+            "Spawn spin max",
+        };
+
         for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
         {
             timeline_emitter_t & data = m_timelineEmitterData[index];
+
+            data.type = static_cast<dz_emitter_timeline_type_e>(index);
+            data.name = emitterTypeNames[index];
+
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+
+            data.startValue = default;
+            data.maxValue = factor;
+            data.minValue = 0.f;
+            data.zoom = 1;
 
             if( __set_emitter_timeline_const( m_service, m_emitter, data.type, data.startValue ) == DZ_FAILURE )
             {
                 return EXIT_FAILURE;
             }
 
-            data.param[0].x = 0.f;
-            data.param[0].y = data.startValue / data.maxValue;
+            float range = data.maxValue - data.minValue;
+            float value = data.startValue - data.minValue;
 
-            data.param[1].x = -1.f; // init data so editor knows to take it from here
+            data.points[0].x = 0.f;
+            data.points[0].y = value / range;
+
+            data.points[1].x = -1.f; // init data so editor knows to take it from here
         }
 
         // affector data
@@ -849,23 +658,53 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
+        const char * affectorTypeNames[] = {
+            "Life",
+
+            "Speed",
+            "Accelerate",
+            "Rotate speed",
+            "Rotate accelerate",
+            "Spin speed",
+            "Spin accelerate",
+            "Strafe speed",
+            "Strafe frequence",
+            "Strafe size",
+            "Strafe shift",
+            "Size",
+            "Color Red",
+            "Color Green",
+            "Color Blue",
+            "Color Alpha",
+        };
+
         for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
         {
             timeline_affector_t & data = m_timelineAffectorData[index];
 
-            if( __set_affector_timeline_linear2( m_service, m_affector, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
+            data.type = static_cast<dz_affector_timeline_type_e>(index);
+            data.name = affectorTypeNames[index];
+
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+
+            data.startValue = default;
+            data.maxValue = factor;
+            data.minValue = 0.f;
+            data.zoom = 1;
+
+            if( __set_affector_timeline_const( m_service, m_affector, data.type, data.startValue ) == DZ_FAILURE )
             {
                 return EXIT_FAILURE;
             }
 
-            data.param[0].x = 0.f;
-            data.param[0].y = data.value0 / data.maxValue;
-            data.param[1].x = data.time0;
-            data.param[1].y = data.value1 / data.maxValue;
-            data.param[2].x = data.time1;
-            data.param[2].y = data.value2 / data.maxValue;
+            float range = data.maxValue - data.minValue;
+            float value = data.startValue - data.minValue;
 
-            data.param[3].x = -1.f; // init data so editor knows to take it from here
+            data.points[0].x = 0.f;
+            data.points[0].y = value / range;
+
+            data.points[1].x = -1.f; // init data so editor knows to take it from here
         }
 
         // emitter
@@ -1227,14 +1066,46 @@ int editor::showShapeData()
 
             if( headerFlags[index] == true )
             {
+                ImGui::SameLine();
+
+                if( ImGui::Button( "+" ) == true )
+                {
+                    ++data.zoom;
+                }
+                ImGui::SameLine();
+
+                if( ImGui::Button( "-" ) == true )
+                {
+                    data.zoom = data.zoom - 1 != 1 ? data.zoom - 1 : 1;
+                }
+
                 dz_timeline_limit_status_e status;
                 float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
                 dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
+                factor *= data.zoom;
+
                 float life = dz_effect_get_life( m_effect );
-                if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+
+                // curve
+                float x_min = 0.f;
+                float x_max = life;
+                float y_min = 0.f;
+                float y_max = factor;
+
+                if( status == DZ_TIMELINE_LIMIT_MAX )
                 {
-                    if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                    y_min = min;
+                }
+                else if( status == DZ_TIMELINE_LIMIT_NORMAL )
+                {
+                    y_min = -factor;
+                }
+
+                if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.points, x_min, x_max, y_min, y_max ) != 0 )
+                {
+                    float y_multiplier = y_max - y_min;
+                    if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.points, y_multiplier ) == DZ_FAILURE )
                     {
                         return EXIT_FAILURE;
                     }
@@ -1273,10 +1144,46 @@ int editor::showAffectorData()
 
         if( headerFlags[index] == true )
         {
-            float life = dz_effect_get_life( m_effect );
-            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            ImGui::SameLine();
+
+            if( ImGui::Button( "+" ) == true )
             {
-                if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                ++data.zoom;
+            }
+            ImGui::SameLine();
+
+            if( ImGui::Button( "-" ) == true )
+            {
+                data.zoom = data.zoom - 1 != 1 ? data.zoom - 1 : 1;
+            }
+
+            dz_timeline_limit_status_e status;
+            float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+
+            factor *= data.zoom;
+
+            float life = dz_effect_get_life( m_effect );
+
+            // curve
+            float x_min = 0.f;
+            float x_max = life;
+            float y_min = 0.f;
+            float y_max = factor;
+
+            if( status == DZ_TIMELINE_LIMIT_MAX )
+            {
+                y_min = min;
+            }
+            else if( status == DZ_TIMELINE_LIMIT_NORMAL )
+            {
+                y_min = -factor;
+            }
+
+            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.points, x_min, x_max, y_min, y_max ) != 0 )
+            {
+                float y_multiplier = y_max - y_min;
+                if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.points, y_multiplier ) == DZ_FAILURE )
                 {
                     return EXIT_FAILURE;
                 }
@@ -1314,10 +1221,55 @@ int editor::showEmitterData()
 
         if( headerFlags[index] == true )
         {
-            float life = dz_effect_get_life( m_effect );
-            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            //float life = dz_effect_get_life( m_effect );
+            //if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.param, 0.f, life, 0.f, data.maxValue ) != 0 )
+            //{
+            //    if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+            //    {
+            //        return EXIT_FAILURE;
+            //    }
+            //}
+
+            ImGui::SameLine();
+
+            if( ImGui::Button( "+" ) == true )
             {
-                if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.param, data.maxValue ) == DZ_FAILURE )
+                ++data.zoom;
+            }
+            ImGui::SameLine();
+
+            if( ImGui::Button( "-" ) == true )
+            {
+                data.zoom = data.zoom - 1 != 1 ? data.zoom - 1 : 1;
+            }
+
+            dz_timeline_limit_status_e status;
+            float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+
+            factor *= data.zoom;
+
+            float life = dz_effect_get_life( m_effect );
+
+            // curve
+            float x_min = 0.f;
+            float x_max = life;
+            float y_min = 0.f;
+            float y_max = factor;
+
+            if( status == DZ_TIMELINE_LIMIT_MAX )
+            {
+                y_min = min;
+            }
+            else if( status == DZ_TIMELINE_LIMIT_NORMAL )
+            {
+                y_min = -factor;
+            }
+
+            if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.points, x_min, x_max, y_min, y_max ) != 0 )
+            {
+                float y_multiplier = y_max - y_min;
+                if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.points, y_multiplier ) == DZ_FAILURE )
                 {
                     return EXIT_FAILURE;
                 }

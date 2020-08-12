@@ -180,7 +180,7 @@ typedef enum dz_timeline_limit_status_e
     DZ_TIMELINE_LIMIT_MINMAX = 0x00000003
 } dz_timeline_limit_status_e;
 
-void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
+void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor );
 
 typedef enum dz_shape_type_e
 {
@@ -263,7 +263,7 @@ typedef enum dz_emitter_timeline_type_e
 void dz_emitter_set_timeline( dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_emitter_get_timeline( const dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type );
 
-void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default );
+void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor );
 
 typedef struct dz_effect_t dz_effect_t;
 
