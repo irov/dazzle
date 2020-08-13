@@ -511,7 +511,7 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
-        if( dz_texture_create( m_service, &m_texture, &m_textureId ) == DZ_FAILURE )
+        if( dz_texture_create( m_service, &m_texture, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
@@ -975,7 +975,7 @@ static void __setupLimits( ImVec2 * _pointsData, dz_timeline_limit_status_e _sta
     if( _status != DZ_TIMELINE_LIMIT_NORMAL )
     {
         // zoom up
-        int32_t nextZoomUp = *_zoom + 1;
+        int32_t nextZoomUp = *_zoom * 2;
 
         float nextFactorUp = nextZoomUp * (*_factor);
 
@@ -1007,7 +1007,7 @@ static void __setupLimits( ImVec2 * _pointsData, dz_timeline_limit_status_e _sta
         }
 
         // zoom down
-        int32_t nextZoomDown = *_zoom - 1;
+        int32_t nextZoomDown = *_zoom / 2;
 
         if( nextZoomDown < 1 )
         {
@@ -1334,6 +1334,8 @@ int editor::showMaterialData()
             dz_render_delete_texture( m_textureId );
 
             m_textureId = dz_render_make_texture( outPath, &m_textureWidth, &m_textureHeight );
+
+            dz_atlas_set_surface( m_atlas, &m_textureId );
 
             free( outPath );
         }

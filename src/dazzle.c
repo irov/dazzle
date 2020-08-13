@@ -255,11 +255,16 @@ uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
     return _atlas->texture_count;
 }
 //////////////////////////////////////////////////////////////////////////
+dz_blend_type_e dz_material_get_default_blend( void )
+{
+    return DZ_BLEND_NORNAL;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud )
 {
     dz_material_t * material = DZ_NEW( _service, dz_material_t );
 
-    material->blend_type = DZ_BLEND_NORNAL;
+    material->blend_type = dz_material_get_default_blend();
 
     material->r = 1.f;
     material->g = 1.f;
