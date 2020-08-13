@@ -1317,14 +1317,6 @@ int editor::showMaterialData()
 
     ImGui::Separator();
 
-    //char texture_path[250];
-    //sprintf( texture_path, "%s/%s"
-    //    , DAZZLE_EDITOR_CONTENT_DIR
-    //    , "particle.png"
-    //);
-
-    //m_textureId = dz_render_make_texture( texture_path, &m_textureWidth, &m_textureHeight);
-
     ImGui::Text( "size = %d x %d", m_textureWidth, m_textureHeight );
     
     ImGui::SameLine();
