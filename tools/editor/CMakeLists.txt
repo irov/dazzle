@@ -40,6 +40,7 @@ include_directories(${DAZZLE_DEPENDENCIES_DIR})
 include_directories(${GLFW_INCLUDE_DIR})
 include_directories(${GLAD_INCLUDE_DIR})
 include_directories(${IMGUI_INCLUDE_DIR})
+include_directories(${NATIVEFILEDIALOG_INCLUDE_DIR})
 include_directories(${DAZZLE_TOOLS_DIR}/render/include)
 
 if(MSVC)
@@ -69,12 +70,14 @@ target_link_libraries(${PROJECT_NAME}
     imgui
     imgui_glfw
     imgui_opengl3
+    nativefiledialog
 )
 
 add_dependencies(${PROJECT_NAME}
     glad_download
     glfw_download
     imgui_download
+    nativefiledialog_download
 )
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
