@@ -192,7 +192,7 @@ namespace ImGui
         window->DrawList->AddLine(
             ImVec2( bb.Min.x, bb.Min.y + ht / 2.f ),
             ImVec2( bb.Max.x, bb.Min.y + ht / 2.f ),
-            GetColorU32( ImGuiCol_TextDisabled ), 3 );
+            GetColorU32( ImGuiCol_TextDisabled ) );
 
         window->DrawList->AddLine(
             ImVec2( bb.Min.x, bb.Min.y + ht / 4.f ),

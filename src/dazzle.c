@@ -33,7 +33,7 @@ typedef struct dz_timeline_limits_t
 } dz_timeline_limits_t;
 //////////////////////////////////////////////////////////////////////////
 static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELINE_MAX__] = {
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 0.f}, //DZ_AFFECTOR_TIMELINE_LIFE
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_LIFE
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_MOVE_SPEED
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 1.f}, //DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 1.f}, //DZ_AFFECTOR_TIMELINE_ROTATE_SPEED
