@@ -612,9 +612,8 @@ int editor::init()
 
         const char * affectorTypeNames[] = {
             "Life",
-
-            "Speed",
-            "Accelerate",
+            "Move speed",
+            "Move accelerate",
             "Rotate speed",
             "Rotate accelerate",
             "Spin speed",
@@ -955,6 +954,109 @@ static void __pointsCurveToData( ImVec2 * _pointsCurve, ImVec2 * _pointsData, fl
     _pointsData[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
+static void __setupLimits( ImVec2 * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
+{
+    if( _status != DZ_TIMELINE_LIMIT_NORMAL )
+    {
+        // zoom up
+        int32_t nextZoomUp = *_zoom + 1;
+
+        float nextFactorUp = nextZoomUp * (*_factor);
+
+        float y_min_up = _min, y_max_up = _max;
+
+        if( _status == DZ_TIMELINE_LIMIT_MAX )
+        {
+            y_max_up = nextFactorUp;
+        }
+        else if( _status == DZ_TIMELINE_LIMIT_MIN )
+        {
+            y_min_up = -nextFactorUp;
+        }
+        else if( _status == DZ_TIMELINE_LIMIT_MINMAX )
+        {
+            y_min_up = -nextFactorUp;
+            y_max_up = nextFactorUp;
+        }
+
+        bool availableZoomUp = y_min_up >= _min && y_max_up <= _max;
+
+        if( availableZoomUp == true )
+        {
+            ImGui::SameLine();
+            if( ImGui::Button( "+" ) == true )
+            {
+                *_zoom = nextZoomUp;
+            }
+        }
+
+        // zoom down
+        int32_t nextZoomDown = *_zoom - 1;
+
+        if( nextZoomDown < 1 )
+        {
+            nextZoomDown = 1;
+        }
+
+        float nextFactorDown = nextZoomDown * (*_factor);
+
+        float y_min_down = _min, y_max_down = _max;
+
+        if( _status == DZ_TIMELINE_LIMIT_MAX )
+        {
+            y_max_down = nextFactorDown;
+        }
+        else if( _status == DZ_TIMELINE_LIMIT_MIN )
+        {
+            y_min_down = -nextFactorDown;
+        }
+        else if( _status == DZ_TIMELINE_LIMIT_MINMAX )
+        {
+            y_min_down = -nextFactorDown;
+            y_max_down = nextFactorDown;
+        }
+
+        bool availableZoomDown = true;
+
+        int end = 0;
+        for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
+        {
+            if( _pointsData[end].y < y_min_down || _pointsData[end].y > y_max_down )
+            {
+                availableZoomDown = false;
+                break;
+            }
+        }
+
+        if( availableZoomDown == true )
+        {
+            ImGui::SameLine();
+            if( ImGui::Button( "-" ) == true )
+            {
+                *_zoom = nextZoomDown;
+            }
+        }
+    }
+
+    *_factor *= *_zoom;
+
+    if( _status == DZ_TIMELINE_LIMIT_MAX )
+    {
+        *_y_min = _min;
+        *_y_max = *_factor;
+    }
+    else if( _status == DZ_TIMELINE_LIMIT_MIN )
+    {
+        *_y_min = -*_factor;
+        *_y_max = _max;
+    }
+    else if( _status == DZ_TIMELINE_LIMIT_MINMAX )
+    {
+        *_y_min = -*_factor;
+        *_y_max = *_factor;
+    }
+};
+//////////////////////////////////////////////////////////////////////////
 int editor::showShapeData()
 {
     const char * shape_type_names[] = {
@@ -1046,46 +1148,15 @@ int editor::showShapeData()
                 float y_min = min;
                 float y_max = max;
 
-                if( status != DZ_TIMELINE_LIMIT_NORMAL )
-                {
-                    ImGui::SameLine();
-                    if( ImGui::Button( "+" ) == true )
-                    {
-                        ++data.zoom;
-                    }
+                __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-                    ImGui::SameLine();
-                    if( ImGui::Button( "-" ) == true )
-                    {
-                        data.zoom = data.zoom - 1 >= 1 ? data.zoom - 1 : 1;
-                    }
-                }
+                float y_range = y_max - y_min;
 
-                factor *= data.zoom;
-
-                if( status == DZ_TIMELINE_LIMIT_MAX )
-                {
-                    y_min = min;
-                    y_max = factor;
-                }
-                else if( status == DZ_TIMELINE_LIMIT_MIN )
-                {
-                    y_min = -factor;
-                    y_max = max;
-                }
-                else if( status == DZ_TIMELINE_LIMIT_MINMAX )
-                {
-                    y_min = -factor;
-                    y_max = factor;
-                }
-
-                float height = y_max - y_min;
-
-                __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, height );
+                __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
                 if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
                 {
-                    __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, height );
+                    __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
                     if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.pointsData ) == DZ_FAILURE )
                     {
@@ -1138,46 +1209,15 @@ int editor::showAffectorData()
             float y_min = min;
             float y_max = max;
 
-            if( status != DZ_TIMELINE_LIMIT_NORMAL )
-            {
-                ImGui::SameLine();
-                if( ImGui::Button( "+" ) == true )
-                {
-                    ++data.zoom;
-                }
+            __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-                ImGui::SameLine();
-                if( ImGui::Button( "-" ) == true )
-                {
-                    data.zoom = data.zoom - 1 >= 1 ? data.zoom - 1 : 1;
-                }
-            }
+            float y_range = y_max - y_min;
 
-            factor *= data.zoom;
-
-            if( status == DZ_TIMELINE_LIMIT_MAX )
-            {
-                y_min = min;
-                y_max = factor;
-            }
-            else if( status == DZ_TIMELINE_LIMIT_MIN )
-            {
-                y_min = -factor;
-                y_max = max;
-            }
-            else if( status == DZ_TIMELINE_LIMIT_MINMAX )
-            {
-                y_min = -factor;
-                y_max = factor;
-            }
-
-            float height = y_max - y_min;
-
-            __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, height );
+            __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
             if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
             {
-                __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, height );
+                __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.pointsData ) == DZ_FAILURE )
                 {
@@ -1229,46 +1269,15 @@ int editor::showEmitterData()
             float y_min = min;
             float y_max = max;
 
-            if( status != DZ_TIMELINE_LIMIT_NORMAL )
-            {
-                ImGui::SameLine();
-                if( ImGui::Button( "+" ) == true )
-                {
-                    ++data.zoom;
-                }
+            __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-                ImGui::SameLine();
-                if( ImGui::Button( "-" ) == true )
-                {
-                    data.zoom = data.zoom - 1 >= 1 ? data.zoom - 1 : 1;
-                }
-            }
+            float y_range = y_max - y_min;
 
-            factor *= data.zoom;
-
-            if( status == DZ_TIMELINE_LIMIT_MAX )
-            {
-                y_min = min;
-                y_max = factor;
-            }
-            else if( status == DZ_TIMELINE_LIMIT_MIN )
-            {
-                y_min = -factor;
-                y_max = max;
-            }
-            else if( status == DZ_TIMELINE_LIMIT_MINMAX )
-            {
-                y_min = -factor;
-                y_max = factor;
-            }
-
-            float height = y_max - y_min;
-
-            __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, height );
+            __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
             if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
             {
-                __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, height );
+                __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
                 if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
                 {
