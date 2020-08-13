@@ -523,7 +523,9 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
-        dz_material_set_blend( m_material, DZ_BLEND_ADD );
+        dz_blend_type_e blend_type = dz_material_get_default_blend();
+
+        dz_material_set_blend( m_material, blend_type );
         dz_material_set_atlas( m_material, m_atlas );
 
         // shape data
