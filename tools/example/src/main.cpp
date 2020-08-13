@@ -317,7 +317,7 @@ int main( int argc, char ** argv )
     }
 
     dz_atlas_t * atlas;
-    if( dz_atlas_create( service, &atlas, &textureId ) == DZ_FAILURE )
+    if( dz_atlas_create( service, &atlas, &textureId, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
