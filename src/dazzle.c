@@ -200,12 +200,13 @@ float dz_texture_get_sequence_delay( const dz_texture_t * _texture )
     return _texture->sequence_delay;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _ud )
+dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud )
 {
     dz_atlas_t * atlas = DZ_NEW( _service, dz_atlas_t );
 
     atlas->texture_count = 0;
 
+    atlas->surface = _surface;
     atlas->ud = _ud;
 
     *_atlas = atlas;
@@ -216,6 +217,16 @@ dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_u
 void dz_atlas_destroy( dz_service_t * _service, const dz_atlas_t * _atlas )
 {
     DZ_FREE( _service, _atlas );
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_atlas_set_surface( dz_atlas_t * _atlas, dz_userdata_t _surface )
+{
+    _atlas->surface = _surface;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_atlas_get_surface( const dz_atlas_t * _atlas )
+{
+    return _atlas->surface;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas )
@@ -1802,7 +1813,7 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
     const dz_material_t * material = _effect->material;
 
     chunk->blend_type = material->blend_type;
-    chunk->atlas_ud = material->atlas->ud;
+    chunk->surface = material->atlas->surface;
 
     *_count = 1;
 }

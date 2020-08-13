@@ -506,7 +506,7 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
-        if( dz_atlas_create( m_service, &m_atlas, &m_textureId ) == DZ_FAILURE )
+        if( dz_atlas_create( m_service, &m_atlas, &m_textureId, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }

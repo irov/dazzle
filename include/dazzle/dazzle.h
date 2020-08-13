@@ -63,15 +63,18 @@ float dz_texture_get_sequence_delay( const dz_texture_t * _texture );
 
 typedef struct dz_atlas_t dz_atlas_t;
 
-dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _ud );
+dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud );
 void dz_atlas_destroy( dz_service_t * _service, const dz_atlas_t * _atlas );
 
 dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas );
 
-dz_result_t dz_atlas_add_texture( dz_atlas_t * _material, const dz_texture_t * _texture );
-dz_result_t dz_atlas_get_texture( const dz_atlas_t * _material, uint32_t _index, const dz_texture_t ** _texture );
+void dz_atlas_set_surface( dz_atlas_t * _atlas, dz_userdata_t _surface );
+dz_userdata_t dz_atlas_get_surface( const dz_atlas_t * _atlas );
 
-uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _material );
+dz_result_t dz_atlas_add_texture( dz_atlas_t * _atlas, const dz_texture_t * _texture );
+dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture );
+
+uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
 
 typedef struct dz_material_t dz_material_t;
 
@@ -328,7 +331,7 @@ typedef struct dz_effect_mesh_chunk_t
 
     dz_blend_type_e blend_type;
 
-    const dz_userdata_t * atlas_ud;
+    const dz_userdata_t * surface;
 } dz_effect_mesh_chunk_t;
 
 typedef struct dz_effect_mesh_t
