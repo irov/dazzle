@@ -29,16 +29,6 @@ void dz_service_destroy( dz_service_t * _service );
 
 void dz_service_get_providers( dz_service_t * _service, dz_service_providers_t * _providers );
 
-typedef enum dz_blend_type_e
-{
-    DZ_BLEND_NORNAL,
-    DZ_BLEND_ADD,
-    DZ_BLEND_MULTIPLY,
-    DZ_BLEND_SCREEN,
-
-    __DZ_BLEND_MAX__
-} dz_blend_type_e;
-
 typedef struct dz_texture_t dz_texture_t;
 
 dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud );
@@ -75,6 +65,18 @@ dz_result_t dz_atlas_add_texture( dz_atlas_t * _atlas, const dz_texture_t * _tex
 dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture );
 
 uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
+
+typedef enum dz_blend_type_e
+{
+    DZ_BLEND_NORNAL,
+    DZ_BLEND_ADD,
+    DZ_BLEND_MULTIPLY,
+    DZ_BLEND_SCREEN,
+
+    __DZ_BLEND_MAX__
+} dz_blend_type_e;
+
+dz_blend_type_e dz_material_get_default_blend( void );
 
 typedef struct dz_material_t dz_material_t;
 
