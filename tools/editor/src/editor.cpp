@@ -1312,10 +1312,24 @@ int editor::showEmitterData()
 //////////////////////////////////////////////////////////////////////////
 int editor::showMaterialData()
 {
+
     ImGui::Spacing();
     ImGui::Text( "Texture" );
 
     ImGui::Separator();
+
+    const char * blendModes[] = {
+        "Normal",
+        "Add",
+        "Multiply",
+        "Screen",
+    };
+
+    static int blend_current = dz_material_get_blend( m_material );
+    if( ImGui::Combo( "Blend mode", &blend_current, blendModes, IM_ARRAYSIZE( blendModes ) ) == true )
+    {
+        dz_material_set_blend( m_material, (dz_blend_type_e)blend_current );
+    }
 
     ImGui::Text( "size = %d x %d", m_textureWidth, m_textureHeight );
     
@@ -1348,6 +1362,8 @@ int editor::showMaterialData()
     }
 
     ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( (float)m_textureWidth, (float)m_textureHeight ) );
+
+    
 
     return EXIT_SUCCESS;
 }
