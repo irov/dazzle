@@ -33,7 +33,7 @@ void dz_render_finalize( dz_render_desc_t * _desc );
 //////////////////////////////////////////////////////////////////////////
 void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _right, float _top, float _bottom );
 //////////////////////////////////////////////////////////////////////////
-GLuint dz_render_make_texture( const char * _path );
+GLuint dz_render_make_texture( const char * _path, int * _out_width, int * _out_height );
 void dz_render_delete_texture( GLuint _id );
 //////////////////////////////////////////////////////////////////////////
 void dz_render_use_color_program( dz_render_desc_t * _desc );

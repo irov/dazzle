@@ -86,7 +86,7 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
     return shaderProgram;
 }
 //////////////////////////////////////////////////////////////////////////
-GLuint dz_render_make_texture( const char * _path )
+GLuint dz_render_make_texture( const char * _path, int * _out_width, int * _out_height )
 {
     int width;
     int height;
@@ -140,6 +140,9 @@ GLuint dz_render_make_texture( const char * _path )
     glBindTexture( GL_TEXTURE_2D, 0 );
 
     stbi_image_free( data );
+
+    *_out_width = width;
+    *_out_height = height;
 
     return id;
 }

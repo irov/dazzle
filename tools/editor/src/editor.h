@@ -44,6 +44,7 @@ protected:
     int showShapeData();
     int showAffectorData();
     int showEmitterData();
+    int showMaterialData();
 
     int showContentPane();
     int showContentPaneControls();
@@ -76,6 +77,9 @@ public:
     dz_effect_t * m_effect;
 
     dz_bool_t m_loop;
+
+    int m_textureWidth;
+    int m_textureHeight;
 
     GLuint m_textureId;
 

@@ -2,6 +2,7 @@
 
 #include "curve.hpp"
 
+#include <nfd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -396,6 +397,9 @@ editor::editor()
     , m_showDebugInfo( false )
     , m_pause( false )
 
+    , m_textureWidth( 0 )
+    , m_textureHeight( 0 )
+
     , m_service( nullptr )
     , m_atlas( nullptr )
     , m_texture( nullptr )
@@ -483,7 +487,7 @@ int editor::init()
             , "particle.png"
         );
 
-        m_textureId = dz_render_make_texture( texture_path );
+        m_textureId = dz_render_make_texture( texture_path, &m_textureWidth, &m_textureHeight);
     }
 
     // init emitter
@@ -732,6 +736,7 @@ int editor::update()
                 SELECTED_SHAPE_DATA,
                 SELECTED_AFFECTOR_DATA,
                 SELECTED_EMITTER_DATA,
+                SELECTED_MATERIAL_DATA,
 
                 __SELECTED_DATA_MAX__
             };
@@ -748,6 +753,9 @@ int editor::update()
 
                 if( ImGui::Selectable( "Emitter", selected == SelectedType::SELECTED_EMITTER_DATA ) )
                     selected = SelectedType::SELECTED_EMITTER_DATA;
+
+                if( ImGui::Selectable( "Material", selected == SelectedType::SELECTED_MATERIAL_DATA ) )
+                    selected = SelectedType::SELECTED_MATERIAL_DATA;
 
                 ImGui::EndChild();
             }
@@ -781,6 +789,14 @@ int editor::update()
                 case SelectedType::SELECTED_EMITTER_DATA:
                     {
                         if( this->showEmitterData() )
+                        {
+                            return EXIT_FAILURE;
+                        }
+                    }
+                    break;
+                case SelectedType::SELECTED_MATERIAL_DATA:
+                    {
+                        if( this->showMaterialData() )
                         {
                             return EXIT_FAILURE;
                         }
@@ -1290,6 +1306,56 @@ int editor::showEmitterData()
 
         ImGui::PopID();
     }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::showMaterialData()
+{
+    ImGui::Spacing();
+    ImGui::Text( "Texture" );
+
+    ImGui::Separator();
+
+    //char texture_path[250];
+    //sprintf( texture_path, "%s/%s"
+    //    , DAZZLE_EDITOR_CONTENT_DIR
+    //    , "particle.png"
+    //);
+
+    //m_textureId = dz_render_make_texture( texture_path, &m_textureWidth, &m_textureHeight);
+
+    ImGui::Text( "size = %d x %d", m_textureWidth, m_textureHeight );
+    
+    ImGui::SameLine();
+
+    if( ImGui::Button( "Browse" ) == true )
+    {
+        nfdchar_t * outPath = NULL;
+        nfdresult_t result = NFD_OpenDialog( NULL, NULL, &outPath );
+
+        if( result == NFD_OKAY )
+        {
+            puts( "Success!" );
+            puts( outPath );
+
+            dz_render_delete_texture( m_textureId );
+
+            m_textureId = dz_render_make_texture( outPath, &m_textureWidth, &m_textureHeight );
+
+            free( outPath );
+        }
+        else if( result == NFD_CANCEL )
+        {
+            puts( "User pressed cancel." );
+        }
+        else
+        {
+            printf( "Error: %s\n", NFD_GetError() );
+        }
+    }
+
+    ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( (float)m_textureWidth, (float)m_textureHeight ) );
 
     return EXIT_SUCCESS;
 }

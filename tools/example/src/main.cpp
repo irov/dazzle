@@ -300,7 +300,10 @@ int main( int argc, char ** argv )
         , "particle.png"
     );
 
-    GLuint textureId = dz_render_make_texture( texture_path );
+    int width = 0;
+    int height = 0;
+
+    GLuint textureId = dz_render_make_texture( texture_path, &width, &height );
 
     dz_service_providers_t providers;
     providers.f_malloc = &dz_malloc;
