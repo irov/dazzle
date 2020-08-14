@@ -89,39 +89,71 @@ namespace ImGui
         int max = 0;
         while( max < _maxpoints && _points[max].x >= 0 ) max++;
 
-        //int kill = 0;
-        //do
-        //{
-        //    if( kill )
-        //    {
-        //        modified = 1;
-        //        for( i = kill + 1; i < max; i++ )
-        //        {
-        //            _points[i - 1] = _points[i];
-        //        }
-        //        max--;
-        //        _points[max].x = -1;
-        //        kill = 0;
-        //    }
-
-        //    for( i = 1; i < max - 1; i++ )
-        //    {
-        //        if( abs( _points[i].x - _points[i - 1].x ) < 1.f / 128.f )
-        //        {
-        //            kill = i;
-        //        }
-        //    }
-        //} while( kill );
-
         RenderFrame( bb.Min, bb.Max, GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
 
         float ht = bb.Max.y - bb.Min.y;
         float wd = bb.Max.x - bb.Min.x;
 
-        if( hovered )
+        const ImGuiID CURVE_ID_NONE = 0;
+        const int CURVE_POINT_NONE = -1;
+
+        static ImGuiID active_id = CURVE_ID_NONE;
+        static int selected_point = CURVE_POINT_NONE;
+
+        if( g.IO.MouseReleased[0] == true )
+        {
+            active_id = CURVE_ID_NONE;
+            selected_point = CURVE_POINT_NONE;
+        }
+
+        bool isMoved = false;
+
+        if( active_id == id && selected_point != CURVE_POINT_NONE )
+        {
+            modified = 1;
+            ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
+            pos.y = 1 - pos.y;
+
+            if( pos.x < 0.f || selected_point == 0 )
+            {
+                pos.x = 0.f;
+            }
+
+            if( pos.x > 1.f || (max > 1 && selected_point == max - 1) )
+            {
+                pos.x = 1.f;
+            }
+
+            if( pos.y < 0.f )
+            {
+                pos.y = 0.f;
+            }
+
+            if( pos.y > 1.f )
+            {
+                pos.y = 1.f;
+            }
+
+            _points[selected_point] = pos;
+
+            if( max > 2 )
+            {
+                if( selected_point - 1 > 0 && _points[selected_point].x < _points[selected_point - 1].x )
+                {
+                    _points[selected_point].x = _points[selected_point - 1].x;
+                }
+                else if( selected_point + 1 < max - 1 && _points[selected_point].x > _points[selected_point + 1].x )
+                {
+                    _points[selected_point].x = _points[selected_point + 1].x;
+                }
+            }
+            
+            isMoved = true;
+        }
+        else if( hovered && active_id == CURVE_ID_NONE )
         {
             SetHoveredID( id );
-            if( g.IO.MouseDown[0] /*&& g.IO.KeyCtrl*/ )
+            if( g.IO.MouseDown[0] == true )
             {
                 modified = 1;
                 ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
@@ -135,9 +167,21 @@ namespace ImGui
                 float p1d = sqrt( p.x * p.x + p.y * p.y );
                 p = _points[left + 1] - pos;
                 float p2d = sqrt( p.x * p.x + p.y * p.y );
+
                 int sel = -1;
-                if( p1d < (1.f / 16.f) ) sel = left;
-                if( p2d < (1.f / 16.f) ) sel = left + 1;
+
+                if( selected_point == CURVE_POINT_NONE )
+                {
+                    if( p1d < (1.f / 16.f) ) sel = left;
+                    if( p2d < (1.f / 16.f) ) sel = left + 1;
+
+                    active_id = id;
+                    selected_point = sel;
+                }
+                else
+                {
+                    sel = selected_point;
+                }
 
                 if( sel != -1 )
                 {
@@ -151,10 +195,14 @@ namespace ImGui
                         }
                         max--;
                         _points[max].x = -1;
+
+                        active_id = CURVE_ID_NONE;
+                        selected_point = CURVE_POINT_NONE;
                     }
                     else
                     {
                         _points[sel] = pos;
+                        isMoved = true;
                     }
                 }
                 else if ( g.IO.KeyCtrl )
@@ -237,18 +285,20 @@ namespace ImGui
                 window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
             }
 
-            if( hovered )
+        }
+
+        //if( hovered )
+        if( (active_id == CURVE_ID_NONE && hovered == true) || (active_id == id) )
+        {
+            // control points
+            for( i = 0; i < max; i++ )
             {
-                // control points
-                for( i = 0; i < max; i++ )
-                {
-                    ImVec2 p = _points[i];
-                    p.y = 1.f - p.y;
-                    p = p * (bb.Max - bb.Min) + bb.Min;
-                    ImVec2 a = p - ImVec2( 2.f, 2.f );
-                    ImVec2 b = p + ImVec2( 2.f, 2.f );
-                    window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
-                }
+                ImVec2 p = _points[i];
+                p.y = 1.f - p.y;
+                p = p * (bb.Max - bb.Min) + bb.Min;
+                ImVec2 a = p - ImVec2( 2.f, 2.f );
+                ImVec2 b = p + ImVec2( 2.f, 2.f );
+                window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
             }
         }
 
@@ -291,6 +341,19 @@ namespace ImGui
 
             RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 1.f, 1.f ) );
         }
+
+        // debug text
+        //{
+        //    char buf[256];
+        //    sprintf( buf, "my_id=%d\nactive_id=%d\nsel=%d\nis_moved=%s"
+        //        , id
+        //        , active_id
+        //        , selected_point 
+        //        , isMoved == true ? "true" : "false"
+        //    );
+
+        //    RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.5f, 0.5f ) );
+        //}
 
         return modified;
     }
