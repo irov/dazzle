@@ -208,7 +208,15 @@ namespace ImGui
                 else if ( g.IO.KeyCtrl )
                 {
                     // add new point
-                    if( max < _maxpoints )
+                    if( max < _maxpoints && max == 1 && _maxpoints > 2)
+                    {
+                        _points[1] = pos;
+                        _points[2].x = 1.f;
+                        _points[2].y = _points[0].y;
+
+                        max = 3;
+                    }
+                    else if( max < _maxpoints )
                     {
                         max++;
                         for( i = max; i > left; i-- )
@@ -220,7 +228,6 @@ namespace ImGui
                     if( max < _maxpoints )
                         _points[max].x = -1;
                 }
-                
 
                 // snap first/last to min/max
                 if( _points[0].x < _points[max - 1].x )
