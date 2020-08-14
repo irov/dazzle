@@ -1549,7 +1549,7 @@ int editor::showContentPaneControls()
         ImGui::Text( "Emitter states:" );
         ImGui::SameLine();
 
-        dz_effect_state_e emitter_state = dz_emitter_get_state( m_effect );
+        dz_effect_state_e emitter_state = dz_effect_get_state( m_effect );
 
         auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
         {

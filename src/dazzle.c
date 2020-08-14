@@ -1665,7 +1665,7 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_effect_state_e dz_emitter_get_state( const dz_effect_t * _effect )
+dz_effect_state_e dz_effect_get_state( const dz_effect_t * _effect )
 {
     dz_effect_state_e state = DZ_EFFECT_PROCESS;
 
@@ -1687,6 +1687,11 @@ dz_effect_state_e dz_emitter_get_state( const dz_effect_t * _effect )
     }
 
     return state;
+}
+//////////////////////////////////////////////////////////////////////////
+uint32_t dz_effect_get_particle_count( const dz_effect_t * _effect )
+{
+    return _effect->partices_count;
 }
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_effect_mesh_t * _mesh )

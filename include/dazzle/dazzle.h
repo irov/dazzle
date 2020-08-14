@@ -317,7 +317,9 @@ typedef enum dz_effect_state_e
     DZ_EFFECT_PARTICLE_COMPLETE = 0x00000004,
 } dz_effect_state_e;
 
-dz_effect_state_e dz_emitter_get_state( const dz_effect_t * _effect );
+dz_effect_state_e dz_effect_get_state( const dz_effect_t * _effect );
+
+uint32_t dz_effect_get_particle_count( const dz_effect_t * _effect );
 
 typedef enum dz_effect_mesh_flags_e
 {
