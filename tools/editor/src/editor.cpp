@@ -972,6 +972,17 @@ static void __pointsDataToCurve( ImVec2 * _pointsData, ImVec2 * _pointsCurve, fl
     }
     _pointsCurve[end].x = -1;
 };
+////////////////////////////////////////////////////////////////////////////
+//static void __pointsDataToCurveInv( ImVec2 * _pointsData, ImVec2 * _pointsCurve, float _min, float _range )
+//{
+//    int end = 0;
+//    for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
+//    {
+//        _pointsCurve[end].x = _pointsData[end].x;
+//        _pointsCurve[end].y = (1 / _pointsData[end].y - _min) / _range;
+//    }
+//    _pointsCurve[end].x = -1;
+//};
 //////////////////////////////////////////////////////////////////////////
 static void __pointsCurveToData( ImVec2 * _pointsCurve, ImVec2 * _pointsData, float _min, float _range )
 {
@@ -983,6 +994,17 @@ static void __pointsCurveToData( ImVec2 * _pointsCurve, ImVec2 * _pointsData, fl
     }
     _pointsData[end].x = -1;
 };
+////////////////////////////////////////////////////////////////////////////
+//static void __pointsCurveToDataInv( ImVec2 * _pointsCurve, ImVec2 * _pointsData, float _min, float _range )
+//{
+//    int end = 0;
+//    for( ; end < MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
+//    {
+//        _pointsData[end].x = _pointsCurve[end].x;
+//        _pointsData[end].y = _min + (1 / _pointsCurve[end].y * _range);
+//    }
+//    _pointsData[end].x = -1;
+//};
 //////////////////////////////////////////////////////////////////////////
 static void __setupLimits( ImVec2 * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
 {
@@ -1294,9 +1316,77 @@ int editor::showEmitterData()
     float width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
 
+    // ------------------------------------------------------ //
+    // Spawn speed
+    // ------------------------------------------------------ //
+    //{
+    //    static bool spawnSpeedFlag = false;
+
+    //    ImGui::Separator();
+
+    //    timeline_emitter_t & data = m_timelineEmitterData[DZ_EMITTER_SPAWN_DELAY];
+
+    //    ImGui::PushID( __DZ_EMITTER_TIMELINE_MAX__ );
+
+    //    ImGui::Checkbox( "Spawn speed", &spawnSpeedFlag );
+
+    //    if( spawnSpeedFlag == true )
+    //    {
+    //        //{DZ_TIMELINE_LIMIT_MAX, 0.0009765625f, DZ_FLT_MAX, 0.1f, 1.f}, //DZ_EMITTER_SPAWN_DELAY
+    //        dz_timeline_limit_status_e status;
+    //        float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+    //        dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+    //        float life = dz_effect_get_life( m_effect );
+
+    //        float inv_min = 1 / max;
+    //        float inv_max = 1 / min;
+
+    //        min = inv_min;
+    //        max = inv_max;
+
+    //        factor = 1 / factor;
+
+    //        // curve
+    //        float x_min = 0.f;
+    //        float x_max = life;
+
+    //        float y_min = min;
+    //        float y_max = max;
+
+    //        int end = 0;
+    //        for( ; end < MAX_POINTS && data.pointsData[end].x >= 0; end++ )
+    //        {
+    //            data.pointsCurve[end].x = data.pointsData[end].x;
+    //            data.pointsCurve[end].y = 1 / data.pointsData[end].y;
+    //        }
+    //        data.pointsCurve[end].x = -1;
+
+    //        __setupLimits( data.pointsCurve, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+
+    //        float y_range = y_max - y_min;
+
+    //        __pointsDataToCurveInv( data.pointsData, data.pointsCurve, y_min, y_range );
+
+    //        if( ImGui::Curve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
+    //        {
+    //            __pointsCurveToDataInv( data.pointsCurve, data.pointsData, y_min, y_range );
+
+    //            if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
+    //            {
+    //                return EXIT_FAILURE;
+    //            }
+    //        }
+    //    }
+
+    //    ImGui::Separator();
+
+    //    ImGui::PopID();
+    //}
+    // ------------------------------------------------------ //
+
     static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = { false };
 
-    ImGui::Separator();
+    //ImGui::Separator();
 
     for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
