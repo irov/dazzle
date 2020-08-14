@@ -302,24 +302,26 @@ namespace ImGui
             }
         }
 
+        ImGui::PushStyleColor( ImGuiCol_Text, ImGui::GetColorU32( ImGuiCol_Text, 0.7f ) );
+
         // labels
-        {
-            char buf[128];
-            const char * str = _label;
+        //{
+        //    char buf[128];
+        //    const char * str = _label;
 
-            if( hovered )
-            {
-                ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
-                pos.y = 1.f - pos.y;
-                float x = _x_min + pos.x * (_x_max - _x_min);
-                float y = _y_min + pos.y * (_y_max - _y_min);
+        //    if( hovered )
+        //    {
+        //        ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
+        //        pos.y = 1.f - pos.y;
+        //        float x = _x_min + pos.x * (_x_max - _x_min);
+        //        float y = _y_min + pos.y * (_y_max - _y_min);
 
-                sprintf( buf, "(%.3f,%.3f)", x, y );
-                str = buf;
-            }
+        //        sprintf( buf, "(%.3f,%.3f)", x, y );
+        //        str = buf;
+        //    }
 
-            RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, str, NULL, NULL, ImVec2( 1.f, 0.f ) );
-        }
+        //    RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, str, NULL, NULL, ImVec2( 1.f, 0.f ) );
+        //}
 
         {
             char buf[32];
@@ -354,6 +356,22 @@ namespace ImGui
 
         //    RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.5f, 0.5f ) );
         //}
+
+        ImGui::PopStyleColor( 1 );
+
+        if( hovered )
+        {
+            ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
+            pos.y = 1.f - pos.y;
+            float x = _x_min + pos.x * (_x_max - _x_min);
+            float y = _y_min + pos.y * (_y_max - _y_min);
+
+            ImGui::Text( "Position: (%.3f,%.3f)", x, y );
+        }
+        else
+        {
+            ImGui::Text( "Position: -" );
+        }
 
         return modified;
     }
