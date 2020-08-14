@@ -999,6 +999,11 @@ const dz_affector_t * dz_effect_set_affector( dz_effect_t * _effect, const dz_af
     return affector;
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_effect_set_seed( dz_effect_t * _effect, uint32_t _seed )
+{
+    _effect->init_seed = _seed;
+}
+//////////////////////////////////////////////////////////////////////////
 uint32_t dz_effect_get_seed( const dz_effect_t * _effect )
 {
     return _effect->init_seed;

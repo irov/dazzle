@@ -291,6 +291,7 @@ dz_bool_t dz_effect_get_loop( const dz_effect_t * _effect );
 void dz_effect_set_time( dz_effect_t * _effect, float _time );
 float dz_effect_get_time( const dz_effect_t * _effect );
 
+void dz_effect_set_seed( dz_effect_t * _effect, uint32_t _seed );
 uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
 
 void dz_effect_set_particle_limit( dz_effect_t * _effect, uint32_t _limit );
