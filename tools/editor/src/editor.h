@@ -41,6 +41,7 @@ protected:
 
     int showMenuBar();
 
+    int showEffectData();
     int showShapeData();
     int showAffectorData();
     int showEmitterData();

@@ -735,6 +735,7 @@ int editor::update()
             // Left
             enum SelectedType
             {
+                SELECTED_EFFECT_DATA,
                 SELECTED_SHAPE_DATA,
                 SELECTED_AFFECTOR_DATA,
                 SELECTED_EMITTER_DATA,
@@ -743,10 +744,13 @@ int editor::update()
                 __SELECTED_DATA_MAX__
             };
 
-            static int selected = SELECTED_SHAPE_DATA;
+            static int selected = SELECTED_EFFECT_DATA;
             {
                 ImGui::BeginChild( "left pane", ImVec2( 150, 0 ), true );
 
+                if( ImGui::Selectable( "Effect", selected == SelectedType::SELECTED_EFFECT_DATA ) )
+                    selected = SelectedType::SELECTED_EFFECT_DATA;
+                
                 if( ImGui::Selectable( "Shape", selected == SelectedType::SELECTED_SHAPE_DATA ) )
                     selected = SelectedType::SELECTED_SHAPE_DATA;
 
@@ -772,6 +776,14 @@ int editor::update()
 
                 switch( selected )
                 {
+                case SelectedType::SELECTED_EFFECT_DATA:
+                    {
+                        if( this->showEffectData() )
+                        {
+                            return EXIT_FAILURE;
+                        }
+                    } 
+                    break;
                 case SelectedType::SELECTED_SHAPE_DATA:
                     {
                         if( this->showShapeData() )
@@ -1075,6 +1087,27 @@ static void __setupLimits( ImVec2 * _pointsData, dz_timeline_limit_status_e _sta
     }
 };
 //////////////////////////////////////////////////////////////////////////
+int editor::showEffectData()
+{
+    ImGui::Spacing();
+
+    ImGui::Text( "Effect data:" );
+    ImGui::Separator();
+
+    ImGui::Spacing();
+
+    int seed = dz_effect_get_seed( m_effect );
+
+    if( ImGui::InputInt( "Seed", &seed, 0, 0, ImGuiInputTextFlags_None ) == true )
+    {
+        dz_effect_set_seed( m_effect, seed );
+
+        this->resetEffect();
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
 int editor::showShapeData()
 {
     const char * shape_type_names[] = {
@@ -1314,10 +1347,8 @@ int editor::showEmitterData()
 //////////////////////////////////////////////////////////////////////////
 int editor::showMaterialData()
 {
-
     ImGui::Spacing();
-    ImGui::Text( "Texture" );
-
+    ImGui::Text( "Material data" );
     ImGui::Separator();
 
     const char * blendModes[] = {
@@ -1333,7 +1364,11 @@ int editor::showMaterialData()
         dz_material_set_blend( m_material, (dz_blend_type_e)blend_current );
     }
 
-    ImGui::Text( "size = %d x %d", m_textureWidth, m_textureHeight );
+    ImGui::Spacing();
+    ImGui::Text( "Texture" );
+    ImGui::Separator();
+
+    ImGui::Text( "Size: %d x %d", m_textureWidth, m_textureHeight );
     
     ImGui::SameLine();
 
@@ -1425,7 +1460,10 @@ int editor::showContentPane()
 
     if( m_showDebugInfo == true )
     {
-        char buf[500];
+        uint32_t particle_count = dz_effect_get_particle_count( m_effect );
+        uint32_t particle_limit = dz_effect_get_particle_limit( m_effect );
+
+        char buf[1000];
 
         sprintf( buf,
             "Application average %.3f ms/frame (%.1f FPS)\n\n"
@@ -1438,6 +1476,8 @@ int editor::showContentPane()
             "  camera_offset_y: %.2f\n"
             "      mouse_pos_x: %.2f\n"
             "      mouse_pos_y: %.2f\n"
+            "      particle_count: %u\n"
+            "      particle_limit: %u\n"
             , 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate
             , m_dzWindowSize.x, m_dzWindowSize.y
             , camera_scale
@@ -1448,6 +1488,8 @@ int editor::showContentPane()
             , camera_offset_y
             , mouse_pos_x
             , mouse_pos_y
+            , particle_count
+            , particle_limit != ~0U ? particle_limit : 0
         );
 
         window->DrawList->AddText( cursorPos, ImGui::GetColorU32( ImGuiCol_Text, 0.7f ), buf );
