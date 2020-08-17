@@ -931,7 +931,7 @@ dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, c
     effect->partices = DZ_NULLPTR;
     effect->partices_count = 0;
     effect->partices_capacity = 0;
-    effect->particle_limit = ~1U;
+    effect->particle_limit = ~0U;
 
     effect->loop = DZ_FALSE;
     effect->emit_pause = DZ_FALSE;

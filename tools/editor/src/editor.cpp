@@ -1386,7 +1386,7 @@ int editor::showEmitterData()
 
     static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = { false };
 
-    //ImGui::Separator();
+    ImGui::Separator();
 
     for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {

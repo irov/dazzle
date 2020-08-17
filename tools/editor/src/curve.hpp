@@ -16,7 +16,6 @@ namespace ImGui
 {
     int Curve(const char *label, const ImVec2& size, int maxpoints, ImVec2 *points);
     float CurveValue(float p, int maxpoints, const ImVec2 *points);
-    float CurveValueSmooth(float p, int maxpoints, const ImVec2 *points);
 };
 
 */
@@ -163,17 +162,27 @@ namespace ImGui
                 while( left < max && _points[left].x < pos.x ) left++;
                 if( left ) left--;
 
-                ImVec2 p = _points[left] - pos;
-                float p1d = sqrt( p.x * p.x + p.y * p.y );
-                p = _points[left + 1] - pos;
-                float p2d = sqrt( p.x * p.x + p.y * p.y );
-
                 int sel = -1;
 
                 if( selected_point == CURVE_POINT_NONE )
                 {
-                    if( p1d < (1.f / 16.f) ) sel = left;
-                    if( p2d < (1.f / 16.f) ) sel = left + 1;
+                    ImVec2 p = _points[left] - pos;
+
+                    if( max == 1 )
+                    {
+                        float p1d = abs( p.y );
+
+                        if( p1d < (1.f / 16.f) ) sel = left;
+                    }
+                    else
+                    {
+                        float p1d = sqrt( p.x * p.x + p.y * p.y );
+                        p = _points[left + 1] - pos;
+                        float p2d = sqrt( p.x * p.x + p.y * p.y );
+
+                        if( p1d < (1.f / 16.f) ) sel = left;
+                        if( p2d < (1.f / 16.f) ) sel = left + 1;
+                    }
 
                     active_id = id;
                     selected_point = sel;
@@ -292,44 +301,25 @@ namespace ImGui
                 window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
             }
 
-        }
-
-        //if( hovered )
-        if( (active_id == CURVE_ID_NONE && hovered == true) || (active_id == id) )
-        {
-            // control points
-            for( i = 0; i < max; i++ )
+            //if( hovered )
+            if( (active_id == CURVE_ID_NONE && hovered == true) || (active_id == id) )
             {
-                ImVec2 p = _points[i];
-                p.y = 1.f - p.y;
-                p = p * (bb.Max - bb.Min) + bb.Min;
-                ImVec2 a = p - ImVec2( 2.f, 2.f );
-                ImVec2 b = p + ImVec2( 2.f, 2.f );
-                window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+                // control points
+                for( i = 0; i < max; i++ )
+                {
+                    ImVec2 p = _points[i];
+                    p.y = 1.f - p.y;
+                    p = p * (bb.Max - bb.Min) + bb.Min;
+                    ImVec2 a = p - ImVec2( 2.f, 2.f );
+                    ImVec2 b = p + ImVec2( 2.f, 2.f );
+                    window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+                }
             }
         }
 
         ImGui::PushStyleColor( ImGuiCol_Text, ImGui::GetColorU32( ImGuiCol_Text, 0.7f ) );
-
+        
         // labels
-        //{
-        //    char buf[128];
-        //    const char * str = _label;
-
-        //    if( hovered )
-        //    {
-        //        ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
-        //        pos.y = 1.f - pos.y;
-        //        float x = _x_min + pos.x * (_x_max - _x_min);
-        //        float y = _y_min + pos.y * (_y_max - _y_min);
-
-        //        sprintf( buf, "(%.3f,%.3f)", x, y );
-        //        str = buf;
-        //    }
-
-        //    RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, str, NULL, NULL, ImVec2( 1.f, 0.f ) );
-        //}
-
         {
             char buf[32];
             sprintf( buf, "%.2f", _y_min );
@@ -364,8 +354,6 @@ namespace ImGui
         //    RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.5f, 0.5f ) );
         //}
 
-        ImGui::PopStyleColor( 1 );
-
         if( hovered )
         {
             ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
@@ -373,12 +361,14 @@ namespace ImGui
             float x = _x_min + pos.x * (_x_max - _x_min);
             float y = _y_min + pos.y * (_y_max - _y_min);
 
-            ImGui::Text( "Position: (%.3f,%.3f)", x, y );
+            ImGui::Text( "(%.3f,%.3f)", x, y );
         }
         else
         {
-            ImGui::Text( "Position: -" );
+            ImGui::Text( "(0.000, 0.000)" );
         }
+
+        ImGui::PopStyleColor( 1 );
 
         return modified;
     }
