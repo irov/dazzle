@@ -358,7 +358,14 @@ namespace ImGui
         {
             ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
             pos.y = 1.f - pos.y;
-            float x = _x_min + pos.x * (_x_max - _x_min);
+
+            float x = 0.f;
+
+            if( max > 1 )
+            {
+                x = _x_min + pos.x * (_x_max - _x_min);
+            }
+
             float y = _y_min + pos.y * (_y_max - _y_min);
 
             ImGui::Text( "(%.3f,%.3f)", x, y );
