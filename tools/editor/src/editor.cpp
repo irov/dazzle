@@ -744,8 +744,8 @@ int editor::update()
                 __SELECTED_DATA_MAX__
             };
 
-            //static int selected = SELECTED_EFFECT_DATA;
-            static int selected = SELECTED_EMITTER_DATA; // debug
+            static int selected = SELECTED_EFFECT_DATA;
+            //static int selected = SELECTED_AFFECTOR_DATA; // debug
             {
                 ImGui::BeginChild( "left pane", ImVec2( 150, 0 ), true );
 
