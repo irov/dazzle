@@ -277,6 +277,9 @@ namespace ImGui
                 GetColorU32( ImGuiCol_TextDisabled ) );
         }
 
+        ImU32 lineColorIdle = GetColorU32( ImGuiCol_PlotHistogramHovered );
+        //ImU32 lineColorSelected = GetColorU32( ImGuiCol_PlotLinesHovered );
+
         // lines
         if( max == 1 )  // draw line when 1 point
         {
@@ -286,7 +289,7 @@ namespace ImGui
             b.y = 1 - b.y;
             a = a * (bb.Max - bb.Min) + bb.Min;
             b = b * (bb.Max - bb.Min) + bb.Min;
-            window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+            window->DrawList->AddLine( a, b, lineColorIdle );
         }
         else
         {
@@ -298,7 +301,7 @@ namespace ImGui
                 b.y = 1 - b.y;
                 a = a * (bb.Max - bb.Min) + bb.Min;
                 b = b * (bb.Max - bb.Min) + bb.Min;
-                window->DrawList->AddLine( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+                window->DrawList->AddLine( a, b, lineColorIdle );
             }
 
             //if( hovered )
@@ -312,7 +315,7 @@ namespace ImGui
                     p = p * (bb.Max - bb.Min) + bb.Min;
                     ImVec2 a = p - ImVec2( 2.f, 2.f );
                     ImVec2 b = p + ImVec2( 2.f, 2.f );
-                    window->DrawList->AddRect( a, b, GetColorU32( ImGuiCol_PlotLinesHovered ) );
+                    window->DrawList->AddRect( a, b, lineColorIdle );
                 }
             }
         }
