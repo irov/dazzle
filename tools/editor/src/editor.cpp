@@ -16,6 +16,8 @@ static constexpr float WINDOW_WIDTH = 1280.f;    // aspect ratio HD 720p
 static constexpr float WINDOW_HEIGHT = 720.f; 
 static constexpr float TIMELINE_PANEL_WIDTH = 330.f;
 static constexpr int32_t CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
+static constexpr ImGuiID CURVE_ID_NONE = 0;
+static constexpr int CURVE_POINT_NONE = -1;
 //////////////////////////////////////////////////////////////////////////
 static const char * CURVE_LABEL = "Add with <Ctrl> | Delete with <Alt>";
 //////////////////////////////////////////////////////////////////////////
@@ -554,6 +556,8 @@ int editor::init()
             
             data.zoom = 1;
 
+            data.selectedPoint = CURVE_POINT_NONE;
+
             if( __set_shape_timeline_const( m_service, m_shape, data.type, default ) == DZ_FAILURE )
             {
                 return EXIT_FAILURE;
@@ -591,6 +595,8 @@ int editor::init()
             dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
             data.zoom = 1;
+
+            data.selectedPoint = CURVE_POINT_NONE;
 
             if( __set_emitter_timeline_const( m_service, m_emitter, data.type, default ) == DZ_FAILURE )
             {
@@ -639,6 +645,8 @@ int editor::init()
             dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
             data.zoom = 1;
+
+            data.selectedPoint = CURVE_POINT_NONE;
 
             if( __set_affector_timeline_const( m_service, m_affector, data.type, default ) == DZ_FAILURE )
             {
@@ -963,6 +971,7 @@ static void __pointsDataToCurve( dz_editor_curve_point_t * _pointsData, dz_edito
     {
         _pointsCurve[end].x = _pointsData[end].x;
         _pointsCurve[end].y = (_pointsData[end].y - _min) / _range;
+        _pointsCurve[end].y2 = (_pointsData[end].y2 - _min) / _range;
     }
     _pointsCurve[end].x = -1;
 };
@@ -985,6 +994,7 @@ static void __pointsCurveToData( dz_editor_curve_point_t * _pointsCurve, dz_edit
     {
         _pointsData[end].x = _pointsCurve[end].x;
         _pointsData[end].y = _min + (_pointsCurve[end].y * _range);
+        _pointsData[end].y2 = _min + (_pointsCurve[end].y2 * _range);
     }
     _pointsData[end].x = -1;
 };
@@ -1231,8 +1241,10 @@ static void __setupLimitsInv( dz_editor_curve_point_t * _pointsData, dz_timeline
     }
 };
 //////////////////////////////////////////////////////////////////////////
-static int __setupCurve( const char * _label, const ImVec2 & _size, const int _maxpoints, dz_editor_curve_point_t * _points, float _x_min = 0.f, float _x_max = 1.f, float _y_min = 0.f, float _y_max = 1.f )
+static int __setupCurve( const char * _label, const ImVec2 & _size, const int _maxpoints, dz_editor_curve_point_t * _points, int * _selected, float _x_min = 0.f, float _x_max = 1.f, float _y_min = 0.f, float _y_max = 1.f )
 {
+    DZ_UNUSED( _selected );
+
     int modified = 0;
     int i;
     if( _maxpoints < 2 || _points == 0 )
@@ -1269,32 +1281,29 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     float ht = bb.Max.y - bb.Min.y;
     float wd = bb.Max.x - bb.Min.x;
 
-    const ImGuiID CURVE_ID_NONE = 0;
-    const int CURVE_POINT_NONE = -1;
-
     static ImGuiID active_id = CURVE_ID_NONE;
-    static int selected_point = CURVE_POINT_NONE;
+    static int active_point = CURVE_POINT_NONE;
 
     if( g.IO.MouseReleased[0] == true )
     {
         active_id = CURVE_ID_NONE;
-        selected_point = CURVE_POINT_NONE;
+        active_point = CURVE_POINT_NONE;
     }
 
     bool isMoved = false;
 
-    if( active_id == id && selected_point != CURVE_POINT_NONE )
+    if( active_id == id && active_point != CURVE_POINT_NONE )
     {
         modified = 1;
         ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
         pos.y = 1 - pos.y;
 
-        if( pos.x < 0.f || selected_point == 0 )
+        if( pos.x < 0.f || active_point == 0 )
         {
             pos.x = 0.f;
         }
 
-        if( pos.x > 1.f || (max > 1 && selected_point == max - 1) )
+        if( pos.x > 1.f || (max > 1 && active_point == max - 1) )
         {
             pos.x = 1.f;
         }
@@ -1309,18 +1318,18 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
             pos.y = 1.f;
         }
 
-        _points[selected_point].x = pos.x;
-        _points[selected_point].y = pos.y;
+        _points[active_point].x = pos.x;
+        _points[active_point].y = pos.y;
 
         if( max > 2 )
         {
-            if( selected_point - 1 > 0 && _points[selected_point].x < _points[selected_point - 1].x )
+            if( active_point - 1 > 0 && _points[active_point].x < _points[active_point - 1].x )
             {
-                _points[selected_point].x = _points[selected_point - 1].x;
+                _points[active_point].x = _points[active_point - 1].x;
             }
-            else if( selected_point + 1 < max - 1 && _points[selected_point].x > _points[selected_point + 1].x )
+            else if( active_point + 1 < max - 1 && _points[active_point].x > _points[active_point + 1].x )
             {
-                _points[selected_point].x = _points[selected_point + 1].x;
+                _points[active_point].x = _points[active_point + 1].x;
             }
         }
 
@@ -1341,7 +1350,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
             int sel = -1;
 
-            if( selected_point == CURVE_POINT_NONE )
+            if( active_point == CURVE_POINT_NONE )
             {
                 ImVec2 p( _points[left].x, _points[left].y );
                 p = p - pos;
@@ -1365,11 +1374,12 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                 }
 
                 active_id = id;
-                selected_point = sel;
+                active_point = sel;
+                *_selected = sel;
             }
             else
             {
-                sel = selected_point;
+                sel = active_point;
             }
 
             if( sel != -1 )
@@ -1386,7 +1396,8 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     _points[max].x = -1;
 
                     active_id = CURVE_ID_NONE;
-                    selected_point = CURVE_POINT_NONE;
+                    active_point = CURVE_POINT_NONE;
+                    *_selected = CURVE_POINT_NONE;
                 }
                 else
                 {
@@ -1461,7 +1472,9 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     }
 
     ImU32 lineColorIdle = ImGui::GetColorU32( ImGuiCol_PlotLinesHovered );
-    ImU32 lineColorSelected = ImGui::GetColorU32( ImGuiCol_PlotHistogram );
+    ImU32 lineColorActive = ImGui::GetColorU32( ImGuiCol_PlotHistogram );
+    //ImU32 lineColorSelected = ImGui::GetColorU32( ImGuiCol_PlotHistogramHovered );
+    ImU32 lineColorSelected = ImGui::GetColorU32( ImVec4( 0.f, 1.f, 0.f, 1.f ) );
 
     // lines
     if( max == 1 )  // draw line when 1 point
@@ -1472,7 +1485,11 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
         b.y = 1 - b.y;
         a = a * (bb.Max - bb.Min) + bb.Min;
         b = b * (bb.Max - bb.Min) + bb.Min;
-        if( active_id == id && selected_point == 0 )
+        if( active_id == id && active_point == 0 )
+        {
+            window->DrawList->AddLine( a, b, lineColorActive );
+        }
+        else if( *_selected == 0 )
         {
             window->DrawList->AddLine( a, b, lineColorSelected );
         }
@@ -1485,13 +1502,67 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     {
         for( i = 1; i < max; i++ )
         {
-            ImVec2 a( _points[i - 1].x, _points[i - 1].y );
-            ImVec2 b( _points[i].x, _points[i].y );
-            a.y = 1 - a.y;
-            b.y = 1 - b.y;
-            a = a * (bb.Max - bb.Min) + bb.Min;
-            b = b * (bb.Max - bb.Min) + bb.Min;
-            window->DrawList->AddLine( a, b, lineColorIdle );
+            if( _points[i - 1].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+            {
+                if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                {
+                    ImVec2 a( _points[i - 1].x, _points[i - 1].y );
+                    ImVec2 b( _points[i].x, _points[i].y );
+                    a.y = 1 - a.y;
+                    b.y = 1 - b.y;
+                    a = a * (bb.Max - bb.Min) + bb.Min;
+                    b = b * (bb.Max - bb.Min) + bb.Min;
+                    window->DrawList->AddLine( a, b, lineColorIdle );
+                }
+                else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                {
+                    ImVec2 a( _points[i - 1].x, _points[i - 1].y );
+                    ImVec2 b( _points[i].x, _points[i].y );
+                    ImVec2 b2( _points[i].x, _points[i].y2 );
+                    a.y = 1 - a.y;
+                    b.y = 1 - b.y;
+                    b2.y = 1 - b2.y;
+                    a = a * (bb.Max - bb.Min) + bb.Min;
+                    b = b * (bb.Max - bb.Min) + bb.Min;
+                    b2 = b2 * (bb.Max - bb.Min) + bb.Min;
+                    window->DrawList->AddLine( a, b, lineColorIdle );
+                    window->DrawList->AddLine( a, b2, lineColorIdle );
+                }
+            }
+            else if (_points[i - 1].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            {
+                if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                {
+                    ImVec2 a( _points[i - 1].x, _points[i - 1].y );
+                    ImVec2 a2( _points[i - 1].x, _points[i - 1].y2 );
+                    ImVec2 b( _points[i].x, _points[i].y );
+                    a.y = 1 - a.y;
+                    a2.y = 1 - a2.y;
+                    b.y = 1 - b.y;
+                    a = a * (bb.Max - bb.Min) + bb.Min;
+                    a2 = a2 * (bb.Max - bb.Min) + bb.Min;
+                    b = b * (bb.Max - bb.Min) + bb.Min;
+                    window->DrawList->AddLine( a, b, lineColorIdle );
+                    window->DrawList->AddLine( a2, b, lineColorIdle );
+                }
+                else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                {
+                    ImVec2 a( _points[i - 1].x, _points[i - 1].y );
+                    ImVec2 a2( _points[i - 1].x, _points[i - 1].y2 );
+                    ImVec2 b( _points[i].x, _points[i].y );
+                    ImVec2 b2( _points[i].x, _points[i].y2 );
+                    a.y = 1 - a.y;
+                    a2.y = 1 - a2.y;
+                    b.y = 1 - b.y;
+                    b2.y = 1 - b2.y;
+                    a = a * (bb.Max - bb.Min) + bb.Min;
+                    a2 = a2 * (bb.Max - bb.Min) + bb.Min;
+                    b = b * (bb.Max - bb.Min) + bb.Min;
+                    b2 = b2 * (bb.Max - bb.Min) + bb.Min;
+                    window->DrawList->AddLine( a, b, lineColorIdle );
+                    window->DrawList->AddLine( a2, b2, lineColorIdle );
+                }
+            }
         }
 
         //if( hovered )
@@ -1505,14 +1576,68 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                 p = p * (bb.Max - bb.Min) + bb.Min;
                 ImVec2 a = p - ImVec2( 2.f, 2.f );
                 ImVec2 b = p + ImVec2( 2.f, 2.f );
-                if( selected_point == i )
+
+                if( active_point == i )
+                {
+                    window->DrawList->AddRect( a, b, lineColorActive );
+
+                    if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                    {
+                        ImVec2 p2( _points[i].x, _points[i].y2 );
+                        p2.y = 1.f - p2.y;
+                        p2 = p2 * (bb.Max - bb.Min) + bb.Min;
+                        ImVec2 a2 = p2 - ImVec2( 2.f, 2.f );
+                        ImVec2 b2 = p2 + ImVec2( 2.f, 2.f );
+                        window->DrawList->AddRect( a2, b2, lineColorActive );
+                    }
+                }
+                else if( *_selected == i )
                 {
                     window->DrawList->AddRect( a, b, lineColorSelected );
+
+                    if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                    {
+                        ImVec2 p2( _points[i].x, _points[i].y2 );
+                        p2.y = 1.f - p2.y;
+                        p2 = p2 * (bb.Max - bb.Min) + bb.Min;
+                        ImVec2 a2 = p2 - ImVec2( 2.f, 2.f );
+                        ImVec2 b2 = p2 + ImVec2( 2.f, 2.f );
+                        window->DrawList->AddRect( a2, b2, lineColorSelected );
+                    }
                 }
                 else
                 {
                     window->DrawList->AddRect( a, b, lineColorIdle );
+
+                    if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                    {
+                        ImVec2 p2( _points[i].x, _points[i].y2 );
+                        p2.y = 1.f - p2.y;
+                        p2 = p2 * (bb.Max - bb.Min) + bb.Min;
+                        ImVec2 a2 = p2 - ImVec2( 2.f, 2.f );
+                        ImVec2 b2 = p2 + ImVec2( 2.f, 2.f );
+                        window->DrawList->AddRect( a2, b2, lineColorIdle );
+                    }
                 }
+            }
+        }
+        else if( *_selected != CURVE_POINT_NONE )
+        {
+            ImVec2 p( _points[*_selected].x, _points[*_selected].y );
+            p.y = 1.f - p.y;
+            p = p * (bb.Max - bb.Min) + bb.Min;
+            ImVec2 a = p - ImVec2( 2.f, 2.f );
+            ImVec2 b = p + ImVec2( 2.f, 2.f );
+            window->DrawList->AddRect( a, b, lineColorSelected );
+
+            if( _points[*_selected].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            {
+                ImVec2 p2( _points[*_selected].x, _points[*_selected].y2 );
+                p2.y = 1.f - p2.y;
+                p2 = p2 * (bb.Max - bb.Min) + bb.Min;
+                ImVec2 a2 = p2 - ImVec2( 2.f, 2.f );
+                ImVec2 b2 = p2 + ImVec2( 2.f, 2.f );
+                window->DrawList->AddRect( a2, b2, lineColorSelected );
             }
         }
     }
@@ -1542,17 +1667,17 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     }
 
     // debug text
-    //{
-    //    char buf[256];
-    //    sprintf( buf, "my_id=%d\nactive_id=%d\nsel=%d\nis_moved=%s"
-    //        , id
-    //        , active_id
-    //        , selected_point 
-    //        , isMoved == true ? "true" : "false"
-    //    );
-
-    //    RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.5f, 0.5f ) );
-    //}
+    {
+        char buf[256];
+        sprintf( buf, "my_id=%d\nactive_id=%d\nactive=%d\nselected=%d\nis_moved=%s"
+            , id
+            , active_id
+            , active_point
+            , *_selected
+            , isMoved == true ? "true" : "false"
+        );
+        ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.5f, 0.5f ) );
+    }
 
     if( hovered )
     {
@@ -1577,17 +1702,20 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
     ImGui::PopStyleColor( 1 );
 
-    // wip
-    const char * modes[] = {
-        "Normal",
-        "Random",
-    };
+    //// wip
+    //if( *_selected != CURVE_POINT_NONE )
+    //{
+    //    const char * modes[] = {
+    //        "Normal", // DZ_EDITOR_CURVE_POINT_MODE_NORMAL
+    //        "Random", // DZ_EDITOR_CURVE_POINT_MODE_RANDOM
+    //    };
 
-    static int mode = 0;
-    if( ImGui::Combo( "Mode", &mode, modes, IM_ARRAYSIZE( modes ) ) == true )
-    {
-        // wip
-    }
+    //    int mode = _points[*_selected].mode;
+    //    if( ImGui::Combo( "Mode", &mode, modes, IM_ARRAYSIZE( modes ) ) == true )
+    //    {
+    //        _points[*_selected].mode = static_cast<dz_editor_curve_point_mode_e>(mode);
+    //    }
+    //}
 
     return modified;
 }
@@ -1710,7 +1838,7 @@ int editor::showShapeData()
 
                 __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
-                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
+                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
                 {
                     __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
@@ -1771,13 +1899,42 @@ int editor::showAffectorData()
 
             __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
-            if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
+            if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
             {
                 __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.pointsData ) == DZ_FAILURE )
                 {
                     return EXIT_FAILURE;
+                }
+            }
+
+            // wip
+            if( data.selectedPoint != CURVE_POINT_NONE )
+            {
+                const char * modes[] = {
+                    "Normal", // DZ_EDITOR_CURVE_POINT_MODE_NORMAL
+                    "Random", // DZ_EDITOR_CURVE_POINT_MODE_RANDOM
+                };
+
+                int mode = data.pointsCurve[data.selectedPoint].mode;
+                if( ImGui::Combo( "Mode", &mode, modes, IM_ARRAYSIZE( modes ) ) == true )
+                {
+                    dz_editor_curve_point_mode_e selected_mode = static_cast<dz_editor_curve_point_mode_e>(mode);
+
+                    if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                    {
+                        float distance = data.pointsData[data.selectedPoint].y2 - data.pointsData[data.selectedPoint].y;
+                        data.pointsData[data.selectedPoint].y = data.pointsData[data.selectedPoint].y + distance / 2.f;
+                    }
+                    else if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                    {
+                        float normalValue = data.pointsData[data.selectedPoint].y;
+                        data.pointsData[data.selectedPoint].y = normalValue - 0.25f * factor;
+                        data.pointsData[data.selectedPoint].y2 = normalValue + 0.25f * factor;
+                    }
+
+                    data.pointsCurve[data.selectedPoint].mode = selected_mode;
                 }
             }
         }
@@ -1834,7 +1991,7 @@ int editor::showEmitterData()
 
                 __pointsDataToCurveInv( data.pointsData, data.pointsCurve, y_min, y_range );
 
-                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
+                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
                 {
                     __pointsCurveToDataInv( data.pointsCurve, data.pointsData, y_min, y_range );
 
@@ -1852,7 +2009,7 @@ int editor::showEmitterData()
 
                 __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
-                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, x_min, x_max, y_min, y_max ) != 0 )
+                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
                 {
                     __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 

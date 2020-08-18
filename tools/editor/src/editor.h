@@ -113,6 +113,8 @@ public:
 
         int32_t zoom;
 
+        int selectedPoint;
+
         PointsArray pointsData;
         PointsArray pointsCurve;
     } timeline_shape_t;
@@ -126,6 +128,8 @@ public:
 
         int32_t zoom;
 
+        int selectedPoint;
+
         PointsArray pointsData;
         PointsArray pointsCurve;
     } timeline_affector_t;
@@ -138,6 +142,8 @@ public:
         const char * name;
 
         int32_t zoom;
+
+        int selectedPoint;
 
         PointsArray pointsData;
         PointsArray pointsCurve;
