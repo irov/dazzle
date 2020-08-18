@@ -14,13 +14,32 @@
 static constexpr uint32_t MAX_POINTS = 100;
 static constexpr float HEIGHT_TO_WIDTH_RATIO = 0.4f;
 //////////////////////////////////////////////////////////////////////////
-typedef ImVec2 PointsArray[MAX_POINTS];
+typedef enum dz_editor_curve_point_mode_e
+{
+    DZ_EDITOR_CURVE_POINT_MODE_NORMAL,
+    DZ_EDITOR_CURVE_POINT_MODE_RANDOM,
+
+    __DZ_EDITOR_CURVE_POINT_MODE_MAX__
+} dz_editor_curve_point_mode_e;
+//////////////////////////////////////////////////////////////////////////
+typedef struct dz_editor_curve_point_t
+{
+    float x = 0.f;
+    float y = 0.f;
+
+    float y2 = 0.f;
+
+    dz_editor_curve_point_mode_e mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
+
+} dz_editor_curve_point_t;
+//////////////////////////////////////////////////////////////////////////
+typedef dz_editor_curve_point_t PointsArray[MAX_POINTS];
 //////////////////////////////////////////////////////////////////////////
 class editor
 {
 public:
     editor();
-    virtual ~editor();
+    ~editor();
 
 protected:
     int init();
