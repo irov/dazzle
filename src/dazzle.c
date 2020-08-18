@@ -338,28 +338,14 @@ dz_material_mode_e dz_material_get_mode( const dz_material_t * _material )
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud )
 {
-    dz_timeline_interpolate_t * interpolate;
-
-    switch( _type )
-    {
-    case DZ_TIMELINE_INTERPOLATE_LINEAR:
-        {
-            interpolate = DZ_NEWV( _service, dz_timeline_interpolate_t, dz_timeline_interpolate_linear_t );
-        }break;
-    case DZ_TIMELINE_INTERPOLATE_BEZIER2:
-        {
-            interpolate = DZ_NEWV( _service, dz_timeline_interpolate_t, dz_timeline_interpolate_bezier2_t );
-        }break;
-    case __DZ_TIMELINE_INTERPOLATE_MAX__:
-    default:
-        {
-            return DZ_FAILURE;
-        }break;
-    }
+    dz_timeline_interpolate_t * interpolate = DZ_NEW( _service, dz_timeline_interpolate_t );
 
     interpolate->type = _type;
     interpolate->key = DZ_NULLPTR;
     interpolate->ud = _ud;
+
+    interpolate->p0 = 0.f;
+    interpolate->p1 = 0.f;
 
     *_interpolate = interpolate;
 
@@ -376,9 +362,14 @@ void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline
     DZ_FREE( _service, _interpolate );
 }
 //////////////////////////////////////////////////////////////////////////
-dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _key )
+void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * _interpolate, dz_userdata_t _ud )
 {
-    return _key->ud;
+    _interpolate->ud = _ud;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _interpolate )
+{
+    return _interpolate->ud;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
@@ -390,29 +381,15 @@ dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t *
     }
 #endif
 
-    dz_timeline_key_t * key;
-
-    switch( _type )
-    {
-    case DZ_TIMELINE_KEY_CONST:
-        {
-            key = DZ_NEWV( _service, dz_timeline_key_t, dz_timeline_key_const_t );
-        }break;
-    case DZ_TIMELINE_KEY_RANDOMIZE:
-        {
-            key = DZ_NEWV( _service, dz_timeline_key_t, dz_timeline_key_const_t );
-        }break;
-    case __DZ_TIMELINE_KEY_MAX__:
-    default:
-        {
-            return DZ_FAILURE;
-        }break;
-    }
+    dz_timeline_key_t * key = DZ_NEW( _service, dz_timeline_key_t );
 
     key->p = _p;
     key->type = _type;
     key->interpolate = DZ_NULLPTR;
     key->ud = _ud;
+    key->const_value = 0.f;
+    key->randomize_min_value = 0.f;
+    key->randomize_max_value = 0.f;
 
     *_key = key;
 
@@ -429,9 +406,24 @@ void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t *
     DZ_FREE( _service, _key );
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_timeline_key_set_ud( dz_timeline_key_t * _key, dz_userdata_t _ud )
+{
+    _key->ud = _ud;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_timeline_key_get_ud( const dz_timeline_key_t * _key )
 {
     return _key->ud;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_timeline_key_set_type( dz_timeline_key_t * _key, dz_timeline_key_type_e _type )
+{
+    _key->type = _type;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_timeline_key_type_e dz_timeline_key_get_type( const dz_timeline_key_t * _key )
+{
+    return _key->type;
 }
 //////////////////////////////////////////////////////////////////////////
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate )
@@ -454,49 +446,36 @@ void dz_timeline_key_set_interpolate( dz_timeline_key_t * _key0, dz_timeline_int
     _interpolate->key = _key1;
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_timeline_key_set_p( dz_timeline_key_t * _key, float _p )
+{
+    _key->p = _p;
+}
+//////////////////////////////////////////////////////////////////////////
 float dz_timeline_key_get_p( const dz_timeline_key_t * _key )
 {
-    float p = _key->p;
-
-    return p;
+    return _key->p;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _value )
+void dz_timeline_key_set_const_value( dz_timeline_key_t * _key, float _value )
 {
-    dz_timeline_key_const_t * key_const = (dz_timeline_key_const_t *)_key;
-
-    key_const->value = _value;
-
-    return DZ_SUCCESSFUL;
+    _key->const_value = _value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_const_get_value( const dz_timeline_key_t * _key, float * _value )
+void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * _value )
 {
-    const dz_timeline_key_const_t * key_const = (const dz_timeline_key_const_t *)_key;
-
-    *_value = key_const->value;
-
-    return DZ_SUCCESSFUL;
+    *_value = _key->const_value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_randomize_set_min_max( dz_timeline_key_t * _key, float _min, float _max )
+void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * _key, float _min, float _max )
 {
-    dz_timeline_key_randomize_t * key_randomize = (dz_timeline_key_randomize_t *)_key;
-
-    key_randomize->value_min = _min;
-    key_randomize->value_max = _max;
-
-    return DZ_SUCCESSFUL;
+    _key->randomize_min_value = _min;
+    _key->randomize_max_value = _max;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_randomize_get_min_max( const dz_timeline_key_t * _key, float * _min, float * _max )
+void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * _min, float * _max )
 {
-    const dz_timeline_key_randomize_t * key_randomize = (const dz_timeline_key_randomize_t *)_key;
-
-    *_min = key_randomize->value_min;
-    *_max = key_randomize->value_max;
-
-    return DZ_SUCCESSFUL;
+    *_min = _key->randomize_min_value;
+    *_max = _key->randomize_max_value;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_affector_create( dz_service_t * _service, dz_affector_t ** _affector, dz_userdata_t _ud )
@@ -839,17 +818,13 @@ static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key 
     {
     case DZ_TIMELINE_KEY_CONST:
         {
-            const dz_timeline_key_const_t * key_const = (const dz_timeline_key_const_t *)_key;
-
-            float value = key_const->value;
+            float value = _key->const_value;
 
             return value;
         }break;
     case DZ_TIMELINE_KEY_RANDOMIZE:
         {
-            const dz_timeline_key_randomize_t * key_randomize = (const dz_timeline_key_randomize_t *)_key;
-
-            float value = key_randomize->value_min + (key_randomize->value_max - key_randomize->value_min) * _t;
+            float value = _key->randomize_min_value + (_key->randomize_max_value - _key->randomize_min_value) * _t;
 
             return value;
         }break;

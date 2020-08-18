@@ -116,15 +116,20 @@ typedef struct dz_timeline_key_t dz_timeline_key_t;
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
 void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key );
 
+void dz_timeline_key_set_ud( dz_timeline_key_t * _key, dz_userdata_t _ud );
 dz_userdata_t dz_timeline_key_get_ud( const dz_timeline_key_t * _key );
 
+void dz_timeline_key_set_type( dz_timeline_key_t * _key, dz_timeline_key_type_e _type );
+dz_timeline_key_type_e dz_timeline_key_get_type( const dz_timeline_key_t * _key );
+
+void dz_timeline_key_set_p( dz_timeline_key_t * _key, float _p );
 float dz_timeline_key_get_p( const dz_timeline_key_t * _key );
 
-dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _value );
-dz_result_t dz_timeline_key_const_get_value( const dz_timeline_key_t * _key, float * _value );
+void dz_timeline_key_set_const_value( dz_timeline_key_t * _key, float _value );
+void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * _value );
 
-dz_result_t dz_timeline_key_randomize_set_min_max( dz_timeline_key_t * _key, float _min, float _max );
-dz_result_t dz_timeline_key_randomize_get_min_max( const dz_timeline_key_t * _key, float * _min, float * _max );
+void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * _key, float _min, float _max );
+void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * _min, float * _max );
 
 typedef enum dz_timeline_interpolate_type_e
 {
@@ -139,7 +144,8 @@ typedef struct dz_timeline_interpolate_t dz_timeline_interpolate_t;
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud );
 void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate );
 
-dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _key );
+void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * _interpolate, dz_userdata_t _ud );
+dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _interpolate );
 
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate );
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );

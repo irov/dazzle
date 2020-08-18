@@ -81,10 +81,7 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
         return DZ_FAILURE;
     }
 
-    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_const_value( timeline, _value );
 
     dz_shape_set_timeline( _shape, _type, timeline );
 
@@ -100,10 +97,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
         return DZ_FAILURE;
     }
 
-    if( dz_timeline_key_const_set_value( key0, _points[0].y ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_const_value( key0, _points[0].y );
 
     int32_t max = 0;
     while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
@@ -123,10 +117,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
             return DZ_FAILURE;
         }
 
-        if( dz_timeline_key_const_set_value( nextKey, _points[i].y ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_set_const_value( nextKey, _points[i].y );
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
 
@@ -152,10 +143,7 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
         return DZ_FAILURE;
     }
 
-    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_const_value( timeline, _value );
 
     dz_emitter_set_timeline( _emitter, _type, timeline );
 
@@ -171,10 +159,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
         return DZ_FAILURE;
     }
 
-    if( dz_timeline_key_const_set_value( key0, _points[0].y ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_const_value( key0, _points[0].y );
 
     int32_t max = 0;
     while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
@@ -194,10 +179,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
             return DZ_FAILURE;
         }
 
-        if( dz_timeline_key_const_set_value( nextKey, _points[i].y ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_set_const_value( nextKey, _points[i].y );
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
 
@@ -223,10 +205,7 @@ static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_af
         return DZ_FAILURE;
     }
 
-    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_const_value( timeline, _value );
 
     dz_affector_set_timeline( _affector, _type, timeline );
 
@@ -242,10 +221,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
         return DZ_FAILURE;
     }
 
-    if( dz_timeline_key_const_set_value( key0, _points[0].y ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_const_value( key0, _points[0].y );
 
     int32_t max = 0;
     while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
@@ -265,10 +241,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
             return DZ_FAILURE;
         }
 
-        if( dz_timeline_key_const_set_value( nextKey, _points[i].y ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_set_const_value( nextKey, _points[i].y );
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
 
