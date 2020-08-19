@@ -1922,7 +1922,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     return modified;
 }
 //////////////////////////////////////////////////////////////////////////
-static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve )
+static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float _min, float _max, dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve )
 {
     int modified = 0;
     if( _selectedPoint != CURVE_POINT_NONE )
@@ -1947,8 +1947,22 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, dz_ed
                 else if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
                 {
                     float normalValue = _pointsData[_selectedPoint].y;
-                    _pointsData[_selectedPoint].y = normalValue - 0.25f * _factor;
-                    _pointsData[_selectedPoint].y2 = normalValue + 0.25f * _factor;
+                    float randMinValue = normalValue - 0.25f * _factor;
+                    
+                    if( randMinValue < _min )
+                    {
+                        randMinValue = _min;
+                    }
+
+                    float randMaxValue = normalValue + 0.25f * _factor;
+
+                    if( randMaxValue > _max )
+                    {
+                        randMaxValue = _max;
+                    }
+
+                    _pointsData[_selectedPoint].y = randMinValue;
+                    _pointsData[_selectedPoint].y2 = randMaxValue;
                 }
 
                 _pointsCurve[_selectedPoint].mode = selected_mode;
@@ -2090,7 +2104,7 @@ int editor::showShapeData()
                     }
                 }
 
-                if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+                if( __setupSelectCurvePointMode( data.selectedPoint, factor, y_min, y_max, data.pointsData, data.pointsCurve ) != 0 )
                 {
                     if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.pointsData ) == DZ_FAILURE )
                     {
@@ -2123,6 +2137,12 @@ int editor::showAffectorData()
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
+        // ignore
+        if( index == DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT )
+        {
+            continue;
+        }
+
         ImGui::PushID( index );
 
         timeline_affector_t & data = m_timelineAffectorData[index];
@@ -2159,7 +2179,7 @@ int editor::showAffectorData()
                 }
             }
 
-            if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+            if( __setupSelectCurvePointMode( data.selectedPoint, factor, y_min, y_max, data.pointsData, data.pointsCurve ) != 0 )
             {
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.pointsData ) == DZ_FAILURE )
                 {
@@ -2230,7 +2250,7 @@ int editor::showEmitterData()
                     }
                 }
 
-                if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+                if( __setupSelectCurvePointMode( data.selectedPoint, factor, y_min, y_max, data.pointsData, data.pointsCurve ) != 0 )
                 {
                     if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
                     {
@@ -2256,7 +2276,7 @@ int editor::showEmitterData()
                     }
                 }
 
-                if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+                if( __setupSelectCurvePointMode( data.selectedPoint, factor, y_min, y_max, data.pointsData, data.pointsCurve ) != 0 )
                 {
                     if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
                     {
