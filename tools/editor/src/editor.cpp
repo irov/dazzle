@@ -93,19 +93,29 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
 static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points )
 {
     // first create new timeline
-    dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_t * key0 = DZ_NULLPTR;
 
     if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
     {
+        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
     else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
     {
+        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
         dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
+    }
+    else
+    {
+        return DZ_FAILURE;
     }
 
     int32_t max = 0;
@@ -121,18 +131,28 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
         }
 
         dz_timeline_key_t * nextKey;
-        if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
 
         if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
         {
+            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
         else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
         {
+            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
             dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
+        }
+        else
+        {
+            return DZ_FAILURE;
         }
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
@@ -170,18 +190,28 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 {
     // first create new timeline
     dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
 
     if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
     {
+        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
     else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
     {
+        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
         dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
+    }
+    else
+    {
+        return DZ_FAILURE;
     }
 
     int32_t max = 0;
@@ -197,18 +227,28 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
         }
 
         dz_timeline_key_t * nextKey;
-        if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
 
         if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
         {
+            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
         else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
         {
+            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
             dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
+        }
+        else
+        {
+            return DZ_FAILURE;
         }
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
@@ -246,18 +286,28 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
 {
     // first create new timeline
     dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
+    
     if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
     {
+        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
     else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
     {
+        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+        
         dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
+    }
+    else
+    {
+        return DZ_FAILURE;
     }
 
     int32_t max = 0;
@@ -273,18 +323,28 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
         }
 
         dz_timeline_key_t * nextKey;
-        if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
 
         if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
         {
+            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
         else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
         {
+            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
             dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
+        }
+        else
+        {
+            return DZ_FAILURE;
         }
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
@@ -1301,12 +1361,14 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     static ImGuiID active_id = CURVE_ID_NONE;
     static int active_point = CURVE_POINT_NONE;
     static bool is_active_y2 = false;
+    static bool is_point_added = false;
 
     if( g.IO.MouseReleased[0] == true )
     {
         active_id = CURVE_ID_NONE;
         active_point = CURVE_POINT_NONE;
         is_active_y2 = false;
+        is_point_added = false;
     }
 
     bool isMoved = false;
@@ -1341,7 +1403,6 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
         if( is_active_y2 == true )
         {
-
             if( pos.y < _points[active_point].y )
             {
                 _points[active_point].y2 = _points[active_point].y;
@@ -1397,143 +1458,20 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
             while( left < max && _points[left].x < pos.x ) left++;
             if( left ) left--;
 
-            int sel = -1;
-
-            if( active_point == CURVE_POINT_NONE )
-            {
-                ImVec2 p( _points[left].x, _points[left].y );
-                p = p - pos;
-
-                ImVec2 p_y2( _points[left].x, _points[left].y2 );
-                p_y2 = p_y2 - pos;
-
-                if( max == 1 )
-                {
-                    if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
-                    {
-                        float p1d = abs( p.y );
-                        if( p1d < (1.f / 16.f) ) sel = left;
-                    }
-                    else if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
-                    {
-                        float p1d = abs( p.y );
-                        if( p1d < (1.f / 16.f) )
-                        {
-                            sel = left;
-                            is_active_y2 = false;
-                        }
-
-                        float p1d_y2 = abs( p_y2.y );
-                        if( p1d_y2 < (1.f / 16.f) )
-                        {
-                            sel = left;
-                            is_active_y2 = true;
-                        }
-                    }
-                }
-                else
-                {
-                    float p1d = sqrt( p.x * p.x + p.y * p.y );
-                    float p1d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
-                    p.x = _points[left + 1].x;
-                    p.y = _points[left + 1].y;
-                    p = p - pos;
-                    p_y2.x = _points[left + 1].x;
-                    p_y2.y = _points[left + 1].y2;
-                    p_y2 = p_y2 - pos;
-                    float p2d = sqrt( p.x * p.x + p.y * p.y );
-                    float p2d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
-
-                    if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
-                    {
-                        if( p1d < (1.f / 16.f) ) sel = left;
-                    }
-                    else if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
-                    {
-                        if( p1d < (1.f / 16.f) )
-                        {
-                            sel = left;
-                            is_active_y2 = false;
-                        }
-
-                        if( p1d_y2 < (1.f / 16.f) )
-                        {
-                            sel = left;
-                            is_active_y2 = true;
-                        }
-                    }
-
-                    if( _points[left + 1].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
-                    {
-                        if( p2d < (1.f / 16.f) ) sel = left + 1;
-                    }
-                    else if( _points[left + 1].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
-                    {
-                        if( p2d < (1.f / 16.f) )
-                        {
-                            sel = left + 1;
-                            is_active_y2 = false;
-                        }
-
-                        if( p2d_y2 < (1.f / 16.f) )
-                        {
-                            sel = left + 1;
-                            is_active_y2 = true;
-                        }
-                    }
-                }
-
-                active_id = id;
-                active_point = sel;
-                *_selected = sel;
-            }
-            else
-            {
-                sel = active_point;
-            }
-
-            if( sel != -1 )
-            {
-                if( g.IO.KeyAlt && max > 1 )
-                {
-                    // kill selected
-                    modified = 1;
-                    for( i = sel + 1; i < max; i++ )
-                    {
-                        _points[i - 1] = _points[i];
-                    }
-                    max--;
-                    _points[max].x = -1;
-
-                    active_id = CURVE_ID_NONE;
-                    active_point = CURVE_POINT_NONE;
-                    *_selected = CURVE_POINT_NONE;
-                }
-                else
-                {
-                    _points[sel].x = pos.x;
-
-                    if( is_active_y2 == true )
-                    {
-                        _points[sel].y2 = pos.y;
-                    }
-                    else
-                    {
-                        _points[sel].y = pos.y;
-                    }
-                    
-                    isMoved = true;
-                }
-            }
-            else if( g.IO.KeyCtrl )
+            if( g.IO.KeyCtrl == true && is_point_added == false )
             {
                 // add new point
                 if( max < _maxpoints && max == 1 && _maxpoints > 2 )
                 {
                     _points[1].x = pos.x;
                     _points[1].y = pos.y;
+                    _points[1].mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
                     _points[2].x = 1.f;
                     _points[2].y = _points[0].y;
+                    _points[2].y2 = _points[0].y2;
+                    _points[2].mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
+
+                    *_selected = 1;
 
                     max = 3;
                 }
@@ -1546,9 +1484,149 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     }
                     _points[left + 1].x = pos.x;
                     _points[left + 1].y = pos.y;
+                    _points[left + 1].mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
+
+                    *_selected = left + 1;
                 }
                 if( max < _maxpoints )
                     _points[max].x = -1;
+
+                active_id = CURVE_ID_NONE;
+                active_point = CURVE_POINT_NONE;
+                is_active_y2 = false;
+
+                is_point_added = true;
+            }
+            else
+            {
+                int sel = -1;
+
+                if( active_point == CURVE_POINT_NONE )
+                {
+                    ImVec2 p( _points[left].x, _points[left].y );
+                    p = p - pos;
+
+                    ImVec2 p_y2( _points[left].x, _points[left].y2 );
+                    p_y2 = p_y2 - pos;
+
+                    if( max == 1 )
+                    {
+                        if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                        {
+                            float p1d = abs( p.y );
+                            if( p1d < (1.f / 16.f) ) sel = left;
+                        }
+                        else if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                        {
+                            float p1d = abs( p.y );
+                            if( p1d < (1.f / 16.f) )
+                            {
+                                sel = left;
+                                is_active_y2 = false;
+                            }
+
+                            float p1d_y2 = abs( p_y2.y );
+                            if( p1d_y2 < (1.f / 16.f) )
+                            {
+                                sel = left;
+                                is_active_y2 = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        float p1d = sqrt( p.x * p.x + p.y * p.y );
+                        float p1d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
+                        p.x = _points[left + 1].x;
+                        p.y = _points[left + 1].y;
+                        p = p - pos;
+                        p_y2.x = _points[left + 1].x;
+                        p_y2.y = _points[left + 1].y2;
+                        p_y2 = p_y2 - pos;
+                        float p2d = sqrt( p.x * p.x + p.y * p.y );
+                        float p2d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
+
+                        if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                        {
+                            if( p1d < (1.f / 16.f) ) sel = left;
+                        }
+                        else if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                        {
+                            if( p1d < (1.f / 16.f) )
+                            {
+                                sel = left;
+                                is_active_y2 = false;
+                            }
+
+                            if( p1d_y2 < (1.f / 16.f) )
+                            {
+                                sel = left;
+                                is_active_y2 = true;
+                            }
+                        }
+
+                        if( _points[left + 1].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                        {
+                            if( p2d < (1.f / 16.f) ) sel = left + 1;
+                        }
+                        else if( _points[left + 1].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                        {
+                            if( p2d < (1.f / 16.f) )
+                            {
+                                sel = left + 1;
+                                is_active_y2 = false;
+                            }
+
+                            if( p2d_y2 < (1.f / 16.f) )
+                            {
+                                sel = left + 1;
+                                is_active_y2 = true;
+                            }
+                        }
+                    }
+
+                    active_id = id;
+                    active_point = sel;
+                    *_selected = sel;
+                }
+                else
+                {
+                    sel = active_point;
+                }
+
+                if( sel != -1 )
+                {
+                    if( g.IO.KeyAlt && max > 1 )
+                    {
+                        // kill selected
+                        modified = 1;
+                        for( i = sel + 1; i < max; i++ )
+                        {
+                            _points[i - 1] = _points[i];
+                        }
+                        max--;
+                        _points[max].x = -1;
+
+                        active_id = CURVE_ID_NONE;
+                        active_point = CURVE_POINT_NONE;
+                        *_selected = CURVE_POINT_NONE;
+                    }
+                    else
+                    {
+                        _points[sel].x = pos.x;
+
+                        if( is_active_y2 == true )
+                        {
+                            _points[sel].y2 = pos.y;
+                        }
+                        else
+                        {
+                            _points[sel].y = pos.y;
+                        }
+
+                        isMoved = true;
+                    }
+                }
             }
 
             // snap first/last to min/max
@@ -1594,7 +1672,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     ImU32 lineColorActive = ImGui::GetColorU32( ImGuiCol_PlotHistogram );
     ImU32 lineColorSelected = ImGui::GetColorU32( ImVec4( 0.f, 1.f, 0.f, 1.f ) );
 
-    // lines
+    // lines and points
     if( max == 1 )  // draw line when 1 point
     {
         if( _points[i - 1].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
@@ -1788,43 +1866,36 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
         }
     }
 
+    // texts
     ImGui::PushStyleColor( ImGuiCol_Text, ImGui::GetColorU32( ImGuiCol_Text, 0.7f ) );
 
-    // labels
+    // - labels on curve
     {
-        char buf[32];
+        char buf[256];
+
         sprintf( buf, "%.2f", _y_min );
-
         ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.f, 1.f ) );
-    }
 
-    {
-        char buf[32];
         sprintf( buf, "%.2f", _y_max );
-
         ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.f, 0.f ) );
-    }
 
-    {
-        char buf[32];
         sprintf( buf, "%.2f", _x_max );
-
         ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 1.f, 1.f ) );
+    
+        // debug text
+        //sprintf( buf, "my_id=%d\nactive_id=%d\nactive=%d\nselected=%d\nis_moved=%s\nis_ctrl=%s\nmax=%d"
+        //    , id
+        //    , active_id
+        //    , active_point
+        //    , *_selected
+        //    , isMoved == true ? "true" : "false"
+        //    , g.IO.KeyCtrl == true ? "true" : "false"
+        //    , max
+        //);
+        //ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.5f, 0.5f ) );
     }
 
-    // debug text
-    //{
-    //    char buf[256];
-    //    sprintf( buf, "my_id=%d\nactive_id=%d\nactive=%d\nselected=%d\nis_moved=%s"
-    //        , id
-    //        , active_id
-    //        , active_point
-    //        , *_selected
-    //        , isMoved == true ? "true" : "false"
-    //    );
-    //    ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.5f, 0.5f ) );
-    //}
-
+    // - position down curve
     if( hovered )
     {
         ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
@@ -1866,22 +1937,25 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, dz_ed
         {
             dz_editor_curve_point_mode_e selected_mode = static_cast<dz_editor_curve_point_mode_e>(mode);
 
-            if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+            if( selected_mode != _pointsCurve[_selectedPoint].mode )
             {
-                float distance = _pointsData[_selectedPoint].y2 - _pointsData[_selectedPoint].y;
-                _pointsData[_selectedPoint].y = _pointsData[_selectedPoint].y + distance / 2.f;
-            }
-            else if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
-            {
-                float normalValue = _pointsData[_selectedPoint].y;
-                _pointsData[_selectedPoint].y = normalValue - 0.25f * _factor;
-                _pointsData[_selectedPoint].y2 = normalValue + 0.25f * _factor;
-            }
+                if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                {
+                    float distance = _pointsData[_selectedPoint].y2 - _pointsData[_selectedPoint].y;
+                    _pointsData[_selectedPoint].y = _pointsData[_selectedPoint].y + distance / 2.f;
+                }
+                else if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                {
+                    float normalValue = _pointsData[_selectedPoint].y;
+                    _pointsData[_selectedPoint].y = normalValue - 0.25f * _factor;
+                    _pointsData[_selectedPoint].y2 = normalValue + 0.25f * _factor;
+                }
 
-            _pointsCurve[_selectedPoint].mode = selected_mode;
-            _pointsData[_selectedPoint].mode = selected_mode;
+                _pointsCurve[_selectedPoint].mode = selected_mode;
+                _pointsData[_selectedPoint].mode = selected_mode;
 
-            modified = 1;
+                modified = 1;
+            }
         }
     }
 
