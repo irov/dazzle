@@ -127,6 +127,11 @@ void dz_texture_destroy( dz_service_t * _service, const dz_texture_t * _texture 
     DZ_FREE( _service, _texture );
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_texture_set_ud( dz_texture_t * _texture, dz_userdata_t _ud )
+{
+    _texture->ud = _ud;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture )
 {
     return _texture->ud;
@@ -229,6 +234,11 @@ dz_userdata_t dz_atlas_get_surface( const dz_atlas_t * _atlas )
     return _atlas->surface;
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_atlas_set_ud( dz_atlas_t * _atlas, dz_userdata_t _ud )
+{
+    _atlas->ud = _ud;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas )
 {
     return _atlas->ud;
@@ -283,6 +293,11 @@ dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _mater
 void dz_material_destroy( dz_service_t * _service, const dz_material_t * _material )
 {
     DZ_FREE( _service, _material );
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_set_ud( dz_material_t * _material, dz_userdata_t _ud )
+{
+    _material->ud = _ud;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_material_get_ud( const dz_material_t * _material )
@@ -569,6 +584,11 @@ void dz_shape_destroy( dz_service_t * _service, const dz_shape_t * _shape )
     DZ_FREE( _service, _shape );
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_shape_set_ud( dz_shape_t * _shape, dz_userdata_t _ud )
+{
+    _shape->ud = _ud;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape )
 {
     return _shape->ud;
@@ -725,6 +745,11 @@ void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter 
     }
 
     DZ_FREE( _service, _emitter );
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_emitter_set_ud( dz_emitter_t * _emitter, dz_userdata_t _ud )
+{
+    _emitter->ud = _ud;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter )
@@ -933,45 +958,54 @@ void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect )
     DZ_FREE( _service, _effect );
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_effect_set_ud( dz_effect_t * _effect, dz_userdata_t _ud )
+{
+    _effect->ud = _ud;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect )
 {
     return _effect->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-const dz_material_t * dz_effect_set_material( dz_effect_t * _effect, const dz_material_t * _material )
+void dz_effect_set_material( dz_effect_t * _effect, const dz_material_t * _material )
 {
-    const dz_material_t * material = _effect->material;
-
     _effect->material = _material;
-
-    return material;
 }
 //////////////////////////////////////////////////////////////////////////
-const dz_shape_t * dz_effect_set_shape( dz_effect_t * _effect, const dz_shape_t * _shape )
+const dz_material_t * dz_effect_get_material( const dz_effect_t * _effect )
 {
-    const dz_shape_t * shape = _effect->shape;
-
+    return _effect->material;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_set_shape( dz_effect_t * _effect, const dz_shape_t * _shape )
+{
     _effect->shape = _shape;
-
-    return shape;
 }
 //////////////////////////////////////////////////////////////////////////
-const dz_emitter_t * dz_effect_set_emitter( dz_effect_t * _effect, const dz_emitter_t * _emitter )
+const dz_shape_t * dz_effect_get_shape( const dz_effect_t * _effect )
 {
-    const dz_emitter_t * emitter = _effect->emitter;
-
+    return _effect->shape;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_set_emitter( dz_effect_t * _effect, const dz_emitter_t * _emitter )
+{
     _effect->emitter = _emitter;
-
-    return emitter;
 }
 //////////////////////////////////////////////////////////////////////////
-const dz_affector_t * dz_effect_set_affector( dz_effect_t * _effect, const dz_affector_t * _affector )
+const dz_emitter_t * dz_effect_get_emitter( const dz_effect_t * _effect )
 {
-    const dz_affector_t * affector = _effect->affector;
-
+    return _effect->emitter;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_effect_set_affector( dz_effect_t * _effect, const dz_affector_t * _affector )
+{
     _effect->affector = _affector;
-
-    return affector;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect )
+{
+    return _effect->affector;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_set_seed( dz_effect_t * _effect, uint32_t _seed )
