@@ -1297,35 +1297,34 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
         if( is_active_y2 == true )
         {
-            _points[active_point].y2 = pos.y;
+
+            if( pos.y < _points[active_point].y )
+            {
+                _points[active_point].y2 = _points[active_point].y;
+            }
+            else
+            {
+                _points[active_point].y2 = pos.y;
+            }
         }
         else
         {
-            _points[active_point].y = pos.y;
+            if( _points[active_point].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+            {
+                _points[active_point].y = pos.y;
+            }
+            else if( _points[active_point].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            {
+                if( pos.y > _points[active_point].y2 )
+                {
+                    _points[active_point].y = _points[active_point].y2;
+                }
+                else
+                {
+                    _points[active_point].y = pos.y;
+                }
+            }
         }
-
-        //if( is_active_y2 == true )
-        //{
-        //    if( pos.y < _points[active_point].y )
-        //    {
-        //        _points[active_point].y2 = _points[active_point].y;
-        //    }
-        //    else
-        //    {
-        //        _points[active_point].y2 = pos.y;
-        //    }
-        //}
-        //else
-        //{
-        //    if( pos.y > _points[active_point].y2 )
-        //    {
-        //        _points[active_point].y = _points[active_point].y2;
-        //    }
-        //    else
-        //    {
-        //        _points[active_point].y = pos.y;
-        //    }
-        //}
 
         if( max > 2 )
         {
@@ -1400,9 +1399,6 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     p_y2 = p_y2 - pos;
                     float p2d = sqrt( p.x * p.x + p.y * p.y );
                     float p2d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
-
-                    //if( p1d < (1.f / 16.f) ) sel = left;
-                    //if( p2d < (1.f / 16.f) ) sel = left + 1;
 
                     if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
                     {
@@ -1481,29 +1477,6 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     {
                         _points[sel].y = pos.y;
                     }
-
-                    //if( is_active_y2 == true )
-                    //{
-                    //    if( pos.y < _points[sel].y )
-                    //    {
-                    //        _points[sel].y2 = _points[sel].y;
-                    //    }
-                    //    else
-                    //    {
-                    //        _points[sel].y2 = pos.y;
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    if( pos.y > _points[sel].y2 )
-                    //    {
-                    //        _points[sel].y = _points[sel].y2;
-                    //    }
-                    //    else
-                    //    {
-                    //        _points[sel].y = pos.y;
-                    //    }
-                    //}
                     
                     isMoved = true;
                 }
@@ -1834,6 +1807,37 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     return modified;
 }
 //////////////////////////////////////////////////////////////////////////
+static void __setupSelectCurvePointMode( int _selectedPoint, float _factor, dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve )
+{
+    if( _selectedPoint != CURVE_POINT_NONE )
+    {
+        const char * modes[] = {
+            "Normal", // DZ_EDITOR_CURVE_POINT_MODE_NORMAL
+            "Random", // DZ_EDITOR_CURVE_POINT_MODE_RANDOM
+        };
+
+        int mode = _pointsCurve[_selectedPoint].mode;
+        if( ImGui::Combo( "Mode", &mode, modes, IM_ARRAYSIZE( modes ) ) == true )
+        {
+            dz_editor_curve_point_mode_e selected_mode = static_cast<dz_editor_curve_point_mode_e>(mode);
+
+            if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+            {
+                float distance = _pointsData[_selectedPoint].y2 - _pointsData[_selectedPoint].y;
+                _pointsData[_selectedPoint].y = _pointsData[_selectedPoint].y + distance / 2.f;
+            }
+            else if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            {
+                float normalValue = _pointsData[_selectedPoint].y;
+                _pointsData[_selectedPoint].y = normalValue - 0.25f * _factor;
+                _pointsData[_selectedPoint].y2 = normalValue + 0.25f * _factor;
+            }
+
+            _pointsCurve[_selectedPoint].mode = selected_mode;
+        }
+    }
+}
+//////////////////////////////////////////////////////////////////////////
 int editor::showEffectData()
 {
     ImGui::Spacing();
@@ -1961,6 +1965,8 @@ int editor::showShapeData()
                         return EXIT_FAILURE;
                     }
                 }
+
+                __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
             }
 
             ImGui::Separator();
@@ -2023,34 +2029,7 @@ int editor::showAffectorData()
                 }
             }
 
-            // wip
-            if( data.selectedPoint != CURVE_POINT_NONE )
-            {
-                const char * modes[] = {
-                    "Normal", // DZ_EDITOR_CURVE_POINT_MODE_NORMAL
-                    "Random", // DZ_EDITOR_CURVE_POINT_MODE_RANDOM
-                };
-
-                int mode = data.pointsCurve[data.selectedPoint].mode;
-                if( ImGui::Combo( "Mode", &mode, modes, IM_ARRAYSIZE( modes ) ) == true )
-                {
-                    dz_editor_curve_point_mode_e selected_mode = static_cast<dz_editor_curve_point_mode_e>(mode);
-
-                    if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
-                    {
-                        float distance = data.pointsData[data.selectedPoint].y2 - data.pointsData[data.selectedPoint].y;
-                        data.pointsData[data.selectedPoint].y = data.pointsData[data.selectedPoint].y + distance / 2.f;
-                    }
-                    else if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
-                    {
-                        float normalValue = data.pointsData[data.selectedPoint].y;
-                        data.pointsData[data.selectedPoint].y = normalValue - 0.25f * factor;
-                        data.pointsData[data.selectedPoint].y2 = normalValue + 0.25f * factor;
-                    }
-
-                    data.pointsCurve[data.selectedPoint].mode = selected_mode;
-                }
-            }
+            __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
         }
 
         ImGui::Separator();
@@ -2114,6 +2093,8 @@ int editor::showEmitterData()
                         return EXIT_FAILURE;
                     }
                 }
+
+                __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
             }
             else // other
             {
@@ -2132,6 +2113,8 @@ int editor::showEmitterData()
                         return EXIT_FAILURE;
                     }
                 }
+
+                __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
             }
         }
 
