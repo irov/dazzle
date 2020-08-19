@@ -1156,10 +1156,21 @@ static void __setupLimits( dz_editor_curve_point_t * _pointsData, dz_timeline_li
         int end = 0;
         for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
         {
-            if( _pointsData[end].y < y_min_down || _pointsData[end].y > y_max_down )
+            if( _pointsData[end].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
             {
-                availableZoomDown = false;
-                break;
+                if( _pointsData[end].y < y_min_down || _pointsData[end].y > y_max_down )
+                {
+                    availableZoomDown = false;
+                    break;
+                }
+            }
+            else if( _pointsData[end].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            {
+                if( _pointsData[end].y < y_min_down || _pointsData[end].y2 < y_min_down || _pointsData[end].y > y_max_down || _pointsData[end].y2 > y_max_down )
+                {
+                    availableZoomDown = false;
+                    break;
+                }
             }
         }
 
