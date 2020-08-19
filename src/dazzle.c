@@ -1776,10 +1776,12 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
 
     uint16_t particle_iterator = 0;
 
-    const dz_particle_t * p = _effect->partices;
-    const dz_particle_t * p_end = _effect->partices + _effect->partices_count;
-    for( ; p != p_end; ++p )
+    const dz_particle_t * p_begin = _effect->partices + _effect->partices_count;
+    const dz_particle_t * p_end = _effect->partices;
+    for( ; p_begin != p_end; --p_begin )
     {
+        const dz_particle_t * p = p_begin - 1;
+
         __particle_compute_positions( p, particle_iterator, _mesh );
         __particle_compute_colors( p, particle_iterator, _mesh );
         __particle_compute_uvs( p, particle_iterator, _mesh );
