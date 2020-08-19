@@ -17,6 +17,11 @@
 #include "math.h"
 
 //////////////////////////////////////////////////////////////////////////
+uint32_t dz_get_magic( void )
+{
+    return 'D' + ('A' << 8) + ('Z' << 16) + ('Z' << 24);
+}
+//////////////////////////////////////////////////////////////////////////
 uint32_t dz_get_version( void )
 {
     return 1;
@@ -270,8 +275,6 @@ dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _mater
     material->g = 1.f;
     material->b = 1.f;
     material->a = 1.f;
-
-    material->texture_count = 0;
 
     material->ud = _ud;
 
@@ -1833,21 +1836,154 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
     *_count = 1;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_header( const dz_effect_t * _effect, dz_write_t _write, dz_userdata_t _ud )
+#define DZ_WRITE(W, U, V) if( (*W)(&V, sizeof(V), U) == DZ_FAILURE ) return DZ_FAILURE
+#define DZ_WRITEN(W, U, V, N) if( (*W)(V, sizeof(*V) * N, U) == DZ_FAILURE ) return DZ_FAILURE
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_enum( uint32_t _enum, dz_write_t _write, dz_userdata_t _ud )
 {
-    DZ_UNUSED( _effect );
-    DZ_UNUSED( _write );
-    DZ_UNUSED( _ud );
+    DZ_WRITE( _write, _ud, _enum );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+#define DZ_WRITE_ENUM(W, U, V) __write_enum(V, W, U)
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_bool( dz_bool_t _b, dz_write_t _write, dz_userdata_t _ud )
+{
+    uint8_t v = (uint8_t)_b;
+
+    DZ_WRITE( _write, _ud, v );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+#define DZ_WRITE_BOOL(W, U, V) __write_bool(V, W, U)
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_header_write( dz_write_t _write, dz_userdata_t _ud )
+{
+    uint32_t magic = dz_get_magic();
+
+    DZ_WRITE( _write, _ud, magic );
+
+    uint32_t version = dz_get_version();
+
+    DZ_WRITE( _write, _ud, version );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_texture( const dz_texture_t * _texture, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITEN( _write, _ud, _texture->u, 4 );
+    DZ_WRITEN( _write, _ud, _texture->v, 4 );
+
+    DZ_WRITE( _write, _ud, _texture->trim_offset_x );
+    DZ_WRITE( _write, _ud, _texture->trim_offset_y );
+
+    DZ_WRITE( _write, _ud, _texture->trim_width );
+    DZ_WRITE( _write, _ud, _texture->trim_height );
+
+    DZ_WRITE( _write, _ud, _texture->random_weight );
+    DZ_WRITE( _write, _ud, _texture->sequence_delay );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITE( _write, _ud, _atlas->texture_count );
+
+    for( uint32_t index = 0; index != _atlas->texture_count; ++index )
+    {
+        const dz_texture_t * texture = _atlas->textures[index];
+
+        if( __write_texture( texture, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_material( const dz_material_t * _material, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITE_ENUM( _write, _ud, _material->blend_type );
+
+    DZ_WRITE( _write, _ud, _material->r );
+    DZ_WRITE( _write, _ud, _material->g );
+    DZ_WRITE( _write, _ud, _material->b );
+    DZ_WRITE( _write, _ud, _material->a );
+
+    DZ_WRITE_ENUM( _write, _ud, _material->mode );
+
+    if( _material->atlas == DZ_NULLPTR )
+    {
+        DZ_WRITE_BOOL( _write, _ud, DZ_FALSE );
+    }
+    else
+    {
+        DZ_WRITE_BOOL( _write, _ud, DZ_TRUE );
+
+        if( __write_atlas( _material->atlas, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_timeline( const dz_timeline_key_t * _timeline, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITE( _write, _ud, _timeline->p );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_shape( const dz_shape_t * _shape, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITE_ENUM( _write, _ud, _shape->type );
+
+    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    {
+        const dz_timeline_key_t * timeline = _shape->timelines[index];
+
+        if( __write_timeline( timeline, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_write_t _write, dz_userdata_t _ud )
 {
-    if( __write_header( _effect, _write, _ud ) == DZ_FAILURE )
+    DZ_WRITE( _write, _ud, _effect->init_seed );
+    DZ_WRITE( _write, _ud, _effect->particle_limit );  
+
+    DZ_WRITE( _write, _ud, _effect->life );
+
+    if( __write_material( _effect->material, _write, _ud ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
 
+    if( __write_shape( _effect->shape, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    //if( __write_emitter( _effect->emitter, _write, _ud ) == DZ_FAILURE )
+    //{
+    //    return DZ_FAILURE;
+    //}
+
+    //if( __write_affector( _effect->affector, _write, _ud ) == DZ_FAILURE )
+    //{
+    //    return DZ_FAILURE;
+    //}
+    
     return DZ_SUCCESSFUL;
 }
