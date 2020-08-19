@@ -99,7 +99,14 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
         return DZ_FAILURE;
     }
 
-    dz_timeline_key_set_const_value( key0, _points[0].y );
+    if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+    {
+        dz_timeline_key_set_const_value( key0, _points[0].y );
+    }
+    else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+    {
+        dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
+    }
 
     int32_t max = 0;
     while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
@@ -119,7 +126,14 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
             return DZ_FAILURE;
         }
 
-        dz_timeline_key_set_const_value( nextKey, _points[i].y );
+        if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+        {
+            dz_timeline_key_set_const_value( nextKey, _points[i].y );
+        }
+        else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+        {
+            dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
+        }
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
 
@@ -161,7 +175,14 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
         return DZ_FAILURE;
     }
 
-    dz_timeline_key_set_const_value( key0, _points[0].y );
+    if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+    {
+        dz_timeline_key_set_const_value( key0, _points[0].y );
+    }
+    else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+    {
+        dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
+    }
 
     int32_t max = 0;
     while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
@@ -181,7 +202,14 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
             return DZ_FAILURE;
         }
 
-        dz_timeline_key_set_const_value( nextKey, _points[i].y );
+        if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+        {
+            dz_timeline_key_set_const_value( nextKey, _points[i].y );
+        }
+        else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+        {
+            dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
+        }
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
 
@@ -223,7 +251,14 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
         return DZ_FAILURE;
     }
 
-    dz_timeline_key_set_const_value( key0, _points[0].y );
+    if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+    {
+        dz_timeline_key_set_const_value( key0, _points[0].y );
+    }
+    else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+    {
+        dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
+    }
 
     int32_t max = 0;
     while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
@@ -243,7 +278,14 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
             return DZ_FAILURE;
         }
 
-        dz_timeline_key_set_const_value( nextKey, _points[i].y );
+        if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+        {
+            dz_timeline_key_set_const_value( nextKey, _points[i].y );
+        }
+        else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+        {
+            dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
+        }
 
         dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
 
@@ -969,6 +1011,7 @@ static void __pointsCurveToData( dz_editor_curve_point_t * _pointsCurve, dz_edit
         _pointsData[end].x = _pointsCurve[end].x;
         _pointsData[end].y = _min + (_pointsCurve[end].y * _range);
         _pointsData[end].y2 = _min + (_pointsCurve[end].y2 * _range);
+        _pointsData[end].mode = _pointsCurve[end].mode;
     }
     _pointsData[end].x = -1;
 };
@@ -981,6 +1024,7 @@ static void __pointsCurveToDataInv( dz_editor_curve_point_t * _pointsCurve, dz_e
         _pointsData[end].x = _pointsCurve[end].x;
         _pointsData[end].y = _min + 1.f / (_pointsCurve[end].y * _range);
         _pointsData[end].y2 = _min + 1.f / (_pointsCurve[end].y2 * _range);
+        _pointsData[end].mode = _pointsCurve[end].mode;
     }
     _pointsData[end].x = -1;
 };
@@ -1807,8 +1851,9 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     return modified;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __setupSelectCurvePointMode( int _selectedPoint, float _factor, dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve )
+static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve )
 {
+    int modified = 0;
     if( _selectedPoint != CURVE_POINT_NONE )
     {
         const char * modes[] = {
@@ -1834,8 +1879,13 @@ static void __setupSelectCurvePointMode( int _selectedPoint, float _factor, dz_e
             }
 
             _pointsCurve[_selectedPoint].mode = selected_mode;
+            _pointsData[_selectedPoint].mode = selected_mode;
+
+            modified = 1;
         }
     }
+
+    return modified;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showEffectData()
@@ -1966,7 +2016,13 @@ int editor::showShapeData()
                     }
                 }
 
-                __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
+                if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+                {
+                    if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.pointsData ) == DZ_FAILURE )
+                    {
+                        return EXIT_FAILURE;
+                    }
+                }
             }
 
             ImGui::Separator();
@@ -2029,7 +2085,13 @@ int editor::showAffectorData()
                 }
             }
 
-            __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
+            if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+            {
+                if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.pointsData ) == DZ_FAILURE )
+                {
+                    return EXIT_FAILURE;
+                }
+            }
         }
 
         ImGui::Separator();
@@ -2094,7 +2156,13 @@ int editor::showEmitterData()
                     }
                 }
 
-                __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
+                if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+                {
+                    if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
+                    {
+                        return EXIT_FAILURE;
+                    }
+                }
             }
             else // other
             {
@@ -2114,7 +2182,13 @@ int editor::showEmitterData()
                     }
                 }
 
-                __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve );
+                if( __setupSelectCurvePointMode( data.selectedPoint, factor, data.pointsData, data.pointsCurve ) != 0 )
+                {
+                    if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
+                    {
+                        return EXIT_FAILURE;
+                    }
+                }
             }
         }
 
