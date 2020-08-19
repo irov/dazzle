@@ -35,6 +35,7 @@ typedef struct dz_texture_t dz_texture_t;
 dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud );
 void dz_texture_destroy( dz_service_t * _service, const dz_texture_t * _texture );
 
+void dz_texture_set_ud( dz_texture_t * _texture, dz_userdata_t _ud );
 dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture );
 
 void dz_texture_set_uv( dz_texture_t * _texture, const float * _u, const float * _v );
@@ -57,6 +58,7 @@ typedef struct dz_atlas_t dz_atlas_t;
 dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud );
 void dz_atlas_destroy( dz_service_t * _service, const dz_atlas_t * _atlas );
 
+void dz_atlas_set_ud( dz_atlas_t * _atlas, dz_userdata_t _ud );
 dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas );
 
 void dz_atlas_set_surface( dz_atlas_t * _atlas, dz_userdata_t _surface );
@@ -84,6 +86,7 @@ typedef struct dz_material_t dz_material_t;
 dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud );
 void dz_material_destroy( dz_service_t * _service, const dz_material_t * _material );
 
+void dz_material_set_ud( dz_material_t * _material, dz_userdata_t _ud );
 dz_userdata_t dz_material_get_ud( const dz_material_t * _material );
 
 void dz_material_set_blend( dz_material_t * _material, dz_blend_type_e _blend );
@@ -117,15 +120,20 @@ typedef struct dz_timeline_key_t dz_timeline_key_t;
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
 void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key );
 
+void dz_timeline_key_set_ud( dz_timeline_key_t * _key, dz_userdata_t _ud );
 dz_userdata_t dz_timeline_key_get_ud( const dz_timeline_key_t * _key );
 
+void dz_timeline_key_set_type( dz_timeline_key_t * _key, dz_timeline_key_type_e _type );
+dz_timeline_key_type_e dz_timeline_key_get_type( const dz_timeline_key_t * _key );
+
+void dz_timeline_key_set_p( dz_timeline_key_t * _key, float _p );
 float dz_timeline_key_get_p( const dz_timeline_key_t * _key );
 
-dz_result_t dz_timeline_key_const_set_value( dz_timeline_key_t * _key, float _value );
-dz_result_t dz_timeline_key_const_get_value( const dz_timeline_key_t * _key, float * _value );
+void dz_timeline_key_set_const_value( dz_timeline_key_t * _key, float _value );
+void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * _value );
 
-dz_result_t dz_timeline_key_randomize_set_min_max( dz_timeline_key_t * _key, float _min, float _max );
-dz_result_t dz_timeline_key_randomize_get_min_max( const dz_timeline_key_t * _key, float * _min, float * _max );
+void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * _key, float _min, float _max );
+void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * _min, float * _max );
 
 typedef enum dz_timeline_interpolate_type_e
 {
@@ -140,7 +148,8 @@ typedef struct dz_timeline_interpolate_t dz_timeline_interpolate_t;
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud );
 void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate );
 
-dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _key );
+void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * _interpolate, dz_userdata_t _ud );
+dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _interpolate );
 
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate );
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );
@@ -206,6 +215,7 @@ typedef struct dz_shape_t dz_shape_t;
 dz_result_t dz_shape_create( dz_service_t * _service, dz_shape_t ** _shape, dz_shape_type_e _type, dz_userdata_t _ud );
 void dz_shape_destroy( dz_service_t * _service, const dz_shape_t * _shape );
 
+void dz_shape_set_ud( dz_shape_t * _shape, dz_userdata_t _ud );
 dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape );
 
 void dz_shape_set_type( dz_shape_t * _shape, dz_shape_type_e _type );
@@ -251,6 +261,7 @@ typedef struct dz_emitter_t dz_emitter_t;
 dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter, dz_userdata_t _ud );
 void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter );
 
+void dz_emitter_set_ud( dz_emitter_t * _emitter, dz_userdata_t _ud );
 dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter );
 
 void dz_emitter_set_life( dz_emitter_t * _emitter, float _life );
@@ -276,12 +287,20 @@ typedef struct dz_effect_t dz_effect_t;
 dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, uint32_t _seed, float _life, dz_userdata_t _ud );
 void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect );
 
+void dz_effect_set_ud( dz_effect_t * _effect, dz_userdata_t _ud );
 dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect );
 
-const dz_material_t * dz_effect_set_material( dz_effect_t * _effect, const dz_material_t * _material );
-const dz_shape_t * dz_effect_set_shape( dz_effect_t * _effect, const dz_shape_t * _shape );
-const dz_emitter_t * dz_effect_set_emitter( dz_effect_t * _effect, const dz_emitter_t * _emitter );
-const dz_affector_t * dz_effect_set_affector( dz_effect_t * _effect, const dz_affector_t * _affector );
+void dz_effect_set_material( dz_effect_t * _effect, const dz_material_t * _material );
+const dz_material_t * dz_effect_get_material( const dz_effect_t * _effect );
+
+void dz_effect_set_shape( dz_effect_t * _effect, const dz_shape_t * _shape );
+const dz_shape_t * dz_effect_get_shape( const dz_effect_t * _effect );
+
+void dz_effect_set_emitter( dz_effect_t * _effect, const dz_emitter_t * _emitter );
+const dz_emitter_t * dz_effect_get_emitter( const dz_effect_t * _effect );
+
+void dz_effect_set_affector( dz_effect_t * _effect, const dz_affector_t * _affector );
+const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect );
 
 void dz_effect_set_life( dz_effect_t * _effect, float _life );
 float dz_effect_get_life( const dz_effect_t * _effect );
