@@ -4,7 +4,7 @@ include(ExternalProject)
 
 ExternalProject_Add(imgui_download PREFIX imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-		GIT_TAG "v1.77"
+		GIT_TAG "v1.78"
 		GIT_PROGRESS TRUE
             
         UPDATE_COMMAND ${CMAKE_COMMAND} -E copy 

@@ -1601,6 +1601,19 @@ dz_bool_t dz_effect_is_emit_pause( const dz_effect_t * _effect )
     return _effect->emit_pause;
 }
 //////////////////////////////////////////////////////////////////////////
+static dz_particle_t * __find_dead_particle( dz_particle_t * _p, dz_particle_t * _end )
+{
+    for( ; _p != _end; ++_p )
+    {
+        if( _p->time < 0.f )
+        {
+            return _p;
+        }
+    }
+
+    return _end;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time )
 {
     dz_particle_t * p = _effect->partices;
@@ -1610,12 +1623,31 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
         if( p->time + _time < p->life )
         {
             __particle_update( _service, _effect, p, _time );
-            ++p;
         }
         else
         {
-            *p = *(--p_end);
-            --_effect->partices_count;
+            p->time = -1.f;
+        }
+
+        ++p;
+    }
+
+    dz_particle_t * p_dead = __find_dead_particle( _effect->partices, p_end );
+
+    if( p_dead != p_end )
+    {
+        dz_particle_t * p_sweep = p_dead;
+        ++p_sweep;
+        for( ; p_sweep != p_end; ++p_sweep )
+        {
+            if( p_sweep->time >= 0.f )
+            {
+                *p_dead++ = *p_sweep;
+            }
+            else
+            {
+                --_effect->partices_count;
+            }
         }
     }
 
@@ -1945,9 +1977,56 @@ static dz_result_t __write_material( const dz_material_t * _material, dz_write_t
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_timeline( const dz_timeline_key_t * _timeline, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_write_t _write, dz_userdata_t _ud );
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_timeline_interpolate( const dz_timeline_interpolate_t * _interpolate, dz_write_t _write, dz_userdata_t _ud )
 {
-    DZ_WRITE( _write, _ud, _timeline->p );
+    DZ_WRITE_ENUM( _write, _ud, _interpolate->type );
+
+    DZ_WRITE( _write, _ud, _interpolate->p0 );
+    DZ_WRITE( _write, _ud, _interpolate->p1 );
+
+    if( _interpolate->key == DZ_NULLPTR )
+    {
+        DZ_WRITE_BOOL( _write, _ud, DZ_FALSE );
+    }
+    else
+    {
+        DZ_WRITE_BOOL( _write, _ud, DZ_TRUE );
+
+        if( __write_timeline_key( _interpolate->key, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITE( _write, _ud, _key->p );
+
+    DZ_WRITE_ENUM( _write, _ud, _key->type );
+
+    DZ_WRITE( _write, _ud, _key->const_value );
+
+    DZ_WRITE( _write, _ud, _key->randomize_min_value );
+    DZ_WRITE( _write, _ud, _key->randomize_max_value );
+
+    if( _key->interpolate == DZ_NULLPTR )
+    {
+        DZ_WRITE_BOOL( _write, _ud, DZ_FALSE );
+    }
+    else
+    {
+        DZ_WRITE_BOOL( _write, _ud, DZ_TRUE );
+
+        if( __write_timeline_interpolate( _key->interpolate, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
 
     return DZ_SUCCESSFUL;
 }
@@ -1960,7 +2039,39 @@ static dz_result_t __write_shape( const dz_shape_t * _shape, dz_write_t _write, 
     {
         const dz_timeline_key_t * timeline = _shape->timelines[index];
 
-        if( __write_timeline( timeline, _write, _ud ) == DZ_FAILURE )
+        if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITE( _write, _ud, _emitter->life );
+
+    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    {
+        const dz_timeline_key_t * timeline = _emitter->timelines[index];
+
+        if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_affector( const dz_affector_t * _affector, dz_write_t _write, dz_userdata_t _ud )
+{
+    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    {
+        const dz_timeline_key_t * timeline = _affector->timelines[index];
+
+        if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
@@ -1972,7 +2083,7 @@ static dz_result_t __write_shape( const dz_shape_t * _shape, dz_write_t _write, 
 dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_write_t _write, dz_userdata_t _ud )
 {
     DZ_WRITE( _write, _ud, _effect->init_seed );
-    DZ_WRITE( _write, _ud, _effect->particle_limit );  
+    DZ_WRITE( _write, _ud, _effect->particle_limit );
 
     DZ_WRITE( _write, _ud, _effect->life );
 
@@ -1986,15 +2097,15 @@ dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_write_t _write, dz_
         return DZ_FAILURE;
     }
 
-    //if( __write_emitter( _effect->emitter, _write, _ud ) == DZ_FAILURE )
-    //{
-    //    return DZ_FAILURE;
-    //}
+    if( __write_emitter( _effect->emitter, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
 
-    //if( __write_affector( _effect->affector, _write, _ud ) == DZ_FAILURE )
-    //{
-    //    return DZ_FAILURE;
-    //}
-    
+    if( __write_affector( _effect->affector, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
     return DZ_SUCCESSFUL;
 }
