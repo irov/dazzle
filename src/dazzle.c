@@ -1100,11 +1100,11 @@ static void __particle_update( dz_service_t * _service, const dz_effect_t * _emi
     _p->color_b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_B );
     _p->color_a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_A );
 
-    _p->rotate_accelerate_aux += rotate_accelerate * _time * _time;
-    _p->angle += rotate_speed * _time + _p->rotate_accelerate_aux;
+    _p->rotate_accelerate_aux += rotate_accelerate * _time;
+    _p->angle += rotate_speed * _time + _p->rotate_accelerate_aux * _time;
 
-    _p->spin_accelerate_aux += spin_accelerate * _time * _time;
-    _p->spin += spin_speed * _time + _p->spin_accelerate_aux;
+    _p->spin_accelerate_aux += spin_accelerate * _time;
+    _p->spin += spin_speed * _time + _p->spin_accelerate_aux * _time;
 
     const float dx = DZ_COSF( _service, _p->angle );
     const float dy = DZ_SINF( _service, _p->angle );
@@ -1125,10 +1125,10 @@ static void __particle_update( dz_service_t * _service, const dz_effect_t * _emi
         _p->y += strafey;
     }
 
-    _p->move_accelerate_aux += move_accelerate * _time * _time;
+    _p->move_accelerate_aux += move_accelerate * _time;
 
-    const float movex = dx * (move_speed * _time + _p->move_accelerate_aux);
-    const float movey = dy * (move_speed * _time + _p->move_accelerate_aux);
+    const float movex = dx * (move_speed * _time + _p->move_accelerate_aux * _time);
+    const float movey = dy * (move_speed * _time + _p->move_accelerate_aux * _time);
 
     _p->x += movex;
     _p->y += movey;
