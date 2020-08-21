@@ -2094,7 +2094,6 @@ dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_stream_write_t _wri
     }
 
     DZ_WRITE( _write, _ud, _effect->init_seed );
-    DZ_WRITE( _write, _ud, _effect->particle_limit );
 
     DZ_WRITE( _write, _ud, _effect->life );
 
@@ -2410,9 +2409,6 @@ dz_result_t dz_effect_read( dz_service_t * _service, dz_effect_t ** _effect, dz_
 
     uint32_t init_seed;
     DZ_READ( _read, _ud, init_seed );
-
-    uint32_t particle_limit;
-    DZ_READ( _read, _ud, particle_limit );
 
     float life;
     DZ_READ( _read, _ud, life );
