@@ -1882,16 +1882,7 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
 #define DZ_WRITE(W, U, V) if( (*W)(&V, sizeof(V), U) == DZ_FAILURE ) return DZ_FAILURE
 #define DZ_WRITEN(W, U, V, N) if( (*W)(V, sizeof(*V) * N, U) == DZ_FAILURE ) return DZ_FAILURE
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_enum( uint32_t _enum, dz_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITE( _write, _ud, _enum );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-#define DZ_WRITE_ENUM(W, U, V) __write_enum(V, W, U)
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_bool( dz_bool_t _b, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     uint8_t v = (uint8_t)_b;
 
@@ -1902,7 +1893,7 @@ static dz_result_t __write_bool( dz_bool_t _b, dz_write_t _write, dz_userdata_t 
 //////////////////////////////////////////////////////////////////////////
 #define DZ_WRITE_BOOL(W, U, V) __write_bool(V, W, U)
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_header_write( dz_write_t _write, dz_userdata_t _ud )
+dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud )
 {
     uint32_t magic = dz_get_magic();
 
@@ -1915,7 +1906,7 @@ dz_result_t dz_header_write( dz_write_t _write, dz_userdata_t _ud )
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_texture( const dz_texture_t * _texture, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_texture( const dz_texture_t * _texture, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     DZ_WRITEN( _write, _ud, _texture->u, 4 );
     DZ_WRITEN( _write, _ud, _texture->v, 4 );
@@ -1932,7 +1923,7 @@ static dz_result_t __write_texture( const dz_texture_t * _texture, dz_write_t _w
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     DZ_WRITE( _write, _ud, _atlas->texture_count );
 
@@ -1949,16 +1940,16 @@ static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_write_t _write, 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_material( const dz_material_t * _material, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_material( const dz_material_t * _material, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    DZ_WRITE_ENUM( _write, _ud, _material->blend_type );
+    DZ_WRITE( _write, _ud, _material->blend_type );
 
     DZ_WRITE( _write, _ud, _material->r );
     DZ_WRITE( _write, _ud, _material->g );
     DZ_WRITE( _write, _ud, _material->b );
     DZ_WRITE( _write, _ud, _material->a );
 
-    DZ_WRITE_ENUM( _write, _ud, _material->mode );
+    DZ_WRITE( _write, _ud, _material->mode );
 
     if( _material->atlas == DZ_NULLPTR )
     {
@@ -1977,11 +1968,11 @@ static dz_result_t __write_material( const dz_material_t * _material, dz_write_t
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_write_t _write, dz_userdata_t _ud );
+static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_stream_write_t _write, dz_userdata_t _ud );
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_timeline_interpolate( const dz_timeline_interpolate_t * _interpolate, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_timeline_interpolate( const dz_timeline_interpolate_t * _interpolate, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    DZ_WRITE_ENUM( _write, _ud, _interpolate->type );
+    DZ_WRITE( _write, _ud, _interpolate->type );
 
     DZ_WRITE( _write, _ud, _interpolate->p0 );
     DZ_WRITE( _write, _ud, _interpolate->p1 );
@@ -2003,11 +1994,11 @@ static dz_result_t __write_timeline_interpolate( const dz_timeline_interpolate_t
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     DZ_WRITE( _write, _ud, _key->p );
 
-    DZ_WRITE_ENUM( _write, _ud, _key->type );
+    DZ_WRITE( _write, _ud, _key->type );
 
     DZ_WRITE( _write, _ud, _key->const_value );
 
@@ -2031,9 +2022,9 @@ static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_writ
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_shape( const dz_shape_t * _shape, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_shape( const dz_shape_t * _shape, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    DZ_WRITE_ENUM( _write, _ud, _shape->type );
+    DZ_WRITE( _write, _ud, _shape->type );
 
     for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
@@ -2048,7 +2039,7 @@ static dz_result_t __write_shape( const dz_shape_t * _shape, dz_write_t _write, 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     DZ_WRITE( _write, _ud, _emitter->life );
 
@@ -2065,7 +2056,7 @@ static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_write_t _w
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_affector( const dz_affector_t * _affector, dz_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_affector( const dz_affector_t * _affector, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
@@ -2080,13 +2071,8 @@ static dz_result_t __write_affector( const dz_affector_t * _affector, dz_write_t
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_write_t _write, dz_userdata_t _ud )
+dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    DZ_WRITE( _write, _ud, _effect->init_seed );
-    DZ_WRITE( _write, _ud, _effect->particle_limit );
-
-    DZ_WRITE( _write, _ud, _effect->life );
-
     if( __write_material( _effect->material, _write, _ud ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
@@ -2106,6 +2092,338 @@ dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_write_t _write, dz_
     {
         return DZ_FAILURE;
     }
+
+    DZ_WRITE( _write, _ud, _effect->init_seed );
+    DZ_WRITE( _write, _ud, _effect->particle_limit );
+
+    DZ_WRITE( _write, _ud, _effect->life );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+#define DZ_READ(L, U, V) if( (*L)(&V, sizeof(V), U) == DZ_FAILURE ) return DZ_FAILURE
+#define DZ_READN(L, U, V, N) if( (*L)(V, sizeof(*V) * N, U) == DZ_FAILURE ) return DZ_FAILURE
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_bool( dz_bool_t * _b, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    uint8_t v;
+    DZ_READ( _read, _ud, v );
+
+    *_b = (dz_bool_t)v;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+#define DZ_LOAD_BOOL(L, U, V) __read_bool(&V, L, U)
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect_read_status_e * _status )
+{
+    uint32_t read_magic;
+    DZ_READ( _read, _ud, read_magic );
+
+    uint32_t magic = dz_get_magic();
+
+    if( read_magic != magic )
+    {
+        *_status = DZ_EFFECT_LOAD_INVALID_MAGIC;
+
+        return DZ_FAILURE;
+    }
+
+    uint32_t read_version;
+    DZ_READ( _read, _ud, read_version );
+
+    uint32_t version = dz_get_version();
+
+    if( read_version != version )
+    {
+        *_status = DZ_EFFECT_LOAD_INVALID_MAGIC;
+
+        return DZ_FAILURE;
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_texture( dz_service_t * _service, dz_texture_t ** _texture, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_texture_t * texture;
+    if( dz_texture_create( _service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_READN( _read, _ud, texture->u, 4 );
+    DZ_READN( _read, _ud, texture->v, 4 );
+
+    DZ_READ( _read, _ud, texture->trim_offset_x );
+    DZ_READ( _read, _ud, texture->trim_offset_y );
+
+    DZ_READ( _read, _ud, texture->trim_width );
+    DZ_READ( _read, _ud, texture->trim_height );
+
+    DZ_READ( _read, _ud, texture->random_weight );
+    DZ_READ( _read, _ud, texture->sequence_delay );
+
+    *_texture = texture;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_atlas( dz_service_t * _service, dz_atlas_t ** _atlas, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_atlas_t * atlas;
+    if( dz_atlas_create( _service, &atlas, DZ_NULLPTR, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_READ( _read, _ud, atlas->texture_count );
+
+    for( uint32_t index = 0; index != atlas->texture_count; ++index )
+    {
+        dz_texture_t * texture;
+        if( __read_texture( _service, &texture, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        atlas->textures[index] = texture;
+    }
+
+    *_atlas = atlas;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_material( dz_service_t * _service, dz_material_t ** _material, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_material_t * material;
+    if( dz_material_create( _service, &material, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_READ( _read, _ud, material->blend_type );
+
+    DZ_READ( _read, _ud, material->r );
+    DZ_READ( _read, _ud, material->g );
+    DZ_READ( _read, _ud, material->b );
+    DZ_READ( _read, _ud, material->a );
+
+    DZ_READ( _read, _ud, material->mode );
+
+    dz_bool_t has_atlas;
+    DZ_LOAD_BOOL( _read, _ud, has_atlas );
+
+    if( has_atlas == DZ_TRUE )
+    {
+        dz_atlas_t * atlas;
+        if( __read_atlas( _service, &atlas, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        material->atlas = atlas;
+    }
+
+    *_material = material;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_timeline_key( dz_service_t * _service, dz_timeline_key_t ** _key, dz_stream_read_t _read, dz_userdata_t _ud );
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_timeline_interpolate( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_timeline_interpolate_type_e type;
+    DZ_READ( _read, _ud, type );
+
+    dz_timeline_interpolate_t * interpolate;
+    if( dz_timeline_interpolate_create( _service, &interpolate, type, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_READ( _read, _ud, interpolate->p0 );
+    DZ_READ( _read, _ud, interpolate->p1 );
+
+    dz_bool_t has_timeline_key;
+    DZ_LOAD_BOOL( _read, _ud, has_timeline_key );
+
+    if( has_timeline_key == DZ_TRUE )
+    {
+        dz_timeline_key_t * key;
+        if( __read_timeline_key( _service, &key, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        interpolate->key = key;
+    }
+
+    *_interpolate = interpolate;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_timeline_key( dz_service_t * _service, dz_timeline_key_t ** _key, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    float p;
+    DZ_READ( _read, _ud, p );
+
+    dz_timeline_key_type_e type;
+    DZ_READ( _read, _ud, type );
+
+    dz_timeline_key_t * key;
+    if( dz_timeline_key_create( _service, &key, p, type, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_READ( _read, _ud, key->const_value );
+
+    DZ_READ( _read, _ud, key->randomize_min_value );
+    DZ_READ( _read, _ud, key->randomize_max_value );
+
+    dz_bool_t has_interpolate;
+    DZ_LOAD_BOOL( _read, _ud, has_interpolate );
+
+    if( has_interpolate == DZ_TRUE )
+    {
+        dz_timeline_interpolate_t * interpolate;
+        if( __read_timeline_interpolate( _service, &interpolate, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        key->interpolate = interpolate;
+    }
+
+    *_key = key;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_shape( dz_service_t * _service, dz_shape_t ** _shape, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_shape_type_e type;
+    DZ_READ( _read, _ud, type );
+
+    dz_shape_t * shape;
+    if( dz_shape_create( _service, &shape, type, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    {
+        dz_timeline_key_t * timeline;
+        if( __read_timeline_key( _service, &timeline, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        shape->timelines[index] = timeline;
+    }
+
+    *_shape = shape;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_emitter( dz_service_t * _service, dz_emitter_t ** _emitter, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_emitter_t * emitter;
+    if( dz_emitter_create( _service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_READ( _read, _ud, emitter->life );
+
+    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    {
+        dz_timeline_key_t * key;
+        if( __read_timeline_key( _service, &key, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        emitter->timelines[index] = key;
+    }
+
+    *_emitter = emitter;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_affector( dz_service_t * _service, dz_affector_t ** _affector, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_affector_t * affector;
+    if( dz_affector_create( _service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    {
+        dz_timeline_key_t * key;
+        if( __read_timeline_key( _service, &key, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        affector->timelines[index] = key;
+    }
+
+    *_affector = affector;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_effect_read( dz_service_t * _service, dz_effect_t ** _effect, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_material_t * material;
+    if( __read_material( _service, &material, _read, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_shape_t * shape;
+    if( __read_shape( _service, &shape, _read, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_emitter_t * emitter;
+    if( __read_emitter( _service, &emitter, _read, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_affector_t * affector;
+    if( __read_affector( _service, &affector, _read, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    uint32_t init_seed;
+    DZ_READ( _read, _ud, init_seed );
+
+    uint32_t particle_limit;
+    DZ_READ( _read, _ud, particle_limit );
+
+    float life;
+    DZ_READ( _read, _ud, life );
+
+    dz_effect_t * effect;
+    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, init_seed, life, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    *_effect = effect;
 
     return DZ_SUCCESSFUL;
 }
