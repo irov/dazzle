@@ -84,6 +84,7 @@ public:
     ImVec4 m_backgroundColor;
 
     bool m_showDebugInfo;
+    bool m_showCanvasLines;
 
     bool m_pause;
 

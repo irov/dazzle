@@ -42,6 +42,7 @@ static const char * ER_MENU_EDIT = "Edit";
 static const char * ER_MENU_EDIT_ITEM_UNDO = "Undo";
 static const char * ER_MENU_EDIT_ITEM_REDO = "Redo";
 static const char * ER_MENU_EDIT_ITEM_SHOW_DEBUG_INFO = "Show debug info";
+static const char * ER_MENU_EDIT_ITEM_SHOW_CANVAS_LINES = "Show canvase lines";
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_CURVE_BTN_ZOOM_UP_TEXT = "+";
 static const char * ER_CURVE_BTN_ZOOM_DOWN_TEXT = "-";
@@ -579,6 +580,7 @@ editor::editor()
     , m_backgroundColor( 0.f, 0.f, 0.f, 1.f )
 
     , m_showDebugInfo( false )
+    , m_showCanvasLines( false )
     , m_pause( false )
 
     , m_textureWidth( 0 )
@@ -1079,6 +1081,8 @@ int editor::showMenuBar()
             ImGui::Separator();
 
             ImGui::MenuItem( ER_MENU_EDIT_ITEM_SHOW_DEBUG_INFO, "~", &m_showDebugInfo );
+
+            ImGui::MenuItem( ER_MENU_EDIT_ITEM_SHOW_CANVAS_LINES, NULL, &m_showCanvasLines );
 
             ImGui::EndMenu();
         }
@@ -2442,6 +2446,60 @@ int editor::showContentPane()
     ImGui::BeginChild( "DAZZLE_CANVAS_WINDOW", m_dzWindowSize );
 
     window->DrawList->AddRectFilled( cursorPos, cursorPos + m_dzWindowSize, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ) );
+
+    if( m_showCanvasLines == true )
+    {
+        const float leftBound = cursorPos.x;
+        const float rightBound = cursorPos.x + columnWidth;
+        const float upperBound = cursorPos.y;
+        const float downBound = cursorPos.y + columnHeight;
+
+        const float halfWidth = columnWidth / 2.f;
+        const float halfHeight = columnHeight / 2.f;
+
+        ImVec2 verticalLineStartPos( cursorPos.x + halfWidth + camera_offset_x, cursorPos.y );
+        ImVec2 verticalLineEndPos( cursorPos.x + halfWidth + camera_offset_x, cursorPos.y + columnHeight );
+
+        if( verticalLineStartPos.x > leftBound
+            && verticalLineStartPos.x < rightBound
+            && verticalLineEndPos.x > leftBound
+            && verticalLineEndPos.x < rightBound )
+        {
+            window->DrawList->AddLine( verticalLineStartPos, verticalLineEndPos, ImGui::GetColorU32( ImGuiCol_TextDisabled ) );
+        }
+
+        ImVec2 horizontalLineStartPos( cursorPos.x, cursorPos.y + halfHeight + camera_offset_y );
+        ImVec2 horizontalLineEndPos( cursorPos.x + columnWidth, cursorPos.y + halfHeight + camera_offset_y );
+
+        if( horizontalLineStartPos.y > upperBound
+            && horizontalLineStartPos.y < downBound
+            && horizontalLineEndPos.y > upperBound
+            && horizontalLineEndPos.y < downBound )
+        {
+            window->DrawList->AddLine( horizontalLineStartPos, horizontalLineEndPos, ImGui::GetColorU32( ImGuiCol_TextDisabled ) );
+        }
+
+        // wip
+        //const int linesCount = 20;
+
+        //// vertical grid lines
+        //for( int i = 0; i < linesCount - 1; i++ )
+        //{
+        //    window->DrawList->AddLine(
+        //        ImVec2( cursorPos.x + (columnWidth / linesCount) * (i + 1), cursorPos.y ),
+        //        ImVec2( cursorPos.x + (columnWidth / linesCount) * (i + 1), cursorPos.y + columnHeight ),
+        //        ImGui::GetColorU32( ImGuiCol_TextDisabled ) );
+        //}
+
+        //// vertical grid lines
+        //for( int i = 0; i < linesCount - 1; i++ )
+        //{
+        //    window->DrawList->AddLine(
+        //        ImVec2( cursorPos.x, cursorPos.y + (columnHeight / linesCount) * (i + 1) ),
+        //        ImVec2( cursorPos.x + columnWidth, cursorPos.y + (columnHeight / linesCount) * (i + 1) ),
+        //        ImGui::GetColorU32( ImGuiCol_TextDisabled ) );
+        //}
+    }
 
     ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
     ImGui::GetWindowDrawList()->AddCallback( ImDrawCallback_ResetRenderState, nullptr );
