@@ -53,10 +53,6 @@ ADD_DEFINITIONS(-DDAZZLE_EXAMPLE_CONTENT_DIR="${DAZZLE_EXAMPLE_CONTENT_DIR}")
 
 add_executable(${PROJECT_NAME} ${DAZZLE_EXAMPLE_SOURCES})
 
-message("UNIX: ${UNIX}")
-message("APPLE: ${APPLE}")
-message("ANDROID: ${ANDROID}")
-
 target_link_libraries(${PROJECT_NAME}
     dazzle
     dazzle_render
