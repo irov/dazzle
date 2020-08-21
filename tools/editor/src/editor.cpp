@@ -10,16 +10,94 @@
 #include <cmath>
 
 //////////////////////////////////////////////////////////////////////////
-//static constexpr float WINDOW_WIDTH = 1024.f;  // aspect ratio 3:4
-//static constexpr float WINDOW_HEIGHT = 768.f;
-static constexpr float WINDOW_WIDTH = 1280.f;    // aspect ratio HD 720p
-static constexpr float WINDOW_HEIGHT = 720.f; 
-static constexpr float TIMELINE_PANEL_WIDTH = 330.f;
-static constexpr int32_t CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
-static constexpr ImGuiID CURVE_ID_NONE = 0;
-static constexpr int CURVE_POINT_NONE = -1;
+typedef enum er_window_type_e
+{
+    ER_WINDOW_TYPE_EFFECT_DATA,
+    ER_WINDOW_TYPE_SHAPE_DATA,
+    ER_WINDOW_TYPE_AFFECTOR_DATA,
+    ER_WINDOW_TYPE_EMITTER_DATA,
+    ER_WINDOW_TYPE_MATERIAL_DATA,
+
+    __ER_WINDOW_TYPE_MAX__
+} er_window_type_e;
 //////////////////////////////////////////////////////////////////////////
-static const char * CURVE_LABEL = "Add with <Ctrl> | Delete with <Alt>";
+//static constexpr float ER_WINDOW_WIDTH = 1024.f;  // aspect ratio 3:4
+//static constexpr float ER_WINDOW_HEIGHT = 768.f;
+static constexpr float ER_WINDOW_WIDTH = 1280.f;    // aspect ratio HD 720p
+static constexpr float ER_WINDOW_HEIGHT = 720.f; 
+static constexpr float ER_TIMELINE_PANEL_WIDTH = 330.f;
+static constexpr int32_t ER_CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
+static constexpr ImGuiID ER_CURVE_ID_NONE = 0;
+static constexpr int ER_CURVE_POINT_NONE = -1;
+//////////////////////////////////////////////////////////////////////////
+static const char * ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME = "particle.png";
+//////////////////////////////////////////////////////////////////////////
+// All texts
+//////////////////////////////////////////////////////////////////////////
+static const char * ER_TITLE = "Dazzle particle editor";
+static const char * ER_MENU_FILE = "File";
+static const char * ER_MENU_FILE_ITEM_OPEN = "Open";
+static const char * ER_MENU_FILE_ITEM_SAVE = "Save";
+static const char * ER_MENU_EDIT = "Edit";
+static const char * ER_MENU_EDIT_ITEM_UNDO = "Undo";
+static const char * ER_MENU_EDIT_ITEM_REDO = "Redo";
+static const char * ER_MENU_EDIT_ITEM_SHOW_DEBUG_INFO = "Show debug info";
+//////////////////////////////////////////////////////////////////////////
+static const char * ER_WINDOW_TYPE_NAMES[] = {
+    "Effect",            //ER_WINDOW_TYPE_EFFECT_DATA
+    "Shape",             //ER_WINDOW_TYPE_SHAPE_DATA
+    "Affector",          //ER_WINDOW_TYPE_AFFECTOR_DATA
+    "Emitter",           //ER_WINDOW_TYPE_EMITTER_DATA
+    "Material",          //ER_WINDOW_TYPE_MATERIAL_DATA
+};
+//////////////////////////////////////////////////////////////////////////
+static const char * ER_SHAPE_DATA_NAMES[] = {
+    "Segment angle min", //DZ_SHAPE_SEGMENT_ANGLE_MIN
+    "Segment angle max", //DZ_SHAPE_SEGMENT_ANGLE_MAX
+    "Circle radius min", //DZ_SHAPE_CIRCLE_RADIUS_MIN
+    "Circle radius max", //DZ_SHAPE_CIRCLE_RADIUS_MAX
+    "Circle angle min",  //DZ_SHAPE_CIRCLE_ANGLE_MIN
+    "Circle angle max",  //DZ_SHAPE_CIRCLE_ANGLE_MAX
+    "Line angle",        //DZ_SHAPE_LINE_ANGLE
+    "Line size",         //DZ_SHAPE_LINE_SIZE
+    "Rect width min",    //DZ_SHAPE_RECT_WIDTH_MIN
+    "Rect width max",    //DZ_SHAPE_RECT_WIDTH_MAX
+    "Rect height min",   //DZ_SHAPE_RECT_HEIGHT_MIN
+    "Rect height max",   //DZ_SHAPE_RECT_HEIGHT_MAX
+};
+const char * ER_SHAPE_TYPE_NAMES[] = {
+    "Point",             //DZ_SHAPE_POINT
+    "Segment",           //DZ_SHAPE_SEGMENT
+    "Circle",            //DZ_SHAPE_CIRCLE
+    "Line",              //DZ_SHAPE_LINE
+    "Rect",              //DZ_SHAPE_RECT
+    "Polygon",           //DZ_SHAPE_POLYGON
+    "Mask",              //DZ_SHAPE_MASK
+};
+const char * ER_EMITTER_DATA_NAMES[] = {
+    "Spawn delay (inv)", //DZ_EMITTER_SPAWN_DELAY inverted, means value = 1 / DZ_EMITTER_SPAWN_DELAY
+    "Spawn count",       //DZ_EMITTER_SPAWN_COUNT
+    "Spawn spin min",    //DZ_EMITTER_SPAWN_SPIN_MIN
+    "Spawn spin max",    //DZ_EMITTER_SPAWN_SPIN_MAX
+};
+const char * ER_AFFECTOR_DATA_NAMES[] = {
+    "Life",              //DZ_AFFECTOR_TIMELINE_LIFE
+    "Move speed",        //DZ_AFFECTOR_TIMELINE_MOVE_SPEED
+    "Move accelerate",   //DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE
+    "Rotate speed",      //DZ_AFFECTOR_TIMELINE_ROTATE_SPEED
+    "Rotate accelerate", //DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE
+    "Spin speed",        //DZ_AFFECTOR_TIMELINE_SPIN_SPEED
+    "Spin accelerate",   //DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE
+    "Strafe speed",      //DZ_AFFECTOR_TIMELINE_STRAFE_SPEED
+    "Strafe frequence",  //DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
+    "Strafe size",       //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
+    "Strafe shift",      //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
+    "Size",              //DZ_AFFECTOR_TIMELINE_SIZE
+    "Color Red",         //DZ_AFFECTOR_TIMELINE_COLOR_R
+    "Color Green",       //DZ_AFFECTOR_TIMELINE_COLOR_G
+    "Color Blue",        //DZ_AFFECTOR_TIMELINE_COLOR_B
+    "Color Alpha",       //DZ_AFFECTOR_TIMELINE_COLOR_A
+};
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
@@ -95,7 +173,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
     // first create new timeline
     dz_timeline_key_t * key0 = DZ_NULLPTR;
 
-    if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+    if( _points[0].mode == ER_CURVE_POINT_MODE_NORMAL )
     {
         if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -104,7 +182,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
 
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
-    else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+    else if( _points[0].mode == ER_CURVE_POINT_MODE_RANDOM )
     {
         if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -119,7 +197,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
     }
 
     int32_t max = 0;
-    while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
+    while( max < ER_CURVE_MAX_POINTS && _points[max].x >= 0 ) max++;
 
     dz_timeline_key_t * prevKey = key0;
     for( int32_t i = 1; i < max; i++ )
@@ -132,7 +210,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
 
         dz_timeline_key_t * nextKey;
 
-        if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+        if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
         {
             if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
             {
@@ -141,7 +219,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
 
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
-        else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+        else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
         {
             if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
             {
@@ -191,7 +269,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
     // first create new timeline
     dz_timeline_key_t * key0;
 
-    if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+    if( _points[0].mode == ER_CURVE_POINT_MODE_NORMAL )
     {
         if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -200,7 +278,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
-    else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+    else if( _points[0].mode == ER_CURVE_POINT_MODE_RANDOM )
     {
         if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -215,7 +293,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
     }
 
     int32_t max = 0;
-    while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
+    while( max < ER_CURVE_MAX_POINTS && _points[max].x >= 0 ) max++;
 
     dz_timeline_key_t * prevKey = key0;
     for( int32_t i = 1; i < max; i++ )
@@ -228,7 +306,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 
         dz_timeline_key_t * nextKey;
 
-        if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+        if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
         {
             if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
             {
@@ -237,7 +315,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
-        else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+        else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
         {
             if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
             {
@@ -287,7 +365,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
     // first create new timeline
     dz_timeline_key_t * key0;
     
-    if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+    if( _points[0].mode == ER_CURVE_POINT_MODE_NORMAL )
     {
         if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -296,7 +374,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
 
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
-    else if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+    else if( _points[0].mode == ER_CURVE_POINT_MODE_RANDOM )
     {
         if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -311,7 +389,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
     }
 
     int32_t max = 0;
-    while( max < MAX_POINTS && _points[max].x >= 0 ) max++;
+    while( max < ER_CURVE_MAX_POINTS && _points[max].x >= 0 ) max++;
 
     dz_timeline_key_t * prevKey = key0;
     for( int32_t i = 1; i < max; i++ )
@@ -324,7 +402,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
 
         dz_timeline_key_t * nextKey;
 
-        if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+        if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
         {
             if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
             {
@@ -333,7 +411,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
 
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
-        else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+        else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
         {
             if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
             {
@@ -456,8 +534,8 @@ static void glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, int
 }
 //////////////////////////////////////////////////////////////////////////
 editor::editor()
-    : m_windowWidth( WINDOW_WIDTH )
-    , m_windowHeight( WINDOW_HEIGHT )
+    : m_windowWidth( ER_WINDOW_WIDTH )
+    , m_windowHeight( ER_WINDOW_HEIGHT )
 
     , m_dzWindowPos( 0.f, 0.f )
     , m_dzWindowSize( 500.f, 500.f )
@@ -507,7 +585,7 @@ int editor::init()
         glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
         glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
 
-        m_fwWindow = glfwCreateWindow( (uint32_t)m_windowWidth, (uint32_t)m_windowHeight, "dazzle particle editor", 0, 0 );
+        m_fwWindow = glfwCreateWindow( (uint32_t)m_windowWidth, (uint32_t)m_windowHeight, ER_TITLE, 0, 0 );
 
         glfwSetWindowUserPointer( m_fwWindow, this );
 
@@ -554,7 +632,7 @@ int editor::init()
         char texture_path[250];
         sprintf( texture_path, "%s/%s"
             , DAZZLE_EDITOR_CONTENT_DIR
-            , "particle.png"
+            , ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME
         );
 
         m_textureId = dz_render_make_texture( texture_path, &m_textureWidth, &m_textureHeight);
@@ -604,34 +682,19 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
-        const char * shapeTypeNames[] = {
-            "Segment angle min",
-            "Segment angle max",
-            "Circle radius min",
-            "Circle radius max",
-            "Circle angle min",
-            "Circle angle max",
-            "Line angle",
-            "Line size",
-            "Rect width min",
-            "Rect width max",
-            "Rect height min",
-            "Rect height max",
-        };
-
         for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
         {
             timeline_shape_t & data = m_timelineShapeData[index];
 
             data.type = static_cast<dz_shape_timeline_type_e>(index);
-            data.name = shapeTypeNames[index];
+            data.name = ER_SHAPE_DATA_NAMES[index];
 
             dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
             dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
             
             data.zoom = 1;
 
-            data.selectedPoint = CURVE_POINT_NONE;
+            data.selectedPoint = ER_CURVE_POINT_NONE;
 
             if( __set_shape_timeline_const( m_service, m_shape, data.type, default ) == DZ_FAILURE )
             {
@@ -652,26 +715,19 @@ int editor::init()
 
         dz_emitter_set_life( m_emitter, 1000.f );
 
-        const char * emitterTypeNames[] = {
-            "Spawn delay (inv)",
-            "Spawn count",
-            "Spawn spin min",
-            "Spawn spin max",
-        };
-
         for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
         {
             timeline_emitter_t & data = m_timelineEmitterData[index];
 
             data.type = static_cast<dz_emitter_timeline_type_e>(index);
-            data.name = emitterTypeNames[index];
+            data.name = ER_EMITTER_DATA_NAMES[index];
 
             dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
             dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
             data.zoom = 1;
 
-            data.selectedPoint = CURVE_POINT_NONE;
+            data.selectedPoint = ER_CURVE_POINT_NONE;
 
             if( __set_emitter_timeline_const( m_service, m_emitter, data.type, default ) == DZ_FAILURE )
             {
@@ -690,38 +746,19 @@ int editor::init()
             return EXIT_FAILURE;
         }
 
-        const char * affectorTypeNames[] = {
-            "Life",
-            "Move speed",
-            "Move accelerate",
-            "Rotate speed",
-            "Rotate accelerate",
-            "Spin speed",
-            "Spin accelerate",
-            "Strafe speed",
-            "Strafe frequence",
-            "Strafe size",
-            "Strafe shift",
-            "Size",
-            "Color Red",
-            "Color Green",
-            "Color Blue",
-            "Color Alpha",
-        };
-
         for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
         {
             timeline_affector_t & data = m_timelineAffectorData[index];
 
             data.type = static_cast<dz_affector_timeline_type_e>(index);
-            data.name = affectorTypeNames[index];
+            data.name = ER_AFFECTOR_DATA_NAMES[index];
 
             dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
             dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
             data.zoom = 1;
 
-            data.selectedPoint = CURVE_POINT_NONE;
+            data.selectedPoint = ER_CURVE_POINT_NONE;
 
             if( __set_affector_timeline_const( m_service, m_affector, data.type, default ) == DZ_FAILURE )
             {
@@ -800,7 +837,7 @@ int editor::update()
 
         ImGui::SetNextWindowPos( ImVec2( 0.f, 0.f), ImGuiCond_Always );
         ImGui::SetNextWindowSize( ImVec2( m_windowWidth, m_windowHeight ), ImGuiCond_Always );
-        if( ImGui::Begin( "Example: Simple layout", NULL, window_flags ) )
+        if( ImGui::Begin( "LAYOUT", NULL, window_flags ) )
         {
             // menu bar
             if( this->showMenuBar() == EXIT_FAILURE )
@@ -808,52 +845,34 @@ int editor::update()
                 return EXIT_FAILURE;
             }
 
-            // Left
-            enum SelectedType
+            // left panel
+            static int selected = ER_WINDOW_TYPE_EFFECT_DATA;
             {
-                SELECTED_EFFECT_DATA,
-                SELECTED_SHAPE_DATA,
-                SELECTED_AFFECTOR_DATA,
-                SELECTED_EMITTER_DATA,
-                SELECTED_MATERIAL_DATA,
+                ImGui::BeginChild( "LEFT_PANEL", ImVec2( 150, 0 ), true );
 
-                __SELECTED_DATA_MAX__
-            };
-
-            //static int selected = SELECTED_EFFECT_DATA;
-            static int selected = SELECTED_AFFECTOR_DATA; // debug
-            {
-                ImGui::BeginChild( "left pane", ImVec2( 150, 0 ), true );
-
-                if( ImGui::Selectable( "Effect", selected == SelectedType::SELECTED_EFFECT_DATA ) )
-                    selected = SelectedType::SELECTED_EFFECT_DATA;
-                
-                if( ImGui::Selectable( "Shape", selected == SelectedType::SELECTED_SHAPE_DATA ) )
-                    selected = SelectedType::SELECTED_SHAPE_DATA;
-
-                if( ImGui::Selectable( "Affector", selected == SelectedType::SELECTED_AFFECTOR_DATA ) )
-                    selected = SelectedType::SELECTED_AFFECTOR_DATA;
-
-                if( ImGui::Selectable( "Emitter", selected == SelectedType::SELECTED_EMITTER_DATA ) )
-                    selected = SelectedType::SELECTED_EMITTER_DATA;
-
-                if( ImGui::Selectable( "Material", selected == SelectedType::SELECTED_MATERIAL_DATA ) )
-                    selected = SelectedType::SELECTED_MATERIAL_DATA;
+                for( int32_t selectableIdx = 0; selectableIdx < IM_ARRAYSIZE( ER_WINDOW_TYPE_NAMES ); selectableIdx++ )
+                {
+                    const bool isSelected = selected == selectableIdx;
+                    if( ImGui::Selectable( ER_WINDOW_TYPE_NAMES[selectableIdx], isSelected ) )
+                    {
+                        selected = selectableIdx;
+                    }
+                }
 
                 ImGui::EndChild();
             }
             ImGui::SameLine();
 
-            // Right
+            // middle panel
             {
                 ImGui::BeginGroup();
 
                 // elements
-                ImGui::BeginChild( "Selected data", ImVec2( TIMELINE_PANEL_WIDTH, 0.f ), true );
+                ImGui::BeginChild( "WINDOW_SELECT", ImVec2( ER_TIMELINE_PANEL_WIDTH, 0.f ), true );
 
                 switch( selected )
                 {
-                case SelectedType::SELECTED_EFFECT_DATA:
+                case ER_WINDOW_TYPE_EFFECT_DATA:
                     {
                         if( this->showEffectData() )
                         {
@@ -861,7 +880,7 @@ int editor::update()
                         }
                     } 
                     break;
-                case SelectedType::SELECTED_SHAPE_DATA:
+                case ER_WINDOW_TYPE_SHAPE_DATA:
                     {
                         if( this->showShapeData() )
                         {
@@ -869,7 +888,7 @@ int editor::update()
                         }
                     } 
                     break;
-                case SelectedType::SELECTED_AFFECTOR_DATA:
+                case ER_WINDOW_TYPE_AFFECTOR_DATA:
                     {
                         if( this->showAffectorData() )
                         {
@@ -877,7 +896,7 @@ int editor::update()
                         }
                     }
                     break;
-                case SelectedType::SELECTED_EMITTER_DATA:
+                case ER_WINDOW_TYPE_EMITTER_DATA:
                     {
                         if( this->showEmitterData() )
                         {
@@ -885,7 +904,7 @@ int editor::update()
                         }
                     }
                     break;
-                case SelectedType::SELECTED_MATERIAL_DATA:
+                case ER_WINDOW_TYPE_MATERIAL_DATA:
                     {
                         if( this->showMaterialData() )
                         {
@@ -901,11 +920,11 @@ int editor::update()
             }
             ImGui::SameLine();
 
-            // Right
+            // right panel
             {
                 ImGui::BeginGroup();
 
-                ImGui::BeginChild( "item view", ImVec2( 0, 0 ), true ); // Leave room for 1 line below us
+                ImGui::BeginChild( "ITEM_VIEW", ImVec2( 0, 0 ), true );
 
                 if ( this->showContentPane() == EXIT_FAILURE )
                 {
@@ -1003,33 +1022,27 @@ int editor::showMenuBar()
 {
     if( ImGui::BeginMenuBar() )
     {
-        if( ImGui::BeginMenu( "File" ) )
+        if( ImGui::BeginMenu( ER_MENU_FILE ) )
         {
-            if( ImGui::MenuItem( "Open", "CTRL+O" ) )
+            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_OPEN, NULL, false, false ) ) // todo
+            {
+            }
+            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_SAVE, NULL, false, false ) ) // todo
             {
             }
             ImGui::EndMenu();
         }
-        if( ImGui::BeginMenu( "Edit" ) )
+        if( ImGui::BeginMenu( ER_MENU_EDIT ) )
         {
-            if( ImGui::MenuItem( "Undo", "CTRL+Z" ) )
+            if( ImGui::MenuItem( ER_MENU_EDIT_ITEM_UNDO, NULL, false, false ) ) // todo
             {
             }
-            if( ImGui::MenuItem( "Redo", "CTRL+Y", false, false ) )
+            if( ImGui::MenuItem( ER_MENU_EDIT_ITEM_REDO, NULL, false, false ) ) // todo
             {
-            }  // Disabled item
+            }
             ImGui::Separator();
-            if( ImGui::MenuItem( "Cut", "CTRL+X" ) )
-            {
-            }
-            if( ImGui::MenuItem( "Copy", "CTRL+C" ) )
-            {
-            }
-            if( ImGui::MenuItem( "Paste", "CTRL+V" ) )
-            {
-            }
 
-            ImGui::MenuItem( "Debug info", "CTRL+I", &m_showDebugInfo );
+            ImGui::MenuItem( ER_MENU_EDIT_ITEM_SHOW_DEBUG_INFO, "~", &m_showDebugInfo );
 
             ImGui::EndMenu();
         }
@@ -1039,10 +1052,10 @@ int editor::showMenuBar()
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __pointsDataToCurve( dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve, float _min, float _range )
+static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, float _min, float _range )
 {
     int end = 0;
-    for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
+    for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
     {
         _pointsCurve[end].x = _pointsData[end].x;
         _pointsCurve[end].y = (_pointsData[end].y - _min) / _range;
@@ -1051,10 +1064,10 @@ static void __pointsDataToCurve( dz_editor_curve_point_t * _pointsData, dz_edito
     _pointsCurve[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __pointsDataToCurveInv( dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve, float _min, float _range )
+static void __pointsDataToCurveInv( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, float _min, float _range )
 {
     int end = 0;
-    for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
+    for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
     {
         _pointsCurve[end].x = _pointsData[end].x;
         _pointsCurve[end].y = 1.f / ((_pointsData[end].y - _min) * _range);
@@ -1063,10 +1076,10 @@ static void __pointsDataToCurveInv( dz_editor_curve_point_t * _pointsData, dz_ed
     _pointsCurve[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __pointsCurveToData( dz_editor_curve_point_t * _pointsCurve, dz_editor_curve_point_t * _pointsData, float _min, float _range )
+static void __pointsCurveToData( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, float _min, float _range )
 {
     int end = 0;
-    for( ; end < MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
+    for( ; end < ER_CURVE_MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
     {
         _pointsData[end].x = _pointsCurve[end].x;
         _pointsData[end].y = _min + (_pointsCurve[end].y * _range);
@@ -1076,10 +1089,10 @@ static void __pointsCurveToData( dz_editor_curve_point_t * _pointsCurve, dz_edit
     _pointsData[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __pointsCurveToDataInv( dz_editor_curve_point_t * _pointsCurve, dz_editor_curve_point_t * _pointsData, float _min, float _range )
+static void __pointsCurveToDataInv( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, float _min, float _range )
 {
     int end = 0;
-    for( ; end < MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
+    for( ; end < ER_CURVE_MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
     {
         _pointsData[end].x = _pointsCurve[end].x;
         _pointsData[end].y = _min + 1.f / (_pointsCurve[end].y * _range);
@@ -1089,7 +1102,7 @@ static void __pointsCurveToDataInv( dz_editor_curve_point_t * _pointsCurve, dz_e
     _pointsData[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __setupLimits( dz_editor_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
+static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
 {
     if( _status != DZ_TIMELINE_LIMIT_NORMAL )
     {
@@ -1154,9 +1167,9 @@ static void __setupLimits( dz_editor_curve_point_t * _pointsData, dz_timeline_li
         bool availableZoomDown = true;
 
         int end = 0;
-        for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
+        for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
         {
-            if( _pointsData[end].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+            if( _pointsData[end].mode == ER_CURVE_POINT_MODE_NORMAL )
             {
                 if( _pointsData[end].y < y_min_down || _pointsData[end].y > y_max_down )
                 {
@@ -1164,7 +1177,7 @@ static void __setupLimits( dz_editor_curve_point_t * _pointsData, dz_timeline_li
                     break;
                 }
             }
-            else if( _pointsData[end].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            else if( _pointsData[end].mode == ER_CURVE_POINT_MODE_RANDOM )
             {
                 if( _pointsData[end].y < y_min_down || _pointsData[end].y2 < y_min_down || _pointsData[end].y > y_max_down || _pointsData[end].y2 > y_max_down )
                 {
@@ -1203,14 +1216,14 @@ static void __setupLimits( dz_editor_curve_point_t * _pointsData, dz_timeline_li
     }
 };
 //////////////////////////////////////////////////////////////////////////
-static void __setupLimitsInv( dz_editor_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
+static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
 {
     if( _status != DZ_TIMELINE_LIMIT_NORMAL )
     {
         float max_value = 0.f;
         {
             int end = 0;
-            for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
+            for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
             {
                 float value = 1.f / _pointsData[end].y;
                 if( value > max_value )
@@ -1291,7 +1304,7 @@ static void __setupLimitsInv( dz_editor_curve_point_t * _pointsData, dz_timeline
             bool availableZoomDown = true;
 
             int end = 0;
-            for( ; end < MAX_POINTS && _pointsData[end].x >= 0; end++ )
+            for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
             {
                 float value = 1.f / _pointsData[end].y;
                 if( value < y_min_down || value > y_max_down )
@@ -1331,7 +1344,7 @@ static void __setupLimitsInv( dz_editor_curve_point_t * _pointsData, dz_timeline
     }
 };
 //////////////////////////////////////////////////////////////////////////
-static int __setupCurve( const char * _label, const ImVec2 & _size, const int _maxpoints, dz_editor_curve_point_t * _points, int * _selected, float _x_min = 0.f, float _x_max = 1.f, float _y_min = 0.f, float _y_max = 1.f )
+static int __setupCurve( const char * _label, const ImVec2 & _size, const int _maxpoints, er_curve_point_t * _points, int * _selected, float _x_min = 0.f, float _x_max = 1.f, float _y_min = 0.f, float _y_max = 1.f )
 {
     int modified = 0;
     int i;
@@ -1369,22 +1382,22 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     float ht = bb.Max.y - bb.Min.y;
     float wd = bb.Max.x - bb.Min.x;
 
-    static ImGuiID active_id = CURVE_ID_NONE;
-    static int active_point = CURVE_POINT_NONE;
+    static ImGuiID active_id = ER_CURVE_ID_NONE;
+    static int active_point = ER_CURVE_POINT_NONE;
     static bool is_active_y2 = false;
     static bool is_point_added = false;
 
     if( g.IO.MouseReleased[0] == true )
     {
-        active_id = CURVE_ID_NONE;
-        active_point = CURVE_POINT_NONE;
+        active_id = ER_CURVE_ID_NONE;
+        active_point = ER_CURVE_POINT_NONE;
         is_active_y2 = false;
         is_point_added = false;
     }
 
     bool isMoved = false;
 
-    if( active_id == id && active_point != CURVE_POINT_NONE )
+    if( active_id == id && active_point != ER_CURVE_POINT_NONE )
     {
         modified = 1;
         ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
@@ -1425,11 +1438,11 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
         }
         else
         {
-            if( _points[active_point].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+            if( _points[active_point].mode == ER_CURVE_POINT_MODE_NORMAL )
             {
                 _points[active_point].y = pos.y;
             }
-            else if( _points[active_point].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            else if( _points[active_point].mode == ER_CURVE_POINT_MODE_RANDOM )
             {
                 if( pos.y > _points[active_point].y2 )
                 {
@@ -1456,7 +1469,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
         isMoved = true;
     }
-    else if( hovered && active_id == CURVE_ID_NONE )
+    else if( hovered && active_id == ER_CURVE_ID_NONE )
     {
         ImGui::SetHoveredID( id );
         if( g.IO.MouseDown[0] == true )
@@ -1476,11 +1489,11 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                 {
                     _points[1].x = pos.x;
                     _points[1].y = pos.y;
-                    _points[1].mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
+                    _points[1].mode = ER_CURVE_POINT_MODE_NORMAL;
                     _points[2].x = 1.f;
                     _points[2].y = _points[0].y;
                     _points[2].y2 = _points[0].y2;
-                    _points[2].mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
+                    _points[2].mode = ER_CURVE_POINT_MODE_NORMAL;
 
                     *_selected = 1;
 
@@ -1495,15 +1508,15 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     }
                     _points[left + 1].x = pos.x;
                     _points[left + 1].y = pos.y;
-                    _points[left + 1].mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
+                    _points[left + 1].mode = ER_CURVE_POINT_MODE_NORMAL;
 
                     *_selected = left + 1;
                 }
                 if( max < _maxpoints )
                     _points[max].x = -1;
 
-                active_id = CURVE_ID_NONE;
-                active_point = CURVE_POINT_NONE;
+                active_id = ER_CURVE_ID_NONE;
+                active_point = ER_CURVE_POINT_NONE;
                 is_active_y2 = false;
 
                 is_point_added = true;
@@ -1512,7 +1525,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
             {
                 int sel = -1;
 
-                if( active_point == CURVE_POINT_NONE )
+                if( active_point == ER_CURVE_POINT_NONE )
                 {
                     ImVec2 p( _points[left].x, _points[left].y );
                     p = p - pos;
@@ -1522,12 +1535,12 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
                     if( max == 1 )
                     {
-                        if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                        if( _points[left].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
                             float p1d = abs( p.y );
                             if( p1d < (1.f / 16.f) ) sel = left;
                         }
-                        else if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                        else if( _points[left].mode == ER_CURVE_POINT_MODE_RANDOM )
                         {
                             float p1d = abs( p.y );
                             if( p1d < (1.f / 16.f) )
@@ -1557,11 +1570,11 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                         float p2d = sqrt( p.x * p.x + p.y * p.y );
                         float p2d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
 
-                        if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                        if( _points[left].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
                             if( p1d < (1.f / 16.f) ) sel = left;
                         }
-                        else if( _points[left].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                        else if( _points[left].mode == ER_CURVE_POINT_MODE_RANDOM )
                         {
                             if( p1d < (1.f / 16.f) )
                             {
@@ -1576,11 +1589,11 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                             }
                         }
 
-                        if( _points[left + 1].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                        if( _points[left + 1].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
                             if( p2d < (1.f / 16.f) ) sel = left + 1;
                         }
-                        else if( _points[left + 1].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                        else if( _points[left + 1].mode == ER_CURVE_POINT_MODE_RANDOM )
                         {
                             if( p2d < (1.f / 16.f) )
                             {
@@ -1618,9 +1631,9 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                         max--;
                         _points[max].x = -1;
 
-                        active_id = CURVE_ID_NONE;
-                        active_point = CURVE_POINT_NONE;
-                        *_selected = CURVE_POINT_NONE;
+                        active_id = ER_CURVE_ID_NONE;
+                        active_point = ER_CURVE_POINT_NONE;
+                        *_selected = ER_CURVE_POINT_NONE;
                     }
                     else
                     {
@@ -1686,7 +1699,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     // lines and points
     if( max == 1 )  // draw line when 1 point
     {
-        if( _points[i - 1].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+        if( _points[i - 1].mode == ER_CURVE_POINT_MODE_NORMAL )
         {
             ImVec2 a( 0.f, _points[0].y );
             ImVec2 b( 1.f, _points[0].y );
@@ -1709,7 +1722,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
             }
         }
 
-        if( _points[0].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+        if( _points[0].mode == ER_CURVE_POINT_MODE_RANDOM )
         {
             ImVec2 a( 0.f, _points[0].y2 );
             ImVec2 b( 1.f, _points[0].y2 );
@@ -1737,9 +1750,9 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     {
         for( i = 1; i < max; i++ )
         {
-            if( _points[i - 1].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+            if( _points[i - 1].mode == ER_CURVE_POINT_MODE_NORMAL )
             {
-                if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
                 {
                     ImVec2 a( _points[i - 1].x, _points[i - 1].y );
                     ImVec2 b( _points[i].x, _points[i].y );
@@ -1749,7 +1762,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     b = b * (bb.Max - bb.Min) + bb.Min;
                     window->DrawList->AddLine( a, b, lineColorIdle );
                 }
-                else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
                 {
                     ImVec2 a( _points[i - 1].x, _points[i - 1].y );
                     ImVec2 b( _points[i].x, _points[i].y );
@@ -1764,9 +1777,9 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     window->DrawList->AddLine( a, b2, lineColorIdle );
                 }
             }
-            else if (_points[i - 1].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            else if (_points[i - 1].mode == ER_CURVE_POINT_MODE_RANDOM )
             {
-                if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
                 {
                     ImVec2 a( _points[i - 1].x, _points[i - 1].y );
                     ImVec2 a2( _points[i - 1].x, _points[i - 1].y2 );
@@ -1780,7 +1793,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     window->DrawList->AddLine( a, b, lineColorIdle );
                     window->DrawList->AddLine( a2, b, lineColorIdle );
                 }
-                else if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
                 {
                     ImVec2 a( _points[i - 1].x, _points[i - 1].y );
                     ImVec2 a2( _points[i - 1].x, _points[i - 1].y2 );
@@ -1801,7 +1814,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
         }
 
         //if( hovered )
-        if( (active_id == CURVE_ID_NONE && hovered == true) || (active_id == id) )
+        if( (active_id == ER_CURVE_ID_NONE && hovered == true) || (active_id == id) )
         {
             // control points
             for( i = 0; i < max; i++ )
@@ -1816,7 +1829,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                 {
                     window->DrawList->AddRect( a, b, lineColorActive );
 
-                    if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                    if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
                     {
                         ImVec2 p2( _points[i].x, _points[i].y2 );
                         p2.y = 1.f - p2.y;
@@ -1830,7 +1843,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                 {
                     window->DrawList->AddRect( a, b, lineColorSelected );
 
-                    if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                    if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
                     {
                         ImVec2 p2( _points[i].x, _points[i].y2 );
                         p2.y = 1.f - p2.y;
@@ -1844,7 +1857,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                 {
                     window->DrawList->AddRect( a, b, lineColorIdle );
 
-                    if( _points[i].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                    if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
                     {
                         ImVec2 p2( _points[i].x, _points[i].y2 );
                         p2.y = 1.f - p2.y;
@@ -1856,7 +1869,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                 }
             }
         }
-        else if( *_selected != CURVE_POINT_NONE )
+        else if( *_selected != ER_CURVE_POINT_NONE )
         {
             ImVec2 p( _points[*_selected].x, _points[*_selected].y );
             p.y = 1.f - p.y;
@@ -1865,7 +1878,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
             ImVec2 b = p + ImVec2( 2.f, 2.f );
             window->DrawList->AddRect( a, b, lineColorSelected );
 
-            if( _points[*_selected].mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+            if( _points[*_selected].mode == ER_CURVE_POINT_MODE_RANDOM )
             {
                 ImVec2 p2( _points[*_selected].x, _points[*_selected].y2 );
                 p2.y = 1.f - p2.y;
@@ -1933,10 +1946,10 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     return modified;
 }
 //////////////////////////////////////////////////////////////////////////
-static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float _min, float _max, dz_editor_curve_point_t * _pointsData, dz_editor_curve_point_t * _pointsCurve )
+static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float _min, float _max, er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve )
 {
     int modified = 0;
-    if( _selectedPoint != CURVE_POINT_NONE )
+    if( _selectedPoint != ER_CURVE_POINT_NONE )
     {
         const char * modes[] = {
             "Normal", // DZ_EDITOR_CURVE_POINT_MODE_NORMAL
@@ -1946,16 +1959,16 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float
         int mode = _pointsCurve[_selectedPoint].mode;
         if( ImGui::Combo( "Mode", &mode, modes, IM_ARRAYSIZE( modes ) ) == true )
         {
-            dz_editor_curve_point_mode_e selected_mode = static_cast<dz_editor_curve_point_mode_e>(mode);
+            er_curve_point_mode_e selected_mode = static_cast<er_curve_point_mode_e>(mode);
 
             if( selected_mode != _pointsCurve[_selectedPoint].mode )
             {
-                if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_NORMAL )
+                if( selected_mode == ER_CURVE_POINT_MODE_NORMAL )
                 {
                     float distance = _pointsData[_selectedPoint].y2 - _pointsData[_selectedPoint].y;
                     _pointsData[_selectedPoint].y = _pointsData[_selectedPoint].y + distance / 2.f;
                 }
-                else if( selected_mode == DZ_EDITOR_CURVE_POINT_MODE_RANDOM )
+                else if( selected_mode == ER_CURVE_POINT_MODE_RANDOM )
                 {
                     float normalValue = _pointsData[_selectedPoint].y;
                     float randMinValue = normalValue - 0.25f * _factor;
@@ -2010,19 +2023,10 @@ int editor::showEffectData()
 //////////////////////////////////////////////////////////////////////////
 int editor::showShapeData()
 {
-    const char * shape_type_names[] = {
-        "Point",
-        "Segment",
-        "Circle",
-        "Line",
-        "Rect",
-        //"Polygon",
-        //"Mask",
-    };
-
     static int selected_type = m_shapeType;
 
-    ImGui::Combo( "Shape type", &selected_type, shape_type_names, IM_ARRAYSIZE( shape_type_names ), IM_ARRAYSIZE( shape_type_names ) );
+    // ignore all shape types starts with DZ_SHAPE_POLYGON
+    ImGui::Combo( "Shape type", &selected_type, ER_SHAPE_TYPE_NAMES, DZ_SHAPE_POLYGON, DZ_SHAPE_POLYGON );
 
     if( selected_type != m_shapeType )
     {
@@ -2039,7 +2043,7 @@ int editor::showShapeData()
     ImGui::Text( "Shape timelines:" );
 
     float width = ImGui::GetWindowContentRegionWidth();
-    ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
+    ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = { false };
 
@@ -2105,7 +2109,7 @@ int editor::showShapeData()
 
                 __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
-                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
+                if( __setupCurve( data.name, size, ER_CURVE_MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
                 {
                     __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
@@ -2140,7 +2144,7 @@ int editor::showAffectorData()
     ImGui::Text( "Affector timelines:" );
 
     float width = ImGui::GetWindowContentRegionWidth();
-    ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
+    ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = { false };
 
@@ -2180,7 +2184,7 @@ int editor::showAffectorData()
 
             __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
-            if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
+            if( __setupCurve( data.name, size, ER_CURVE_MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
             {
                 __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
@@ -2214,7 +2218,7 @@ int editor::showEmitterData()
     ImGui::Text( "Emitter timelines:" );
 
     float width = ImGui::GetWindowContentRegionWidth();
-    ImVec2 size( width, width * HEIGHT_TO_WIDTH_RATIO );
+    ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = { false };
 
@@ -2251,7 +2255,7 @@ int editor::showEmitterData()
 
                 __pointsDataToCurveInv( data.pointsData, data.pointsCurve, y_min, y_range );
 
-                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
+                if( __setupCurve( data.name, size, ER_CURVE_MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
                 {
                     __pointsCurveToDataInv( data.pointsCurve, data.pointsData, y_min, y_range );
 
@@ -2277,7 +2281,7 @@ int editor::showEmitterData()
 
                 __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
-                if( __setupCurve( CURVE_LABEL, size, MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
+                if( __setupCurve( data.name, size, ER_CURVE_MAX_POINTS, data.pointsCurve, &(data.selectedPoint), x_min, x_max, y_min, y_max ) != 0 )
                 {
                     __pointsCurveToData( data.pointsCurve, data.pointsData, y_min, y_range );
 
@@ -2397,7 +2401,7 @@ int editor::showContentPane()
 {
     // content
     float columnWidth = ImGui::GetColumnWidth();
-    float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * (CONTENT_CONTROLS_PANE_LINES_COUNT + 1);
+    float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * (ER_CONTENT_CONTROLS_PANE_LINES_COUNT + 1);
 
     m_dzWindowSize.x = columnWidth;
     m_dzWindowSize.y = columnHeight;

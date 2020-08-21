@@ -11,29 +11,31 @@
 #include "imgui_impl_opengl3.h"
 
 //////////////////////////////////////////////////////////////////////////
-static constexpr uint32_t MAX_POINTS = 100;
-static constexpr float HEIGHT_TO_WIDTH_RATIO = 0.4f;
+// prefix ER_ means editor
 //////////////////////////////////////////////////////////////////////////
-typedef enum dz_editor_curve_point_mode_e
+static constexpr uint32_t ER_CURVE_MAX_POINTS = 100;
+static constexpr float ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO = 0.4f;
+//////////////////////////////////////////////////////////////////////////
+typedef enum er_curve_point_mode_e
 {
-    DZ_EDITOR_CURVE_POINT_MODE_NORMAL,
-    DZ_EDITOR_CURVE_POINT_MODE_RANDOM,
+    ER_CURVE_POINT_MODE_NORMAL,
+    ER_CURVE_POINT_MODE_RANDOM,
 
-    __DZ_EDITOR_CURVE_POINT_MODE_MAX__
-} dz_editor_curve_point_mode_e;
+    __ER_CURVE_POINT_MODE_MAX__
+} er_curve_point_mode_e;
 //////////////////////////////////////////////////////////////////////////
-typedef struct dz_editor_curve_point_t
+typedef struct er_curve_point_t
 {
     float x = 0.f;
     float y = 0.f;
 
     float y2 = 0.f;
 
-    dz_editor_curve_point_mode_e mode = DZ_EDITOR_CURVE_POINT_MODE_NORMAL;
+    er_curve_point_mode_e mode = ER_CURVE_POINT_MODE_NORMAL;
 
-} dz_editor_curve_point_t;
+} er_curve_point_t;
 //////////////////////////////////////////////////////////////////////////
-typedef dz_editor_curve_point_t PointsArray[MAX_POINTS];
+typedef er_curve_point_t PointsArray[ER_CURVE_MAX_POINTS];
 //////////////////////////////////////////////////////////////////////////
 class editor
 {
