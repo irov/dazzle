@@ -43,12 +43,48 @@ static const char * ER_MENU_EDIT_ITEM_UNDO = "Undo";
 static const char * ER_MENU_EDIT_ITEM_REDO = "Redo";
 static const char * ER_MENU_EDIT_ITEM_SHOW_DEBUG_INFO = "Show debug info";
 //////////////////////////////////////////////////////////////////////////
+static const char * ER_CURVE_BTN_ZOOM_UP_TEXT = "+";
+static const char * ER_CURVE_BTN_ZOOM_DOWN_TEXT = "-";
+static const char * ER_CURVE_COMBO_MODE_LABEL_TEXT = "Mode";
+static const char * ER_WINDOW_EFFECT_TITLE = "Effect data:";
+static const char * ER_WINDOW_EFFECT_SEED_TEXT = "Seed";
+static const char * ER_WINDOW_SHAPE_TITLE = "Shape timelines:";
+static const char * ER_WINDOW_COMBO_SHAPE_TYPE_TEXT = "Shape type";
+static const char * ER_WINDOW_AFFECTOR_TITLE = "Affector timelines:";
+static const char * ER_WINDOW_EMITTER_TITLE = "Emitter timelines:";
+static const char * ER_WINDOW_MATERIAL_TITLE = "Material data";
+static const char * ER_WINDOW_MATERIAL_COMBO_BLEND_MODE_TEXT = "Blend mode";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_TITLE = "Texture";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL = "Size:";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_BROWSE = "Browse";
+static const char * ER_WINDOW_CONTROLS_BTN_RESET_TEXT = "Reset";
+static const char * ER_WINDOW_CONTROLS_BTN_PAUSE_TEXT = "Pause";
+static const char * ER_WINDOW_CONTROLS_BTN_RESUME_TEXT = "Resume";
+static const char * ER_WINDOW_CONTROLS_BTN_LOOP_TEXT = "Loop";
+static const char * ER_WINDOW_CONTROLS_TIMELINE_PREFIX_TEXT = "Time:";
+static const char * ER_WINDOW_CONTROLS_INPUT_LIFE_TEXT = "Life";
+static const char * ER_WINDOW_CONTROLS_BTN_RESET_CAMERA_TEXT = "Reset camera";
+static const char * ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT = "Camera move/scroll: <Space> + Mouse";
+static const char * ER_WINDOW_CONTROLS_EMIT_STATES_LABEL_TEXT = "Emitter states:";
+static const char * ER_WINDOW_CONTROLS_EMIT_COMPLETE_STATE_TEXT = "[Emit complete]";
+static const char * ER_WINDOW_CONTROLS_PARTICLE_COMPLETE_STATE_TEXT = "[Particle complete]";
+//////////////////////////////////////////////////////////////////////////
 static const char * ER_WINDOW_TYPE_NAMES[] = {
     "Effect",            //ER_WINDOW_TYPE_EFFECT_DATA
     "Shape",             //ER_WINDOW_TYPE_SHAPE_DATA
     "Affector",          //ER_WINDOW_TYPE_AFFECTOR_DATA
     "Emitter",           //ER_WINDOW_TYPE_EMITTER_DATA
     "Material",          //ER_WINDOW_TYPE_MATERIAL_DATA
+};
+static const char * ER_TIMELINE_KEY_MODE_NAMES[] = {
+    "Normal",            // ER_CURVE_POINT_MODE_NORMAL
+    "Random",            // ER_CURVE_POINT_MODE_RANDOM
+};
+static const char * ER_BLEND_MODE_NAMES[] = {
+    "Normal",            //DZ_BLEND_NORNAL
+    "Add",               //DZ_BLEND_ADD
+    "Multiply",          //DZ_BLEND_MULTIPLY
+    "Screen",            //DZ_BLEND_SCREEN
 };
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_SHAPE_DATA_NAMES[] = {
@@ -1132,7 +1168,7 @@ static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_sta
         if( availableZoomUp == true )
         {
             ImGui::SameLine();
-            if( ImGui::Button( "+" ) == true )
+            if( ImGui::Button( ER_CURVE_BTN_ZOOM_UP_TEXT ) == true )
             {
                 *_zoom = nextZoomUp;
             }
@@ -1190,7 +1226,7 @@ static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_sta
         if( availableZoomDown == true )
         {
             ImGui::SameLine();
-            if( ImGui::Button( "-" ) == true )
+            if( ImGui::Button( ER_CURVE_BTN_ZOOM_DOWN_TEXT ) == true )
             {
                 *_zoom = nextZoomDown;
             }
@@ -1267,7 +1303,7 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
             if( availableZoomUp == true )
             {
                 ImGui::SameLine();
-                if( ImGui::Button( "+" ) == true )
+                if( ImGui::Button( ER_CURVE_BTN_ZOOM_UP_TEXT ) == true )
                 {
                     *_zoom = nextZoomUp;
                 }
@@ -1317,7 +1353,7 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
             if( availableZoomDown == true )
             {
                 ImGui::SameLine();
-                if( ImGui::Button( "-" ) == true )
+                if( ImGui::Button( ER_CURVE_BTN_ZOOM_DOWN_TEXT ) == true )
                 {
                     *_zoom = nextZoomDown;
                 }
@@ -1951,13 +1987,8 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float
     int modified = 0;
     if( _selectedPoint != ER_CURVE_POINT_NONE )
     {
-        const char * modes[] = {
-            "Normal", // DZ_EDITOR_CURVE_POINT_MODE_NORMAL
-            "Random", // DZ_EDITOR_CURVE_POINT_MODE_RANDOM
-        };
-
         int mode = _pointsCurve[_selectedPoint].mode;
-        if( ImGui::Combo( "Mode", &mode, modes, IM_ARRAYSIZE( modes ) ) == true )
+        if( ImGui::Combo( ER_CURVE_COMBO_MODE_LABEL_TEXT, &mode, ER_TIMELINE_KEY_MODE_NAMES, IM_ARRAYSIZE( ER_TIMELINE_KEY_MODE_NAMES ) ) == true )
         {
             er_curve_point_mode_e selected_mode = static_cast<er_curve_point_mode_e>(mode);
 
@@ -2004,14 +2035,14 @@ int editor::showEffectData()
 {
     ImGui::Spacing();
 
-    ImGui::Text( "Effect data:" );
+    ImGui::Text( ER_WINDOW_EFFECT_TITLE );
     ImGui::Separator();
 
     ImGui::Spacing();
 
     int seed = dz_effect_get_seed( m_effect );
 
-    if( ImGui::InputInt( "Seed", &seed, 0, 0, ImGuiInputTextFlags_None ) == true )
+    if( ImGui::InputInt( ER_WINDOW_EFFECT_SEED_TEXT, &seed, 0, 0, ImGuiInputTextFlags_None ) == true )
     {
         dz_effect_set_seed( m_effect, seed );
 
@@ -2026,7 +2057,7 @@ int editor::showShapeData()
     static int selected_type = m_shapeType;
 
     // ignore all shape types starts with DZ_SHAPE_POLYGON
-    ImGui::Combo( "Shape type", &selected_type, ER_SHAPE_TYPE_NAMES, DZ_SHAPE_POLYGON, DZ_SHAPE_POLYGON );
+    ImGui::Combo( ER_WINDOW_COMBO_SHAPE_TYPE_TEXT, &selected_type, ER_SHAPE_TYPE_NAMES, DZ_SHAPE_POLYGON, DZ_SHAPE_POLYGON );
 
     if( selected_type != m_shapeType )
     {
@@ -2040,7 +2071,7 @@ int editor::showShapeData()
 
     // timeline
     ImGui::Spacing();
-    ImGui::Text( "Shape timelines:" );
+    ImGui::Text( ER_WINDOW_SHAPE_TITLE );
 
     float width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
@@ -2141,7 +2172,7 @@ int editor::showAffectorData()
 {
     // timeline
     ImGui::Spacing();
-    ImGui::Text( "Affector timelines:" );
+    ImGui::Text( ER_WINDOW_AFFECTOR_TITLE );
 
     float width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
@@ -2212,10 +2243,10 @@ int editor::showAffectorData()
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showEmitterData()
-{
+{   
     // timeline
     ImGui::Spacing();
-    ImGui::Text( "Emitter timelines:" );
+    ImGui::Text( ER_WINDOW_EMITTER_TITLE );
 
     float width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
@@ -2312,31 +2343,26 @@ int editor::showEmitterData()
 int editor::showMaterialData()
 {
     ImGui::Spacing();
-    ImGui::Text( "Material data" );
+    ImGui::Text( ER_WINDOW_MATERIAL_TITLE );
     ImGui::Separator();
 
-    const char * blendModes[] = {
-        "Normal",
-        "Add",
-        "Multiply",
-        "Screen",
-    };
-
     static int blend_current = dz_material_get_blend( m_material );
-    if( ImGui::Combo( "Blend mode", &blend_current, blendModes, IM_ARRAYSIZE( blendModes ) ) == true )
+    if( ImGui::Combo( ER_WINDOW_MATERIAL_COMBO_BLEND_MODE_TEXT, &blend_current, ER_BLEND_MODE_NAMES, IM_ARRAYSIZE( ER_BLEND_MODE_NAMES ) ) == true )
     {
         dz_material_set_blend( m_material, (dz_blend_type_e)blend_current );
     }
 
     ImGui::Spacing();
-    ImGui::Text( "Texture" );
+    ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_TITLE );
     ImGui::Separator();
 
-    ImGui::Text( "Size: %d x %d", m_textureWidth, m_textureHeight );
+    ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL );
+    ImGui::SameLine();
+    ImGui::Text( "%d x %d", m_textureWidth, m_textureHeight );
     
     ImGui::SameLine();
 
-    if( ImGui::Button( "Browse" ) == true )
+    if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_BROWSE ) == true )
     {
         nfdchar_t * outPath = NULL;
         nfdresult_t result = NFD_OpenDialog( NULL, NULL, &outPath );
@@ -2365,8 +2391,6 @@ int editor::showMaterialData()
     }
 
     ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( (float)m_textureWidth, (float)m_textureHeight ) );
-
-    
 
     return EXIT_SUCCESS;
 }
@@ -2407,7 +2431,7 @@ int editor::showContentPane()
     m_dzWindowSize.y = columnHeight;
 
     ImGuiWindow * window = ImGui::GetCurrentWindow();
-    const ImGuiID id = window->GetID( "testrender" );
+    const ImGuiID id = window->GetID( "DAZZLE_RENDER_CANVAS" );
     if( window->SkipItems )
         return EXIT_FAILURE;
 
@@ -2415,7 +2439,7 @@ int editor::showContentPane()
 
     m_dzWindowPos = ImVec2( cursorPos.x, m_windowHeight - cursorPos.y - m_dzWindowSize.y );
 
-    ImGui::BeginChild( "Another Window", m_dzWindowSize );
+    ImGui::BeginChild( "DAZZLE_CANVAS_WINDOW", m_dzWindowSize );
 
     window->DrawList->AddRectFilled( cursorPos, cursorPos + m_dzWindowSize, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ) );
 
@@ -2465,7 +2489,7 @@ int editor::showContentPane()
 
     // controls
     ImGui::BeginGroup();
-    ImGui::BeginChild( "ContentPaneControlls" );
+    ImGui::BeginChild( "CONTROLS_PANEL" );
 
     ImGui::Spacing();
 
@@ -2486,7 +2510,7 @@ int editor::showContentPaneControls()
     float time = dz_effect_get_time( m_effect );
 
     // buttons
-    if( ImGui::Button( "Reset" ) )
+    if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_RESET_TEXT ) )
     {
         if( this->resetEffect() == EXIT_FAILURE )
         {
@@ -2495,13 +2519,13 @@ int editor::showContentPaneControls()
     }
     ImGui::SameLine();
 
-    if( ImGui::Button( "Pause" ) )
+    if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_PAUSE_TEXT ) )
     {
         m_pause = true;
     }
     ImGui::SameLine();
 
-    if( ImGui::Button( "Resume" ) )
+    if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_RESUME_TEXT ) )
     {
         m_pause = false;
     }
@@ -2509,7 +2533,7 @@ int editor::showContentPaneControls()
 
     // loop
     static bool isLoop = m_loop == DZ_TRUE ? true : false;
-    if( ImGui::Checkbox( "Loop", &isLoop ) == true )
+    if( ImGui::Checkbox( ER_WINDOW_CONTROLS_BTN_LOOP_TEXT, &isLoop ) == true )
     {
         m_loop = isLoop == true ? DZ_TRUE : DZ_FALSE;
 
@@ -2519,7 +2543,8 @@ int editor::showContentPaneControls()
 
     // time
     char label[100];
-    sprintf( label, "Time: %%.3f s / %.3f s"
+    sprintf( label, "%s %%.3f s / %.3f s"
+        , ER_WINDOW_CONTROLS_TIMELINE_PREFIX_TEXT
         , life
     );
 
@@ -2531,7 +2556,7 @@ int editor::showContentPaneControls()
     }
     
     // life
-    if( ImGui::InputFloat( "Life", &life, 0.f, 0.f, NULL, ImGuiInputTextFlags_None ) == true )
+    if( ImGui::InputFloat( ER_WINDOW_CONTROLS_INPUT_LIFE_TEXT, &life, 0.f, 0.f, NULL, ImGuiInputTextFlags_None ) == true )
     {
         dz_effect_set_life( m_effect, life );
 
@@ -2540,7 +2565,7 @@ int editor::showContentPaneControls()
     //ImGui::SameLine();
 
     // camera
-    if( ImGui::Button( "Reset camera" ) )
+    if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_RESET_CAMERA_TEXT ) )
     {
         camera_scale = 1.f;
         camera_offset_x = 0.f;
@@ -2548,11 +2573,11 @@ int editor::showContentPaneControls()
     }
     ImGui::SameLine();
 
-    ImGui::Text( "Camera move/scroll: <Space> + Mouse" );
+    ImGui::Text( ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT );
 
     // emitter states
     {
-        ImGui::Text( "Emitter states:" );
+        ImGui::Text( ER_WINDOW_CONTROLS_EMIT_STATES_LABEL_TEXT );
         ImGui::SameLine();
 
         dz_effect_state_e emitter_state = dz_effect_get_state( m_effect );
@@ -2568,8 +2593,8 @@ int editor::showContentPaneControls()
             ImGui::SameLine();
         };
 
-        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, "[Emit complete]" );
-        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, "[Particle complete]" );
+        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, ER_WINDOW_CONTROLS_EMIT_COMPLETE_STATE_TEXT );
+        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, ER_WINDOW_CONTROLS_PARTICLE_COMPLETE_STATE_TEXT );
     }
 
     return EXIT_SUCCESS;
