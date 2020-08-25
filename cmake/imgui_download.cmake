@@ -20,9 +20,14 @@ ExternalProject_Add(imgui_download PREFIX imgui
 ExternalProject_Add_StepDependencies(imgui_download build glfw_download glad_download)
 
 ExternalProject_Get_Property(imgui_download INSTALL_DIR)
+
 set(IMGUI_INCLUDE_DIR ${INSTALL_DIR}/include)
 set(IMGUI_INCLUDE_INTERNAL_DIR ${INSTALL_DIR}/src)
 set(IMGUI_LIBRARY_DIR ${INSTALL_DIR}/lib)
+
+set(IMGUI_INCLUDE_DIR ${IMGUI_INCLUDE_DIR} CACHE STRING "")
+set(IMGUI_INCLUDE_INTERNAL_DIR ${IMGUI_INCLUDE_INTERNAL_DIR} CACHE STRING "")
+set(IMGUI_LIBRARY_DIR ${IMGUI_LIBRARY_DIR} CACHE STRING "")
 
 add_library(imgui STATIC IMPORTED)
 

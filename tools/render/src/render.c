@@ -413,7 +413,7 @@ dz_result_t dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t 
 
         switch( chunk->blend_type )
         {
-        case DZ_BLEND_NORNAL:
+        case DZ_BLEND_NORMAL:
             {                
                 glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
             }break;

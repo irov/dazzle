@@ -249,6 +249,11 @@ dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas )
     return _atlas->ud;
 }
 //////////////////////////////////////////////////////////////////////////
+uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
+{
+    return _atlas->texture_count;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_atlas_add_texture( dz_atlas_t * _atlas, const dz_texture_t * _texture )
 {
     _atlas->textures[_atlas->texture_count++] = _texture;
@@ -265,14 +270,37 @@ dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, co
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
-{
-    return _atlas->texture_count;
-}
-//////////////////////////////////////////////////////////////////////////
 dz_blend_type_e dz_material_get_default_blend( void )
 {
-    return DZ_BLEND_NORNAL;
+    return DZ_BLEND_NORMAL;
+}
+//////////////////////////////////////////////////////////////////////////
+const char * dz_blend_type_stringize( dz_blend_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_BLEND_NORMAL:
+        {
+            return "normal";
+        }break;
+    case DZ_BLEND_ADD:
+        {
+            return "add";
+        }break;
+    case DZ_BLEND_MULTIPLY:
+        {
+            return "multiply";
+        }break;
+    case DZ_BLEND_SCREEN:
+        {
+            return "screen";
+        }break;
+    case __DZ_BLEND_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud )

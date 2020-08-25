@@ -64,14 +64,14 @@ dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas );
 void dz_atlas_set_surface( dz_atlas_t * _atlas, dz_userdata_t _surface );
 dz_userdata_t dz_atlas_get_surface( const dz_atlas_t * _atlas );
 
+uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
+
 dz_result_t dz_atlas_add_texture( dz_atlas_t * _atlas, const dz_texture_t * _texture );
 dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture );
 
-uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
-
 typedef enum dz_blend_type_e
 {
-    DZ_BLEND_NORNAL,
+    DZ_BLEND_NORMAL,
     DZ_BLEND_ADD,
     DZ_BLEND_MULTIPLY,
     DZ_BLEND_SCREEN,
@@ -80,6 +80,8 @@ typedef enum dz_blend_type_e
 } dz_blend_type_e;
 
 dz_blend_type_e dz_material_get_default_blend( void );
+
+const char * dz_blend_type_stringize( dz_blend_type_e _type );
 
 typedef struct dz_material_t dz_material_t;
 

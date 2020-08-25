@@ -16,13 +16,15 @@ ExternalProject_Add(glfw_download PREFIX glfw
             -DGLFW_BUILD_TESTS=OFF
             -DGLFW_BUILD_DOCS=OFF
             -DGLFW_INSTALL=ON
-            -DGLFW_VULKAN_STATIC=OFF
-            
+            -DGLFW_VULKAN_STATIC=OFF            
     )
 
 ExternalProject_Get_Property(glfw_download INSTALL_DIR)
 set(GLFW_INCLUDE_DIR ${INSTALL_DIR}/include)
 set(GLFW_LIBRARY_DIR ${INSTALL_DIR}/lib)
+
+set(GLFW_INCLUDE_DIR ${GLFW_INCLUDE_DIR} CACHE STRING "")
+set(GLFW_LIBRARY_DIR ${GLFW_LIBRARY_DIR} CACHE STRING "")
 
 add_library(glfw STATIC IMPORTED)
 

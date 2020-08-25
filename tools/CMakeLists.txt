@@ -6,7 +6,10 @@ if(DAZZLE_EDITOR_BUILD OR DAZZLE_EXAMPLE_BUILD)
     include(${DAZZLE_CMAKE_DIR}/stb_libs_download.cmake)    
     include(${DAZZLE_CMAKE_DIR}/glfw_download.cmake)
     include(${DAZZLE_CMAKE_DIR}/imgui_download.cmake)
+    include(${DAZZLE_CMAKE_DIR}/jansson_download.cmake)
+    include(${DAZZLE_CMAKE_DIR}/jpp_download.cmake)
 
+    add_subdirectory(evict)
     add_subdirectory(render)
 endif()
 
