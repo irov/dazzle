@@ -1,11 +1,36 @@
 #include "evict/evict.hpp"
 
 //////////////////////////////////////////////////////////////////////////
+static jpp::object __evict_texture_write( const dz_texture_t * _texture )
+{
+    (void)_texture;
+
+    jpp::object obj = jpp::make_object();
+
+    jpp::array a = jpp::make_tuple( 1.f, 2.f, 3.f, 4.f );
+
+    //obj.set( "u0" )
+
+    //float u[4];
+    //float v[4];
+
+    //float trim_offset_x;
+    //float trim_offset_y;
+
+    //float trim_width;
+    //float trim_height;
+
+    //float random_weight;
+    //float sequence_delay;
+
+    return obj;
+}
+//////////////////////////////////////////////////////////////////////////
 static jpp::object __evict_atlas_write( const dz_atlas_t * _atlas )
 {
     jpp::object obj = jpp::make_object();
 
-    jpp::object obj_textures = jpp::make_object();
+    jpp::array array_textures = jpp::make_array();
 
     uint32_t texture_count = dz_atlas_get_texture_count( _atlas );
 
@@ -14,10 +39,12 @@ static jpp::object __evict_atlas_write( const dz_atlas_t * _atlas )
         const dz_texture_t * texture;
         dz_atlas_get_texture( _atlas, index, &texture );
 
-        
+        jpp::object obj_texture = __evict_texture_write( texture );
+
+        array_textures.push_back( obj_texture );
     }
 
-    obj.set( "textures", obj_textures );
+    obj.set( "textures", array_textures );
 
     return obj;
 }
@@ -67,6 +94,8 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 //////////////////////////////////////////////////////////////////////////
 void dz_evict_create( dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data )
 {
-
+    (void)_service;
+    (void)_effect;
+    (void)_data;
 }
 //////////////////////////////////////////////////////////////////////////

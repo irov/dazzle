@@ -2,8 +2,6 @@ include_guard(GLOBAL)
 
 include(ExternalProject)
 
-MESSAGE("JANSSON_INCLUDE_DIR: ${JANSSON_INCLUDE_DIR}")
-
 ExternalProject_Add(jpp_download PREFIX jpp
         GIT_REPOSITORY https://github.com/irov/jpp.git
 		GIT_PROGRESS TRUE
@@ -22,8 +20,8 @@ ExternalProject_Get_Property(jpp_download INSTALL_DIR)
 set(JPP_INCLUDE_DIR ${INSTALL_DIR}/include)
 set(JPP_LIBRARY_DIR ${INSTALL_DIR}/lib)
 
-set(JPP_INCLUDE_DIR ${JPP_INCLUDE_DIR} CACHE STRING "")
-set(JPP_LIBRARY_DIR ${JPP_LIBRARY_DIR} CACHE STRING "")
+set(JPP_INCLUDE_DIR ${JPP_INCLUDE_DIR} CACHE STRING "JPP_INCLUDE_DIR")
+set(JPP_LIBRARY_DIR ${JPP_LIBRARY_DIR} CACHE STRING "JPP_LIBRARY_DIR")
 
 add_library(jpp STATIC IMPORTED)
 
