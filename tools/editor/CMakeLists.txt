@@ -12,8 +12,10 @@ include_directories(${DAZZLE_THIRDPARTY_DIR}/glad/include)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/imgui)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/imgui/examples)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/nativefiledialog/src/include)
+include_directories(${DAZZLE_THIRDPARTY_DIR}/jpp/include)
 
 include_directories(${DAZZLE_TOOLS_DIR}/render/include)
+include_directories(${DAZZLE_TOOLS_DIR}/evict/include)
 
 set(DAZZLE_EDITOR_SOURCES
     ${DAZZLE_EDITOR_SOURCE_DIR}/main.cpp

@@ -9,6 +9,8 @@
 
 #include <cmath>
 
+#include <fstream>
+
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_window_type_e
 {
@@ -134,6 +136,13 @@ const char * ER_AFFECTOR_DATA_NAMES[] = {
     "Color Green",       //DZ_AFFECTOR_TIMELINE_COLOR_G
     "Color Blue",        //DZ_AFFECTOR_TIMELINE_COLOR_B
     "Color Alpha",       //DZ_AFFECTOR_TIMELINE_COLOR_A
+};
+//////////////////////////////////////////////////////////////////////////
+struct my_json_load_data_t
+{
+    const uint8_t * buffer;
+    size_t carriage;
+    size_t capacity;
 };
 //////////////////////////////////////////////////////////////////////////
 
@@ -1050,17 +1059,104 @@ int editor::resetEffect()
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
+int editor::saveEffect()
+{
+    nfdchar_t * outPath = NULL;
+    nfdresult_t result = NFD_SaveDialog( NULL, NULL, &outPath );
+
+    if( result == NFD_OKAY )
+    {
+        puts( "Success!" );
+        puts( outPath );
+
+        jpp::object json = dz_evict_write( m_effect );
+
+        std::string dumpJson;
+
+        this->dumpJSON_( json, &dumpJson, /*_needCompactDump*/ false );
+
+        // Create and open a text file
+        std::ofstream MyFile( outPath );
+
+        // Write to the file
+        MyFile << dumpJson;
+
+        // Close the file
+        MyFile.close();
+
+        free( outPath );
+    }
+    else if( result == NFD_CANCEL )
+    {
+        puts( "User pressed cancel." );
+    }
+    else
+    {
+        printf( "Error: %s\n", NFD_GetError() );
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::loadEffect()
+{
+    nfdchar_t * outPath = NULL;
+    nfdresult_t result = NFD_OpenDialog( NULL, NULL, &outPath );
+
+    if( result == NFD_OKAY )
+    {
+        puts( "Success!" );
+        puts( outPath );
+
+        std::string dumpJson;
+
+        // Create a text string, which is used to output the text file
+        std::string myText;
+
+        // Read from the text file
+        std::ifstream MyReadFile( outPath );
+
+        // todo: load to jpp::object
+
+        // Close the file
+        MyReadFile.close();
+
+
+        void dz_evict_create( dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data );
+
+        free( outPath );
+    }
+    else if( result == NFD_CANCEL )
+    {
+        puts( "User pressed cancel." );
+    }
+    else
+    {
+        printf( "Error: %s\n", NFD_GetError() );
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
 int editor::showMenuBar()
 {
     if( ImGui::BeginMenuBar() )
     {
         if( ImGui::BeginMenu( ER_MENU_FILE ) )
         {
-            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_OPEN, NULL, false, false ) ) // todo
+            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_OPEN ) ) // todo
             {
+                if( this->loadEffect() == EXIT_FAILURE )
+                {
+                    return EXIT_FAILURE;
+                }
             }
-            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_SAVE, NULL, false, false ) ) // todo
+            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_SAVE ) ) // todo
             {
+                if( this->saveEffect() == EXIT_FAILURE )
+                {
+                    return EXIT_FAILURE;
+                }
             }
             ImGui::EndMenu();
         }
@@ -2417,6 +2513,82 @@ void editor::showDazzleCanvas()
     dz_render_effect( &m_openglDesc, m_effect );
 
     glViewport( oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3] );
+}
+//////////////////////////////////////////////////////////////////////////
+bool editor::dumpJSON_( const jpp::object & _json, std::string * _out, bool _needCompactDump )
+{
+    auto my_jpp_dump_callback = []( const char * _buffer, size_t _size, void * _ud )
+    {
+        std::string * p_str = static_cast<std::string *>(_ud);
+
+        p_str->append( _buffer, _size );
+
+        return 0;
+    };
+
+    bool result = false;
+
+    if( _needCompactDump == true )
+    {
+        result = jpp::dump_compact( _json, my_jpp_dump_callback, _out );
+    }
+    else
+    {
+        result = jpp::dump( _json, my_jpp_dump_callback, _out );
+    }
+
+    return result;
+}
+//////////////////////////////////////////////////////////////////////////
+void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out ) const
+{
+    my_json_load_data_t jd;
+    jd.buffer = static_cast<const uint8_t *>(_buffer);
+    jd.carriage = 0;
+    jd.capacity = _size;
+
+    auto  my_jpp_error = []( int32_t _line, int32_t _column, int32_t _position, const char * _source, const char * _text, void * _ud )
+    {
+        DZ_UNUSED( _ud );
+
+        printf( "jpp error: %s\nline: %d\n column: %d\nposition: %d\nsource: %s\n"
+            , _text
+            , _line
+            , _column
+            , _position
+            , _source
+        );
+    };
+
+    auto my_jpp_load_callback = []( void * _buffer, size_t _buflen, void * _data )
+    {
+        my_json_load_data_t * jd = static_cast<my_json_load_data_t *>(_data);
+
+        if( _buflen > jd->capacity - jd->carriage )
+        {
+            _buflen = jd->capacity - jd->carriage;
+        }
+
+        if( _buflen <= 0 )
+        {
+            return (size_t)0;
+        }
+
+        const uint8_t * jd_buffer = jd->buffer + jd->carriage;
+        std::memcpy( _buffer, jd_buffer, _buflen );
+        jd->carriage += _buflen;
+
+        return _buflen;
+    };
+
+    jpp::object json = jpp::load( my_jpp_load_callback, my_jpp_error, &jd );
+
+    if( json == jpp::detail::invalid )
+    {
+        return;
+    }
+
+    *_out = json;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showContentPane()

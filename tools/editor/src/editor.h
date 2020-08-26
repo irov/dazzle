@@ -2,6 +2,7 @@
 
 #include "dazzle/dazzle.hpp"
 #include "render/render.hpp"
+#include "evict/evict.hpp"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -9,6 +10,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <string>
 
 //////////////////////////////////////////////////////////////////////////
 // prefix ER_ means editor
@@ -59,6 +61,8 @@ public:
 
 protected:
     int resetEffect();
+    int saveEffect();
+    int loadEffect();
 
     int showMenuBar();
 
@@ -73,6 +77,10 @@ protected:
 
 public:
     void showDazzleCanvas();
+
+protected:
+    bool dumpJSON_( const jpp::object & _json, std::string * _out, bool _needCompactDump );
+    void loadJSON_( const void * _buffer, size_t _size, jpp::object * _out ) const;
 
 public:
     float m_windowWidth;
