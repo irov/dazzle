@@ -44,8 +44,8 @@ void dz_texture_get_uv( const dz_texture_t * _texture, float * _u, float * _v );
 void dz_texture_set_trim_offset( dz_texture_t * _texture, float _x, float _y );
 void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * _x, float * _y );
 
-void dz_texture_set_trim_width( dz_texture_t * _texture, float _width, float _height );
-void dz_texture_get_trim_width( const dz_texture_t * _texture, float * _width, float * _height );
+void dz_texture_set_trim_size( dz_texture_t * _texture, float _width, float _height );
+void dz_texture_get_trim_size( const dz_texture_t * _texture, float * _width, float * _height );
 
 void dz_texture_set_random_weight( dz_texture_t * _texture, float _weight );
 float dz_texture_get_random_weight( const dz_texture_t * _texture );
@@ -117,6 +117,8 @@ typedef enum dz_timeline_key_type_e
     __DZ_TIMELINE_KEY_MAX__
 } dz_timeline_key_type_e;
 
+const char * dz_timeline_key_type_stringize( dz_timeline_key_type_e _type );
+
 typedef struct dz_timeline_key_t dz_timeline_key_t;
 
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
@@ -145,6 +147,8 @@ typedef enum dz_timeline_interpolate_type_e
     __DZ_TIMELINE_INTERPOLATE_MAX__
 } dz_timeline_interpolate_type_e;
 
+const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_type_e _type );
+
 typedef struct dz_timeline_interpolate_t dz_timeline_interpolate_t;
 
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud );
@@ -152,6 +156,12 @@ void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline
 
 void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * _interpolate, dz_userdata_t _ud );
 dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _interpolate );
+
+void dz_timeline_interpolate_set_type( dz_timeline_interpolate_t * _interpolate, dz_timeline_interpolate_type_e _type );
+dz_timeline_interpolate_type_e dz_timeline_interpolate_get_type( const dz_timeline_interpolate_t * _interpolate );
+
+void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * _interpolate, float _p0, float _p1 );
+void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, float * _p0, float * _p1 );
 
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate );
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );
@@ -185,6 +195,8 @@ typedef enum dz_affector_timeline_type_e
 
     __DZ_AFFECTOR_TIMELINE_MAX__
 } dz_affector_timeline_type_e;
+
+const char * dz_affector_timeline_type_stringize( dz_affector_timeline_type_e _type );
 
 void dz_affector_set_timeline( dz_affector_t * _affector, dz_affector_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_affector_get_timeline( const dz_affector_t * _affector, dz_affector_timeline_type_e _type );
@@ -223,6 +235,8 @@ dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape );
 void dz_shape_set_type( dz_shape_t * _shape, dz_shape_type_e _type );
 dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape );
 
+const char * dz_shape_type_stringize( dz_shape_type_e _type );
+
 typedef enum dz_shape_timeline_type_e
 {
     DZ_SHAPE_SEGMENT_ANGLE_MIN,
@@ -240,6 +254,8 @@ typedef enum dz_shape_timeline_type_e
 
     __DZ_SHAPE_TIMELINE_MAX__
 } dz_shape_timeline_type_e;
+
+const char * dz_shape_timeline_type_stringize( dz_shape_timeline_type_e _type );
 
 void dz_shape_set_timeline( dz_shape_t * _shape, dz_shape_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_shape_get_timeline( const dz_shape_t * _shape, dz_shape_timeline_type_e _type );
@@ -278,6 +294,8 @@ typedef enum dz_emitter_timeline_type_e
 
     __DZ_EMITTER_TIMELINE_MAX__
 } dz_emitter_timeline_type_e;
+
+const char * dz_emitter_timeline_type_stringize( dz_emitter_timeline_type_e _type );
 
 void dz_emitter_set_timeline( dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_emitter_get_timeline( const dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type );

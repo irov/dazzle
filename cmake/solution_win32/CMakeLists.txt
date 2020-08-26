@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
-PROJECT(solution_win32)
+PROJECT(dazzle_win32)
 
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../base_template.cmake)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../win32_template.cmake)

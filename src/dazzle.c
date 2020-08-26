@@ -178,13 +178,13 @@ void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * _x, floa
     *_y = _texture->trim_offset_y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_trim_width( dz_texture_t * _texture, float _width, float _height )
+void dz_texture_set_trim_size( dz_texture_t * _texture, float _width, float _height )
 {
     _texture->trim_width = _width;
     _texture->trim_height = _height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_get_trim_width( const dz_texture_t * _texture, float * _width, float * _height )
+void dz_texture_get_trim_size( const dz_texture_t * _texture, float * _width, float * _height )
 {
     *_width = _texture->trim_width;
     *_height = _texture->trim_height;
@@ -382,6 +382,26 @@ dz_material_mode_e dz_material_get_mode( const dz_material_t * _material )
     return _material->mode;
 }
 //////////////////////////////////////////////////////////////////////////
+const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_TIMELINE_INTERPOLATE_LINEAR:
+        {
+            return "linear";
+        }break;
+    case DZ_TIMELINE_INTERPOLATE_BEZIER2:
+        {
+            return "bezier2";
+        }break;
+    case __DZ_TIMELINE_INTERPOLATE_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud )
 {
     dz_timeline_interpolate_t * interpolate = DZ_NEW( _service, dz_timeline_interpolate_t );
@@ -416,6 +436,48 @@ void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * _interpolate, d
 dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _interpolate )
 {
     return _interpolate->ud;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_timeline_interpolate_set_type( dz_timeline_interpolate_t * _interpolate, dz_timeline_interpolate_type_e _type )
+{
+    _interpolate->type = _type;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_timeline_interpolate_type_e dz_timeline_interpolate_get_type( const dz_timeline_interpolate_t * _interpolate )
+{
+    return _interpolate->type;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * _interpolate, float _p0, float _p1 )
+{
+    _interpolate->p0 = _p0;
+    _interpolate->p1 = _p1;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, float * _p0, float * _p1 )
+{
+    *_p0 = _interpolate->p0;
+    *_p1 = _interpolate->p1;
+}
+//////////////////////////////////////////////////////////////////////////
+const char * dz_timeline_key_type_stringize( dz_timeline_key_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_TIMELINE_KEY_CONST:
+        {
+            return "const";
+        }break;
+    case DZ_TIMELINE_KEY_RANDOMIZE:
+        {
+            return "randomize";
+        }break;
+    case __DZ_TIMELINE_KEY_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
@@ -556,6 +618,82 @@ dz_userdata_t dz_affector_get_ud( const dz_affector_t * _affector )
     return _affector->ud;
 }
 //////////////////////////////////////////////////////////////////////////
+const char * dz_affector_timeline_type_stringize( dz_affector_timeline_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_AFFECTOR_TIMELINE_LIFE:
+        {
+            return "life";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_MOVE_SPEED:
+        {
+            return "move_speed";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE:
+        {
+            return "move_accelerate";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_ROTATE_SPEED:
+        {
+            return "rotate_speed";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE:
+        {
+            return "rotate_accelerate";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_SPIN_SPEED:
+        {
+            return "spin_speed";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE:
+        {
+            return "spin_accelerate";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_STRAFE_SPEED:
+        {
+            return "strafe_speed";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE:
+        {
+            return "strafe_frenquence";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_STRAFE_SIZE:
+        {
+            return "strafe_size";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT:
+        {
+            return "strafe_shift";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_SIZE:
+        {
+            return "size";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_COLOR_R:
+        {
+            return "color_r";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_COLOR_G:
+        {
+            return "color_g";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_COLOR_B:
+        {
+            return "color_b";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_COLOR_A:
+        {
+            return "color_a";
+        }break;
+    case __DZ_AFFECTOR_TIMELINE_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
+}
+//////////////////////////////////////////////////////////////////////////
 void dz_affector_set_timeline( dz_affector_t * _affector, dz_affector_timeline_type_e _type, const dz_timeline_key_t * _timeline )
 {
     _affector->timelines[_type] = _timeline;
@@ -633,6 +771,106 @@ void dz_shape_set_type( dz_shape_t * _shape, dz_shape_type_e _type )
 dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape )
 {
     return _shape->type;
+}
+//////////////////////////////////////////////////////////////////////////
+const char * dz_shape_type_stringize( dz_shape_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_SHAPE_POINT:
+        {
+            return "point";
+        }break;
+    case DZ_SHAPE_SEGMENT:
+        {
+            return "segment";
+        }break;
+    case DZ_SHAPE_CIRCLE:
+        {
+            return "circle";
+        }break;
+    case DZ_SHAPE_LINE:
+        {
+            return "line";
+        }break;
+    case DZ_SHAPE_RECT:
+        {
+            return "rect";
+        }break;
+    case DZ_SHAPE_POLYGON:
+        {
+            return "polygon";
+        }break;
+    case DZ_SHAPE_MASK:
+        {
+            return "mask";
+        }break;
+    case __DZ_SHAPE_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
+}
+//////////////////////////////////////////////////////////////////////////
+const char * dz_shape_timeline_type_stringize( dz_shape_timeline_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_SHAPE_SEGMENT_ANGLE_MIN:
+        {
+            return "segment_angle_min";
+        }break;
+    case DZ_SHAPE_SEGMENT_ANGLE_MAX:
+        {
+            return "segment_angle_max";
+        }break;
+    case DZ_SHAPE_CIRCLE_RADIUS_MIN:
+        {
+            return "circle_radius_min";
+        }break;
+    case DZ_SHAPE_CIRCLE_RADIUS_MAX:
+        {
+            return "circle_radius_max";
+        }break;
+    case DZ_SHAPE_CIRCLE_ANGLE_MIN:
+        {
+            return "circle_angle_min";
+        }break;
+    case DZ_SHAPE_CIRCLE_ANGLE_MAX:
+        {
+            return "circle_angle_max";
+        }break;
+    case DZ_SHAPE_LINE_ANGLE:
+        {
+            return "line_angle";
+        }break;
+    case DZ_SHAPE_LINE_SIZE:
+        {
+            return "line_size";
+        }break;
+    case DZ_SHAPE_RECT_WIDTH_MIN:
+        {
+            return "rect_width_min";
+        }break;
+    case DZ_SHAPE_RECT_WIDTH_MAX:
+        {
+            return "rect_width_max";
+        }break;
+    case DZ_SHAPE_RECT_HEIGHT_MIN:
+        {
+            return "rect_height_min";
+        }break;
+    case DZ_SHAPE_RECT_HEIGHT_MAX:
+        {
+            return "rect_height_max";
+        }break;
+    case __DZ_SHAPE_TIMELINE_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_shape_set_timeline( dz_shape_t * _shape, dz_shape_timeline_type_e _type, const dz_timeline_key_t * _timeline )
@@ -796,6 +1034,34 @@ void dz_emitter_set_life( dz_emitter_t * _emitter, float _life )
 float dz_emitter_get_life( const dz_emitter_t * _emitter )
 {
     return _emitter->life;
+}
+//////////////////////////////////////////////////////////////////////////
+const char * dz_emitter_timeline_type_stringize( dz_emitter_timeline_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_EMITTER_SPAWN_DELAY:
+        {
+            return "delay";
+        }break;
+    case DZ_EMITTER_SPAWN_COUNT:
+        {
+            return "count";
+        }break;
+    case DZ_EMITTER_SPAWN_SPIN_MIN:
+        {
+            return "spin_min";
+        }break;
+    case DZ_EMITTER_SPAWN_SPIN_MAX:
+        {
+            return "spin_max";
+        }break;
+    case __DZ_EMITTER_TIMELINE_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_emitter_set_timeline( dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, const dz_timeline_key_t * _timeline )
