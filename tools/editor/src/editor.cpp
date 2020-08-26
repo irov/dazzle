@@ -667,13 +667,7 @@ int editor::init()
 
         dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
 
-        char texture_path[250];
-        sprintf( texture_path, "%s/%s"
-            , DAZZLE_EDITOR_CONTENT_DIR
-            , ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME
-        );
-
-        m_textureId = dz_render_make_texture( texture_path, &m_textureWidth, &m_textureHeight);
+        m_textureId = 0;
     }
 
     // init emitter

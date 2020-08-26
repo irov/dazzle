@@ -5,46 +5,12 @@ set(DAZZLE_EVICT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 project(dazzle_evict)
 
-set(CMAKE_CXX_STANDARD 17)
-
-if(${CMAKE_C_COMPILER_ID} STREQUAL Clang)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_C_COMPILER_ID} STREQUAL AppleClang)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_C_COMPILER_ID} STREQUAL GNU)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_C_COMPILER_ID} STREQUAL Intel)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_C_COMPILER_ID} STREQUAL MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd5045")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4668")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4710")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4738")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4711")
-endif()
-
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D_DEBUG /ZI /Ob0 /Od /RTC1")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /DNDEBUG /O2 /Oi /Ot /GL")
-    
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
-endif()
-
+include_directories(${DAZZLE_INCLUDE_DIR})
 include_directories(${DAZZLE_EVICT_INCLUDE_DIR})
 include_directories(${DAZZLE_EVICT_SOURCE_DIR})
 include_directories(${DAZZLE_DEPENDENCIES_DIR})
-include_directories(${GLAD_INCLUDE_DIR})
-include_directories(${JPP_INCLUDE_DIR})
-
-if(MSVC)
-    ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-endif()
+include_directories(${DAZZLE_THIRDPARTY_DIR}/glad/include)
+include_directories(${DAZZLE_THIRDPARTY_DIR}/jpp/include)
 
 set(DAZZLE_EVICT_SOURCES
     ${DAZZLE_EVICT_INCLUDE_DIR}/evict/evict.hpp
@@ -53,16 +19,10 @@ set(DAZZLE_EVICT_SOURCES
 
 add_library(${PROJECT_NAME} STATIC ${DAZZLE_EVICT_SOURCES})
 
-target_link_libraries(${PROJECT_NAME}
-    dazzle
-    jansson
-    jpp
-)
+target_link_libraries(${PROJECT_NAME} dazzle)
 
-add_dependencies(${PROJECT_NAME}
-    jansson_download
-    jpp_download
-)
+target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jansson${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jpp${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 set_target_properties (${PROJECT_NAME} PROPERTIES
     FOLDER evict

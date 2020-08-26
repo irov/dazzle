@@ -5,6 +5,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 macro(ADD_DAZZLE_TEST testname)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
     
+    include_directories(${DAZZLE_INCLUDE_DIR})
+    
     ADD_EXECUTABLE(test_${testname} test_${testname}.c)
     TARGET_LINK_LIBRARIES(test_${testname} dazzle)
     
@@ -18,7 +20,7 @@ macro(ADD_DAZZLE_TEST testname)
         FOLDER tests
     )
 
-    ADD_TEST(NAME ${testname} COMMAND ${DAZZLE_ROOT_DIR}/bin/${CMAKE_GENERATOR}/test_${testname} ${DAZZLE_ROOT_DIR}/bin/${CMAKE_GENERATOR})
+    ADD_TEST(NAME ${testname} COMMAND ${DAZZLE_REPOSITORY}/bin/${CMAKE_GENERATOR}/test_${testname} ${DAZZLE_REPOSITORY}/bin/${CMAKE_GENERATOR})
 endmacro()
 
 ADD_DAZZLE_TEST(memory_leak)

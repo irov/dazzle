@@ -1,16 +1,14 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+
 project(nativefiledialog)
-SET (LIB_TYPE STATIC)
 
-set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
-set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(INCLUDE_DIR ${DAZZLE_THIRDPARTY_DIR}/nativefiledialog/src/include)
+set(SOURCE_DIR ${DAZZLE_THIRDPARTY_DIR}/nativefiledialog/src)
 
-include_directories(
-	${INCLUDE_DIR}
-	)
+include_directories(${INCLUDE_DIR})
 
 if(WIN32)
-	add_library(${PROJECT_NAME} ${LIB_TYPE} ${SOURCE_DIR}/nfd_common.c ${SOURCE_DIR}/nfd_win.cpp)
+	add_library(${PROJECT_NAME} STATIC ${SOURCE_DIR}/nfd_common.c ${SOURCE_DIR}/nfd_win.cpp)
 endif()
 
 if(UNIX AND NOT APPLE)
@@ -22,15 +20,13 @@ if(UNIX AND NOT APPLE)
     
     ADD_DEFINITIONS(${GTK3_CFLAGS_OTHER})
 
-	add_library(${PROJECT_NAME} ${LIB_TYPE} ${SOURCE_DIR}/nfd_common.c ${SOURCE_DIR}/nfd_gtk.c)
+	add_library(${PROJECT_NAME} STATIC ${SOURCE_DIR}/nfd_common.c ${SOURCE_DIR}/nfd_gtk.c)
 	target_link_libraries(${PROJECT_NAME} ${GTK3_LIBRARIES})
 endif()
 
 if(APPLE)
-	add_library(${PROJECT_NAME} ${LIB_TYPE} ${SOURCE_DIR}/nfd_common.c ${SOURCE_DIR}/nfd_cocoa.m)
+	add_library(${PROJECT_NAME} STATIC ${SOURCE_DIR}/nfd_common.c ${SOURCE_DIR}/nfd_cocoa.m)
 endif()
-	
-
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 install(FILES ${INCLUDE_DIR}/nfd.h DESTINATION include)

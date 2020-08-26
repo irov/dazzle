@@ -6,12 +6,7 @@ MESSAGE("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 PROJECT(dazzle C)
 
-OPTION(DAZZLE_EXTERNAL_BUILD "DAZZLE_EXTERNAL_BUILD" OFF)
-OPTION(DAZZLE_EDITOR_BUILD "DAZZLE_EDITOR_BUILD" ON)
-OPTION(DAZZLE_EXAMPLE_BUILD "DAZZLE_EXAMPLE_BUILD" ON)
 OPTION(DAZZLE_INSTALL "DAZZLE_INSTALL" OFF)
-OPTION(DAZZLE_TESTS "DAZZLE_TESTS" OFF)
-OPTION(DAZZLE_TESTS_IN_SOLUTIONS "DAZZLE_TESTS_IN_SOLUTIONS" ON)
 
 MESSAGE("DAZZLE_EXTERNAL_BUILD: ${DAZZLE_EXTERNAL_BUILD}")
 MESSAGE("DAZZLE_EDITOR_BUILD: ${DAZZLE_EDITOR_BUILD}")
@@ -20,73 +15,27 @@ MESSAGE("DAZZLE_INSTALL: ${DAZZLE_INSTALL}")
 MESSAGE("DAZZLE_TESTS: ${DAZZLE_TESTS}")
 MESSAGE("DAZZLE_TESTS_IN_SOLUTIONS: ${DAZZLE_TESTS_IN_SOLUTIONS}")
 
-IF(NOT DAZZLE_EXTERNAL_BUILD)
-    set(CMAKE_C_STANDARD 11)
-    set(CMAKE_CXX_STANDARD 17)
-    
-    if(${CMAKE_C_COMPILER_ID} STREQUAL Clang)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
-    elseif(${CMAKE_C_COMPILER_ID} STREQUAL AppleClang)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
-    elseif(${CMAKE_C_COMPILER_ID} STREQUAL GNU)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
-    elseif(${CMAKE_C_COMPILER_ID} STREQUAL Intel)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
-    elseif(${CMAKE_C_COMPILER_ID} STREQUAL MSVC)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Wall /WX")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd5045")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4668")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4710")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4738")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4820")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4711")
-    endif()
-    
-    SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/${CMAKE_GENERATOR})
-    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${CMAKE_GENERATOR})
-    
-    if(MSVC)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS")
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /D_DEBUG /ZI /Ob0 /Od /RTC1")
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /DNDEBUG /O2 /Oi /Ot /GL")
-        
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
-    
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
-    endif()
-ENDIF()
-
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-SET(DAZZLE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-SET(DAZZLE_CMAKE_DIR ${DAZZLE_ROOT_DIR}/cmake)
-SET(DAZZLE_SOURCE_DIR ${DAZZLE_ROOT_DIR}/src)
-SET(DAZZLE_INCLUDE_DIR ${DAZZLE_ROOT_DIR}/include)
-SET(DAZZLE_DEPENDENCIES_DIR ${DAZZLE_ROOT_DIR}/dependencies)
-SET(DAZZLE_TOOLS_DIR ${DAZZLE_ROOT_DIR}/tools)
-
 set(DAZZLE_SOURCES
-    ${DAZZLE_SOURCE_DIR}/affector.h
-    ${DAZZLE_SOURCE_DIR}/alloc.h
-    ${DAZZLE_SOURCE_DIR}/atlas.h
-    ${DAZZLE_SOURCE_DIR}/dazzle.c
-    ${DAZZLE_SOURCE_DIR}/effect.h
-    ${DAZZLE_SOURCE_DIR}/emitter.h
-    ${DAZZLE_SOURCE_DIR}/material.h
-    ${DAZZLE_SOURCE_DIR}/math.h    
-    ${DAZZLE_SOURCE_DIR}/particle.h
-    ${DAZZLE_SOURCE_DIR}/service.h
-    ${DAZZLE_SOURCE_DIR}/shape.h
-    ${DAZZLE_SOURCE_DIR}/texture.h
-    ${DAZZLE_SOURCE_DIR}/timeline_interpolate.h
-    ${DAZZLE_SOURCE_DIR}/timeline_key.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/affector.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/alloc.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/atlas.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dazzle.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/effect.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/emitter.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/material.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/math.h    
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/particle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/service.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shape.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/texture.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/timeline_interpolate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/timeline_key.h
 )
 
 set(DAZZLE_HEADERS
-    ${DAZZLE_INCLUDE_DIR}/dazzle/config.h
-    ${DAZZLE_INCLUDE_DIR}/dazzle/dazzle.h
-    ${DAZZLE_INCLUDE_DIR}/dazzle/dazzle.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/config.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle.hpp
 )
 
 include_directories(${PROJECT_NAME} ${DAZZLE_INCLUDE_DIR})
@@ -101,17 +50,4 @@ if(DAZZLE_INSTALL)
     install(TARGETS ${PROJECT_NAME}
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib)
-endif()
-
-if(DAZZLE_TESTS)
-    include(CTest)
-    enable_testing()
-    
-    add_subdirectory(tests)
-else()
-    add_subdirectory(tools)
-
-    if(DAZZLE_TESTS_IN_SOLUTIONS)
-        add_subdirectory(tests)
-    endif()
 endif()

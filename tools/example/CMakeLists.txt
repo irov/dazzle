@@ -5,45 +5,12 @@ set(DAZZLE_EXAMPLE_CONTENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/content)
 
 project(dazzle_example)
 
-set(CMAKE_CXX_STANDARD 17)
-
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL AppleClang)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL Intel)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W4 -Werror")
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd5045")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4668")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4710")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4738")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4711")
-endif()
-
-if(APPLE)
-    set(LLVM_ENABLE_CXX1Y ON CACHE BOOL "" FORCE)
-    
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -stdlib=libc++" CACHE STRING "" FORCE)
-elseif(ANDROID)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-elseif(UNIX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-endif()
-
+include_directories(${DAZZLE_INCLUDE_DIR})
 include_directories(${DAZZLE_EXAMPLE_SOURCE_DIR})
 include_directories(${DAZZLE_DEPENDENCIES_DIR})
-include_directories(${GLFW_INCLUDE_DIR})
-include_directories(${GLAD_INCLUDE_DIR})
+include_directories(${DAZZLE_THIRDPARTY_DIR}/glfw3/include)
+include_directories(${DAZZLE_THIRDPARTY_DIR}/glad/include)
 include_directories(${DAZZLE_TOOLS_DIR}/render/include)
-
-if(MSVC)
-    ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-endif()
 
 set(DAZZLE_EXAMPLE_SOURCES
     ${DAZZLE_EXAMPLE_SOURCE_DIR}/main.cpp
@@ -53,17 +20,11 @@ ADD_DEFINITIONS(-DDAZZLE_EXAMPLE_CONTENT_DIR="${DAZZLE_EXAMPLE_CONTENT_DIR}")
 
 add_executable(${PROJECT_NAME} ${DAZZLE_EXAMPLE_SOURCES})
 
-target_link_libraries(${PROJECT_NAME}
-    dazzle
-    dazzle_render
-    glad
-    glfw
-)
+target_link_libraries(${PROJECT_NAME} dazzle)
+target_link_libraries(${PROJECT_NAME} dazzle_render)
 
-add_dependencies(${PROJECT_NAME}
-    glad_download
-    glfw_download
-)
+target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glad${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glfw3${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} m)
