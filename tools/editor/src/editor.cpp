@@ -1121,8 +1121,7 @@ int editor::loadEffect()
         // Close the file
         MyReadFile.close();
 
-
-        void dz_evict_create( dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data );
+        //dz_evict_load( m_service, DZ_NULLPTR, const jpp::object & _data );
 
         free( outPath );
     }
