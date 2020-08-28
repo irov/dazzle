@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include <fstream>
+#include <sstream>
 
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_window_type_e
@@ -1075,13 +1076,9 @@ int editor::saveEffect()
 
         this->dumpJSON_( json, &dumpJson, /*_needCompactDump*/ false );
 
-        // Create and open a text file
+        // write dump json to file
         std::ofstream MyFile( outPath );
-
-        // Write to the file
         MyFile << dumpJson;
-
-        // Close the file
         MyFile.close();
 
         free( outPath );
@@ -1108,20 +1105,19 @@ int editor::loadEffect()
         puts( "Success!" );
         puts( outPath );
 
-        std::string dumpJson;
+        // read file to buf
+        std::ostringstream buf;
+        std::ifstream input( outPath );
+        buf << input.rdbuf();
+        std::string content = buf.str();
 
-        // Create a text string, which is used to output the text file
-        std::string myText;
+        size_t size = content.length() * sizeof( char );
 
-        // Read from the text file
-        std::ifstream MyReadFile( outPath );
+        jpp::object data;
 
-        // todo: load to jpp::object
+        this->loadJSON_( content.c_str(), size, &data );
 
-        // Close the file
-        MyReadFile.close();
-
-        //dz_evict_load( m_service, DZ_NULLPTR, const jpp::object & _data );
+        dz_evict_load( m_service, &m_effect, data );
 
         free( outPath );
     }
