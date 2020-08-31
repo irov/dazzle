@@ -280,7 +280,8 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
             return DZ_FAILURE;
         }
 
-        dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
+        dz_timeline_key_set_interpolate( prevKey, interpolate );
+        dz_timeline_interpolate_set_key( interpolate, nextKey );
 
         prevKey = nextKey;
     }
@@ -376,7 +377,8 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
             return DZ_FAILURE;
         }
 
-        dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
+        dz_timeline_key_set_interpolate( prevKey, interpolate );
+        dz_timeline_interpolate_set_key( interpolate, nextKey );
 
         prevKey = nextKey;
     }
@@ -472,7 +474,8 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
             return DZ_FAILURE;
         }
 
-        dz_timeline_key_set_interpolate( prevKey, interpolate, nextKey );
+        dz_timeline_key_set_interpolate( prevKey, interpolate );
+        dz_timeline_interpolate_set_key( interpolate, nextKey );
 
         prevKey = nextKey;
     }

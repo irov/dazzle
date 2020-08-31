@@ -101,7 +101,12 @@ static jpp::object __evict_timeline_interpolate_write( const dz_timeline_interpo
     float p1;
     dz_timeline_interpolate_get_bezier2( _interpolate, &p0, &p1 );
 
-    obj.set( "bezier2", jpp::make_tuple( p0, p1 ) );
+    jpp::object obj_bezier2 = jpp::make_object();
+
+    obj_bezier2.set( "p0", p0 );
+    obj_bezier2.set( "p1", p1 );
+
+    obj.set( "bezier2", obj_bezier2 );
 
     const dz_timeline_key_t * key = dz_timeline_interpolate_get_key( _interpolate );
 
@@ -410,6 +415,56 @@ static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+static dz_timeline_interpolate_type_e __load_timeline_interpolate_type( const char * _type )
+{
+    if( strcmp( _type, "linear" ) == 0 )
+    {
+        return DZ_TIMELINE_INTERPOLATE_LINEAR;
+    }
+    else if( strcmp( _type, "bezier2" ) == 0 )
+    {
+        return DZ_TIMELINE_INTERPOLATE_BEZIER2;
+    }
+
+    return __DZ_TIMELINE_INTERPOLATE_MAX__;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeline_key_t ** _key, const jpp::object & _data );
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __evict_timeline_interpolate_load( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, const jpp::object & _data )
+{
+    const char * j_interpolate_type = _data["type"];
+
+    dz_timeline_interpolate_type_e timeline_interpolate_type = __load_timeline_interpolate_type( j_interpolate_type );
+
+    dz_timeline_interpolate_t * interpolate;
+    if( dz_timeline_interpolate_create( _service, &interpolate, timeline_interpolate_type, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    float p0 = _data["bezier2"]["p0"];
+    float p1 = _data["bezier2"]["p1"];
+
+    dz_timeline_interpolate_set_bezier2( interpolate, p0, p1 );
+
+    jpp::object j_key;
+    if( _data.exist( "key", &j_key ) == true )
+    {
+        dz_timeline_key_t * key;
+        if( __evict_timeline_key_load( _service, &key, j_key ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        dz_timeline_interpolate_set_key( interpolate, key );
+    }
+
+    *_interpolate = interpolate;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
 static dz_timeline_key_type_e __load_timeline_key_type( const char * _type )
 {
     if( strcmp( _type, "const" ) == 0 )
@@ -443,40 +498,22 @@ static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeli
         return DZ_FAILURE;
     }
 
-    //jpp::object obj = jpp::make_object();
+    float const_value = _data["const_value"];
+    dz_timeline_key_set_const_value( key, const_value );
 
-    //dz_timeline_key_type_e key_type = dz_timeline_key_get_type( _key );
+    float randomize_min = _data["randomize_min"];
+    float randomize_max = _data["randomize_max"];
 
-    //const char * key_type_str = dz_timeline_key_type_stringize( key_type );
+    dz_timeline_key_set_randomize_min_max( key, randomize_min, randomize_max );
 
-    //obj.set( "type", key_type_str );
+    jpp::object j_interpolate;
+    if( _data.exist( "interpolate", &j_interpolate ) == true )
+    {
+        dz_timeline_interpolate_t * interpolate;
+        __evict_timeline_interpolate_load( _service, &interpolate, j_interpolate );
 
-    //float p = dz_timeline_key_get_p( _key );
-
-    //obj.set( "p", p );
-
-    //float const_value;
-    //dz_timeline_key_get_const_value( _key, &const_value );
-
-    //obj.set( "const_value", const_value );
-
-    //float randomize_min;
-    //float randomize_max;
-    //dz_timeline_key_get_randomize_min_max( _key, &randomize_min, &randomize_max );
-
-    //obj.set( "randomize_min", randomize_min );
-    //obj.set( "randomize_max", randomize_max );
-
-    //const dz_timeline_interpolate_t * interpolate = dz_timeline_key_get_interpolate( _key );
-
-    //if( interpolate != DZ_NULLPTR )
-    //{
-    //    jpp::object obj_interpolate = __evict_timeline_interpolate_write( interpolate );
-
-    //    obj.set( "interpolate", obj_interpolate );
-    //}
-
-    //return obj;
+        dz_timeline_key_set_interpolate( key, interpolate );
+    }
 
     *_key = key;
 
