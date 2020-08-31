@@ -579,7 +579,11 @@ static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _s
 
         const char * timeline_type_str = dz_shape_timeline_type_stringize( timeline_type );
 
-        jpp::object j_timeline_key = j_timeline[timeline_type_str];
+        jpp::object j_timeline_key;
+        if( j_timeline.exist( timeline_type_str, &j_timeline_key ) == false )
+        {
+            continue;
+        }
 
         dz_timeline_key_t * timeline_key;
         if( __evict_timeline_key_load( _service, &timeline_key, j_timeline_key ) == DZ_FAILURE )
@@ -591,6 +595,46 @@ static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _s
     }
 
     *_shape = shape;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t ** _emitter, const jpp::object & _data )
+{
+    dz_emitter_t * emitter;
+    if( dz_emitter_create( _service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    float life = _data["life"];
+    
+    dz_emitter_set_life( emitter, life );
+
+    jpp::object j_timeline = _data["timeline"];
+
+    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    {
+        dz_emitter_timeline_type_e timeline_type = (dz_emitter_timeline_type_e)index;
+
+        const char * timeline_type_str = dz_emitter_timeline_type_stringize( timeline_type );
+
+        jpp::object j_timeline_key;
+        if( j_timeline.exist( timeline_type_str, &j_timeline_key ) == false )
+        {
+            continue;
+        }
+
+        dz_timeline_key_t * key;
+        if( __evict_timeline_key_load( _service, &key, j_timeline_key ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        dz_emitter_set_timeline( emitter, timeline_type, key );
+    }
+
+    *_emitter = emitter;
 
     return DZ_SUCCESSFUL;
 }
@@ -609,6 +653,14 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
 
     dz_shape_t * shape;
     if( __evict_shape_load( _service, &shape, j_shape ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    jpp::object j_emitter = _data["emitter"];
+
+    dz_emitter_t * emitter;
+    if( __evict_emitter_load( _service, &emitter, j_emitter ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
