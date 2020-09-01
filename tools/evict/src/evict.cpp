@@ -256,10 +256,6 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 
     obj.set( "seed", seed );
 
-    uint32_t particle_limit = dz_effect_get_particle_limit( _effect );
-
-    obj.set( "particle_limit", particle_limit );
-
     float x;
     float y;
     dz_effect_get_position( _effect, &x, &y );
@@ -639,6 +635,42 @@ static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t *
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+dz_result_t __evict_affector_load( dz_service_t * _service, dz_affector_t ** _affector, const jpp::object & _data )
+{
+    dz_affector_t * affector;
+    if( dz_affector_create( _service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    jpp::object j_timeline = _data["timeline"];
+
+    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    {
+        dz_affector_timeline_type_e timeline_type = (dz_affector_timeline_type_e)index;
+
+        const char * timeline_type_str = dz_affector_timeline_type_stringize( timeline_type );
+
+        jpp::object j_timeline_key;
+        if( j_timeline.exist( timeline_type_str, &j_timeline_key ) == false )
+        {
+            continue;
+        }
+
+        dz_timeline_key_t * key;
+        if( __evict_timeline_key_load( _service, &key, j_timeline_key ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        dz_affector_set_timeline( affector, timeline_type, key );
+    }
+
+    *_affector = affector;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data )
 {
     jpp::object j_material = _data["material"];
@@ -665,12 +697,34 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
         return DZ_FAILURE;
     }
 
-    //dz_effect_t * effect;
-    //dz_effect_create( _service, &effect, )
+    jpp::object j_affector = _data["affector"];
 
-    (void)_service;
-    (void)_effect;
-    (void)_data;
+    dz_affector_t * affector;
+    if( __evict_affector_load( _service, &affector, j_affector ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    float life = _data.get( "life", 0.f );
+    uint32_t seed = _data.get( "seed", 0 );
+
+    dz_effect_t * effect;
+    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, seed, life, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_bool_t loop = _data.get( "loop", 0 );
+    dz_effect_set_loop( effect, loop );
+
+    float x = _data["position"][0];
+    float y = _data["position"][1];
+    dz_effect_set_position( effect, x, y );
+
+    float rotate = _data["rotate"];
+    dz_effect_set_rotate( effect, rotate );
+
+    *_effect = effect;
 
     return DZ_SUCCESSFUL;
 }
