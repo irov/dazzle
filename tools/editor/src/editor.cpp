@@ -1120,7 +1120,32 @@ int editor::loadEffect()
 
         this->loadJSON_( content.c_str(), size, &data );
 
-        dz_evict_load( m_service, &m_effect, data );
+        if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
+
+        //m_material = dz_effect_get_material( m_effect );
+
+        //m_atlas = dz_material_get_atlas( m_material );
+
+        //dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t * *_texture )
+        //dz_texture_t * m_texture;
+        //dz_material_t * m_material;
+        //dz_shape_t * m_shape;
+        //dz_emitter_t * m_emitter;
+        //dz_affector_t * m_affector;
+
+        //dz_effect_t * m_effect;
+
+        //dz_bool_t m_loop;
+
+        //dz_atlas_set_surface( m_atlas, &m_textureId );
+
+        if( this->resetEffect() == EXIT_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
 
         free( outPath );
     }
