@@ -1120,34 +1120,36 @@ int editor::loadEffect()
 
         this->loadJSON_( content.c_str(), size, &data );
 
-        //if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
-        //{
-        //    return EXIT_FAILURE;
-        //}
+        if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
 
-        //m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
+        m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
 
-        //m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
+        m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
 
-        //if( dz_atlas_get_texture( m_atlas, m_textureId, const_cast<const dz_texture_t * *>(&m_texture) ) == DZ_FAILURE )
-        //{
-        //    return EXIT_FAILURE;
-        //}
+        if( dz_atlas_get_texture( m_atlas, m_textureId, const_cast<const dz_texture_t * *>(&m_texture) ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
 
-        //m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
+        m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
 
-        //m_shape = const_cast<dz_shape_t *>(dz_effect_get_shape( m_effect ));
-        //m_emitter = const_cast<dz_emitter_t *>(dz_effect_get_emitter( m_effect ));
-        //m_affector = const_cast<dz_affector_t *>(dz_effect_get_affector( m_effect ));
-        //
-        //m_loop = dz_effect_get_loop( m_effect );
+        m_shape = const_cast<dz_shape_t *>(dz_effect_get_shape( m_effect ));
+        m_emitter = const_cast<dz_emitter_t *>(dz_effect_get_emitter( m_effect ));
+        m_affector = const_cast<dz_affector_t *>(dz_effect_get_affector( m_effect ));
 
-        //dz_atlas_set_surface( m_atlas, &m_textureId );
+        m_shapeType = dz_shape_get_type( m_shape );
+        
+        m_loop = dz_effect_get_loop( m_effect );
 
-        //if( this->resetEffect() == EXIT_FAILURE )
-        //{
-        //    return EXIT_FAILURE;
-        //}
+        dz_atlas_set_surface( m_atlas, &m_textureId );
+
+        if( this->resetEffectData() == EXIT_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
 
         free( outPath );
     }
@@ -1215,6 +1217,7 @@ static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_
         _pointsCurve[end].x = _pointsData[end].x;
         _pointsCurve[end].y = (_pointsData[end].y - _min) / _range;
         _pointsCurve[end].y2 = (_pointsData[end].y2 - _min) / _range;
+        _pointsCurve[end].mode = _pointsData[end].mode;
     }
     _pointsCurve[end].x = -1;
 };
@@ -1227,6 +1230,7 @@ static void __pointsDataToCurveInv( er_curve_point_t * _pointsData, er_curve_poi
         _pointsCurve[end].x = _pointsData[end].x;
         _pointsCurve[end].y = 1.f / ((_pointsData[end].y - _min) * _range);
         _pointsCurve[end].y2 = 1.f / ((_pointsData[end].y2 - _min) * _range);
+        _pointsCurve[end].mode = _pointsData[end].mode;
     }
     _pointsCurve[end].x = -1;
 };
@@ -2150,6 +2154,183 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float
     return modified;
 }
 //////////////////////////////////////////////////////////////////////////
+int editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * _pointsData, size_t _index )
+{
+    if( _index + 1 >= ER_CURVE_MAX_POINTS )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_timeline_key_type_e key_type = dz_timeline_key_get_type( _key );
+
+    if( key_type == DZ_TIMELINE_KEY_CONST )
+    {
+        float p = dz_timeline_key_get_p( _key );
+
+        float const_value;
+        dz_timeline_key_get_const_value( _key, &const_value );
+
+        _pointsData[_index].x = p;
+        _pointsData[_index].y = const_value;
+        _pointsData[_index].y2 = 0.f;
+        _pointsData[_index].mode = ER_CURVE_POINT_MODE_NORMAL;
+
+
+    }
+    else if( key_type == DZ_TIMELINE_KEY_RANDOMIZE )
+    {
+        float p = dz_timeline_key_get_p( _key );
+
+        float randomize_min;
+        float randomize_max;
+        dz_timeline_key_get_randomize_min_max( _key, &randomize_min, &randomize_max );
+
+        _pointsData[_index].x = p;
+        _pointsData[_index].y = randomize_min;
+        _pointsData[_index].y2 = randomize_max;
+        _pointsData[_index].mode = ER_CURVE_POINT_MODE_RANDOM;
+    }
+    else
+    {
+        return EXIT_FAILURE;
+    }
+
+    _pointsData[_index + 1].x = -1.f; // init data so editor knows to take it from here
+
+    const dz_timeline_interpolate_t * interpolate = dz_timeline_key_get_interpolate( _key );
+
+    if( interpolate != DZ_NULLPTR )
+    {
+        const dz_timeline_key_t * key = dz_timeline_interpolate_get_key( interpolate );
+
+        if( key != DZ_NULLPTR )
+        {
+            if( this->readTimelineKey( key, _pointsData, _index + 1 ) == EXIT_FAILURE )
+            {
+                return EXIT_FAILURE;
+            }
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
+int editor::resetEffectData()
+{
+    float life = dz_effect_get_life( m_effect );
+
+    // shape data
+    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    {
+        timeline_shape_t & data = m_timelineShapeData[index];
+
+        data.type = static_cast<dz_shape_timeline_type_e>(index);
+        data.selectedPoint = ER_CURVE_POINT_NONE;
+
+        const dz_timeline_key_t * key = dz_shape_get_timeline( m_shape, data.type );
+
+        data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
+
+        if( key != DZ_NULLPTR )
+        {
+            if( this->readTimelineKey( key, data.pointsData, 0 ) == EXIT_FAILURE )
+            {
+                return EXIT_FAILURE;
+            }
+        }
+
+        dz_timeline_limit_status_e status;
+        float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+        dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+
+        // curve
+        float y_min = min;
+        float y_max = max;
+
+        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+
+        float y_range = y_max - y_min;
+
+        __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
+    }
+
+    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    {
+        timeline_emitter_t & data = m_timelineEmitterData[index];
+
+        data.type = static_cast<dz_emitter_timeline_type_e>(index);
+        data.selectedPoint = ER_CURVE_POINT_NONE;
+
+        const dz_timeline_key_t * key = dz_emitter_get_timeline( m_emitter, data.type );
+
+        data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
+
+        if( key != DZ_NULLPTR )
+        {
+            if( this->readTimelineKey( key, data.pointsData, 0 ) == EXIT_FAILURE )
+            {
+                return EXIT_FAILURE;
+            }
+        }
+
+        dz_timeline_limit_status_e status;
+        float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+        dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+
+        // curve
+        float y_min = min;
+        float y_max = max;
+
+        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+
+        float y_range = y_max - y_min;
+
+        __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
+    }
+
+    // affector 
+    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    {
+        timeline_affector_t & data = m_timelineAffectorData[index];
+
+        data.type = static_cast<dz_affector_timeline_type_e>(index);
+        data.selectedPoint = ER_CURVE_POINT_NONE;
+
+        const dz_timeline_key_t * key = dz_affector_get_timeline( m_affector, data.type );
+
+        data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
+
+        if( key != DZ_NULLPTR )
+        {
+            if( this->readTimelineKey( key, data.pointsData, 0 ) == EXIT_FAILURE )
+            {
+                return EXIT_FAILURE;
+            }
+        }
+
+        if( index == DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT )
+        {
+            continue;
+        }
+
+        dz_timeline_limit_status_e status;
+        float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
+        dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+
+        // curve
+        float y_min = min;
+        float y_max = max;
+
+        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+
+        float y_range = y_max - y_min;
+
+        __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
 int editor::showEffectData()
 {
     ImGui::Spacing();
@@ -2781,7 +2962,7 @@ int editor::showContentPaneControls()
     ImGui::SameLine();
 
     // loop
-    static bool isLoop = m_loop == DZ_TRUE ? true : false;
+    bool isLoop = m_loop == DZ_TRUE ? true : false;
     if( ImGui::Checkbox( ER_WINDOW_CONTROLS_BTN_LOOP_TEXT, &isLoop ) == true )
     {
         m_loop = isLoop == true ? DZ_TRUE : DZ_FALSE;
