@@ -27,7 +27,7 @@ set(DAZZLE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle.hpp
 )
 
-include_directories(${PROJECT_NAME} ${DAZZLE_INCLUDE_DIR})
+include_directories(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(${PROJECT_NAME} STATIC ${DAZZLE_SOURCES} ${DAZZLE_HEADERS})
 
