@@ -12,7 +12,8 @@ set(DAZZLE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/effect.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/emitter.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/material.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/math.h    
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/math.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/instance.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/particle.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/service.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shape.h

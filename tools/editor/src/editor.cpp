@@ -611,6 +611,7 @@ editor::editor()
     , m_loop( DZ_FALSE )
 
     , m_effect( nullptr )
+    , m_instance( nullptr )
     , m_fwWindow( nullptr )
 
     , m_shapeType( DZ_SHAPE_RECT )
@@ -817,12 +818,17 @@ int editor::init()
         }
 
         // emitter
-        if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return EXIT_FAILURE;
         }
 
-        dz_effect_set_loop( m_effect, m_loop );
+        if( dz_instance_create( m_service, &m_instance, m_effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return EXIT_FAILURE;
+        }
+
+        dz_instance_set_loop( m_instance, m_loop );
     }
 
     // init imgui
@@ -992,7 +998,7 @@ int editor::update()
     if( m_pause == false )
     {
         // update and render dazzle
-        dz_effect_update( m_service, m_effect, 0.005f );
+        dz_instance_update( m_service, m_instance, 0.005f );
     }
 
     // update camera
@@ -1056,9 +1062,9 @@ int editor::resetEffect()
 {
     dz_shape_set_type( m_shape, m_shapeType );
 
-    dz_effect_reset( m_effect );
+    dz_instance_reset( m_instance );
 
-    dz_effect_emit_resume( m_effect );
+    dz_instance_emit_resume( m_instance );
 
     return EXIT_SUCCESS;
 }
@@ -1142,7 +1148,7 @@ int editor::loadEffect()
 
         m_shapeType = dz_shape_get_type( m_shape );
         
-        m_loop = dz_effect_get_loop( m_effect );
+        m_loop = dz_instance_get_loop( m_instance );
 
         dz_atlas_set_surface( m_atlas, &m_textureId );
 
@@ -2217,7 +2223,7 @@ int editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * 
 //////////////////////////////////////////////////////////////////////////
 int editor::resetEffectData()
 {
-    float life = dz_effect_get_life( m_effect );
+    //float life = dz_effect_get_life( m_effect );
 
     // shape data
     for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
@@ -2340,11 +2346,11 @@ int editor::showEffectData()
 
     ImGui::Spacing();
 
-    int seed = dz_effect_get_seed( m_effect );
+    int seed = dz_instance_get_seed( m_instance );
 
     if( ImGui::InputInt( ER_WINDOW_EFFECT_SEED_TEXT, &seed, 0, 0, ImGuiInputTextFlags_None ) == true )
     {
-        dz_effect_set_seed( m_effect, seed );
+        dz_instance_set_seed( m_instance, seed );
 
         this->resetEffect();
     }
@@ -2716,7 +2722,7 @@ void editor::showDazzleCanvas()
 
     glViewport( (GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y );
 
-    dz_render_effect( &m_openglDesc, m_effect );
+    dz_render_instance( &m_openglDesc, m_instance );
 
     glViewport( oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3] );
 }
@@ -2878,8 +2884,8 @@ int editor::showContentPane()
 
     if( m_showDebugInfo == true )
     {
-        uint32_t particle_count = dz_effect_get_particle_count( m_effect );
-        uint32_t particle_limit = dz_effect_get_particle_limit( m_effect );
+        uint32_t particle_count = dz_instance_get_particle_count( m_instance );
+        uint32_t particle_limit = dz_instance_get_particle_limit( m_instance );
 
         char buf[1000];
 
@@ -2937,7 +2943,7 @@ int editor::showContentPane()
 int editor::showContentPaneControls()
 {
     float life = dz_effect_get_life( m_effect );
-    float time = dz_effect_get_time( m_effect );
+    float time = dz_instance_get_time( m_instance );
 
     // buttons
     if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_RESET_TEXT ) )
@@ -2967,7 +2973,7 @@ int editor::showContentPaneControls()
     {
         m_loop = isLoop == true ? DZ_TRUE : DZ_FALSE;
 
-        dz_effect_set_loop( m_effect, m_loop );
+        dz_instance_set_loop( m_instance, m_loop );
     }
     ImGui::SameLine();
 
@@ -2982,7 +2988,7 @@ int editor::showContentPaneControls()
     {
         this->resetEffect();
 
-        dz_effect_update( m_service, m_effect, time );
+        dz_instance_update( m_service, m_instance, time );
     }
     
     // life
@@ -3010,7 +3016,7 @@ int editor::showContentPaneControls()
         ImGui::Text( ER_WINDOW_CONTROLS_EMIT_STATES_LABEL_TEXT );
         ImGui::SameLine();
 
-        dz_effect_state_e emitter_state = dz_effect_get_state( m_effect );
+        dz_instance_state_e emitter_state = dz_instance_get_state( m_instance );
 
         auto lamdba_addBoolIndicator = []( bool _value, const char * _msg )
         {
@@ -3023,8 +3029,8 @@ int editor::showContentPaneControls()
             ImGui::SameLine();
         };
 
-        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_EMIT_COMPLETE, ER_WINDOW_CONTROLS_EMIT_COMPLETE_STATE_TEXT );
-        lamdba_addBoolIndicator( emitter_state & DZ_EFFECT_PARTICLE_COMPLETE, ER_WINDOW_CONTROLS_PARTICLE_COMPLETE_STATE_TEXT );
+        lamdba_addBoolIndicator( emitter_state & DZ_INSTANCE_EMIT_COMPLETE, ER_WINDOW_CONTROLS_EMIT_COMPLETE_STATE_TEXT );
+        lamdba_addBoolIndicator( emitter_state & DZ_INSTANCE_PARTICLE_COMPLETE, ER_WINDOW_CONTROLS_PARTICLE_COMPLETE_STATE_TEXT );
     }
 
     return EXIT_SUCCESS;

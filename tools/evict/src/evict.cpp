@@ -248,24 +248,6 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 
     obj.set( "life", life );
 
-    dz_bool_t loop = dz_effect_get_loop( _effect );
-
-    obj.set( "loop", loop );
-
-    uint32_t seed = dz_effect_get_seed( _effect );
-
-    obj.set( "seed", seed );
-
-    float x;
-    float y;
-    dz_effect_get_position( _effect, &x, &y );
-
-    obj.set( "position", jpp::make_tuple( x, y ) );
-
-    float rotate = dz_effect_get_rotate( _effect );
-
-    obj.set( "rotate", rotate );
-
     const dz_material_t * material = dz_effect_get_material( _effect );
 
     jpp::object obj_material = __evict_material_write( material );
@@ -706,23 +688,12 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
     }
 
     float life = _data.get( "life", 0.f );
-    uint32_t seed = _data.get( "seed", 0 );
-
+    
     dz_effect_t * effect;
-    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, seed, life, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
-
-    dz_bool_t loop = _data.get( "loop", 0 );
-    dz_effect_set_loop( effect, loop );
-
-    float x = _data["position"][0];
-    float y = _data["position"][1];
-    dz_effect_set_position( effect, x, y );
-
-    float rotate = _data["rotate"];
-    dz_effect_set_rotate( effect, rotate );
 
     *_effect = effect;
 

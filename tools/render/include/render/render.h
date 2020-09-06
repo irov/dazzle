@@ -40,7 +40,7 @@ void dz_render_use_color_program( dz_render_desc_t * _desc );
 void dz_render_use_texture_program( dz_render_desc_t * _desc );
 void dz_render_set_camera( const dz_render_desc_t * _desc, float _offsetX, float _offsetY, float _scale );
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t * _effect );
+dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instnace );
 //////////////////////////////////////////////////////////////////////////
 
 #endif

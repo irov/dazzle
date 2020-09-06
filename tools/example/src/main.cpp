@@ -414,7 +414,13 @@ int main( int argc, char ** argv )
     }
 
     dz_effect_t * effect;
-    if( dz_effect_create( service, &effect, material, shape, emitter, affector, 0, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( service, &effect, material, shape, emitter, affector, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_instance_t * instnace;
+    if( dz_instance_create( service, &instnace, effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
@@ -423,14 +429,14 @@ int main( int argc, char ** argv )
     {
         glfwPollEvents();
 
-        dz_effect_update( service, effect, 0.005f );
+        dz_instance_update( service, instnace, 0.005f );
 
         dz_render_set_camera( &opengl_desc, camera_offset_x, camera_offset_y, camera_scale );
 
         glClearColor( 0, 0, 0, 255 );
         glClear( GL_COLOR_BUFFER_BIT );
 
-        dz_render_effect( &opengl_desc, effect );
+        dz_render_instance( &opengl_desc, instnace );
 
         glfwSwapBuffers( fwWindow );
     }

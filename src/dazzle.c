@@ -12,6 +12,7 @@
 #include "material.h"
 #include "emitter.h"
 #include "effect.h"
+#include "instance.h"
 
 #include "alloc.h"
 #include "math.h"
@@ -1185,7 +1186,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, uint32_t _seed, float _life, dz_userdata_t _ud )
+dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _service == DZ_NULLPTR )
@@ -1226,26 +1227,7 @@ dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, c
     effect->emitter = _emitter;
     effect->affector = _affector;
 
-    effect->init_seed = _seed;
-    effect->seed = _seed;
-
-    effect->partices = DZ_NULLPTR;
-    effect->partices_count = 0;
-    effect->partices_capacity = 0;
-    effect->particle_limit = ~0U;
-
-    effect->loop = DZ_FALSE;
-    effect->emit_pause = DZ_FALSE;
-
     effect->life = _life;
-
-    effect->time = 0.f;
-    effect->emitter_time = 0.f;
-
-    effect->x = 0.f;
-    effect->y = 0.f;
-
-    effect->angle = 0.f;
 
     effect->ud = _ud;
 
@@ -1309,26 +1291,6 @@ const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect )
     return _effect->affector;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_seed( dz_effect_t * _effect, uint32_t _seed )
-{
-    _effect->init_seed = _seed;
-}
-//////////////////////////////////////////////////////////////////////////
-uint32_t dz_effect_get_seed( const dz_effect_t * _effect )
-{
-    return _effect->init_seed;
-}
-//////////////////////////////////////////////////////////////////////////
-void dz_effect_set_particle_limit( dz_effect_t * _effect, uint32_t _limit )
-{
-    _effect->particle_limit = _limit;
-}
-//////////////////////////////////////////////////////////////////////////
-uint32_t dz_effect_get_particle_limit( const dz_effect_t * _effect )
-{
-    return _effect->particle_limit;
-}
-//////////////////////////////////////////////////////////////////////////
 void dz_effect_set_life( dz_effect_t * _effect, float _life )
 {
     _effect->life = _life;
@@ -1339,23 +1301,112 @@ float dz_effect_get_life( const dz_effect_t * _effect )
     return _effect->life;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_loop( dz_effect_t * _effect, dz_bool_t _loop )
+dz_result_t dz_instance_create( dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud )
+{
+#ifdef DZ_DEBUG
+    if( _service == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( _effect == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
+    dz_instance_t * instance = DZ_NEW( _service, dz_instance_t );
+
+    instance->effect = _effect;
+
+    instance->init_seed = _seed;
+    instance->seed = _seed;
+
+    instance->partices = DZ_NULLPTR;
+    instance->partices_count = 0;
+    instance->partices_capacity = 0;
+    instance->particle_limit = ~0U;
+
+    instance->loop = DZ_FALSE;
+    instance->emit_pause = DZ_FALSE;
+
+    instance->time = 0.f;
+    instance->emitter_time = 0.f;
+
+    instance->x = 0.f;
+    instance->y = 0.f;
+
+    instance->angle = 0.f;
+
+    instance->ud = _ud;
+
+    *_instance = instance;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_destroy( dz_service_t * _service, const dz_instance_t * _instance )
+{
+    DZ_FREE( _service, _instance );
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_set_seed( dz_instance_t * _effect, uint32_t _seed )
+{
+    _effect->init_seed = _seed;
+}
+//////////////////////////////////////////////////////////////////////////
+uint32_t dz_instance_get_seed( const dz_instance_t * _effect )
+{
+    return _effect->init_seed;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_set_particle_limit( dz_instance_t * _effect, uint32_t _limit )
+{
+    _effect->particle_limit = _limit;
+}
+//////////////////////////////////////////////////////////////////////////
+uint32_t dz_instance_get_particle_limit( const dz_instance_t * _effect )
+{
+    return _effect->particle_limit;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_set_ud( dz_instance_t * _instance, dz_userdata_t _ud )
+{
+    _instance->ud = _ud;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_userdata_t dz_instance_get_ud( const dz_instance_t * _instance )
+{
+    return _instance->ud;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_set_effect( dz_instance_t * _instance, const dz_effect_t * _effect )
+{
+    _instance->effect = _effect;
+}
+//////////////////////////////////////////////////////////////////////////
+const dz_effect_t * dz_instance_get_effect( const dz_instance_t * _instance )
+{
+    return _instance->effect;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_set_loop( dz_instance_t * _effect, dz_bool_t _loop )
 {
     _effect->loop = _loop;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_bool_t dz_effect_get_loop( const dz_effect_t * _effect )
+dz_bool_t dz_instance_get_loop( const dz_instance_t * _effect )
 {
     return _effect->loop;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_time( dz_effect_t * _effect, float _time )
+void dz_instance_set_time( dz_instance_t * _effect, float _time )
 {
     _effect->time = _time;
     _effect->emitter_time = _time;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_effect_get_time( const dz_effect_t * _effect )
+float dz_instance_get_time( const dz_instance_t * _effect )
 {
     return _effect->time;
 }
@@ -1447,9 +1498,11 @@ static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_shape_value_seed( dz_effect_t * _effect, dz_shape_timeline_type_e _type, float _life, float _time )
+static float __get_shape_value_seed( dz_instance_t * _instance, dz_shape_timeline_type_e _type, float _life, float _time )
 {
-    const dz_timeline_key_t * timeline_key = _effect->shape->timelines[_type];
+    const dz_effect_t * effect = _instance->effect;
+
+    const dz_timeline_key_t * timeline_key = effect->shape->timelines[_type];
 
     if( timeline_key == DZ_NULLPTR )
     {
@@ -1458,14 +1511,16 @@ static float __get_shape_value_seed( dz_effect_t * _effect, dz_shape_timeline_ty
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _life, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_emitter_value_seed( dz_effect_t * _effect, dz_emitter_timeline_type_e _type, float _life, float _time )
+static float __get_emitter_value_seed( dz_instance_t * _instance, dz_emitter_timeline_type_e _type, float _life, float _time )
 {
-    const dz_timeline_key_t * timeline_key = _effect->emitter->timelines[_type];
+    const dz_effect_t * effect = _instance->effect;
+
+    const dz_timeline_key_t * timeline_key = effect->emitter->timelines[_type];
 
     if( timeline_key == DZ_NULLPTR )
     {
@@ -1474,14 +1529,16 @@ static float __get_emitter_value_seed( dz_effect_t * _effect, dz_emitter_timelin
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _life, _time );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_seed( dz_effect_t * _effect, dz_affector_timeline_type_e _type, float _life, float _time )
+static float __get_affector_value_seed( dz_instance_t * _instance, dz_affector_timeline_type_e _type, float _life, float _time )
 {
-    const dz_timeline_key_t * timeline_key = _effect->affector->timelines[_type];
+    const dz_effect_t * effect = _instance->effect;
+
+    const dz_timeline_key_t * timeline_key = effect->affector->timelines[_type];
 
     if( timeline_key == DZ_NULLPTR )
     {
@@ -1490,7 +1547,7 @@ static float __get_affector_value_seed( dz_effect_t * _effect, dz_affector_timel
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_effect->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _life, _time );
 
     return value;
 }
@@ -1611,34 +1668,34 @@ static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _p
     return DZ_FAILURE;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_t * _effect, float _life, float _spawn_time )
+static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
 {
-    const float time = _effect->time - _spawn_time;
+    const float time = _instance->time - _spawn_time;
 
-    if( _effect->partices_count >= _effect->partices_capacity )
+    if( _instance->partices_count >= _instance->partices_capacity )
     {
-        if( _effect->partices_capacity == 0 )
+        if( _instance->partices_capacity == 0 )
         {
-            _effect->partices_capacity = 16;
+            _instance->partices_capacity = 16;
         }
         else
         {
-            _effect->partices_capacity *= 2;
+            _instance->partices_capacity *= 2;
         }
 
-        _effect->partices = DZ_REALLOCN( _service, _effect->partices, dz_particle_t, _effect->partices_capacity );
+        _instance->partices = DZ_REALLOCN( _service, _instance->partices, dz_particle_t, _instance->partices_capacity );
 
-        if( _effect->partices == DZ_NULLPTR )
+        if( _instance->partices == DZ_NULLPTR )
         {
             return DZ_FAILURE;
         }
     }
 
-    dz_particle_t * p = _effect->partices + _effect->partices_count++;
+    dz_particle_t * p = _instance->partices + _instance->partices_count++;
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
-        p->rands[index] = __get_randf( &_effect->seed );
+        p->rands[index] = __get_randf( &_instance->seed );
     }
 
     p->life = _life;
@@ -1648,12 +1705,14 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
     p->rotate_accelerate_aux = 0.f;
     p->spin_accelerate_aux = 0.f;
 
-    p->x = _effect->x;
-    p->y = _effect->y;
+    p->x = _instance->x;
+    p->y = _instance->y;
 
-    p->angle = _effect->angle;
+    p->angle = _instance->angle;
 
-    dz_shape_type_e shape_type = _effect->shape->type;
+    const dz_effect_t * effect = _instance->effect;
+
+    dz_shape_type_e shape_type = effect->shape->type;
 
     switch( shape_type )
     {
@@ -1662,7 +1721,7 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
             p->x += 0.f;
             p->y += 0.f;
 
-            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             p->angle += angle;
         }break;
@@ -1671,20 +1730,20 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
             p->x += 0.f;
             p->y += 0.f;
 
-            const float angle_min = __get_shape_value_seed( _effect, DZ_SHAPE_SEGMENT_ANGLE_MIN, _life, _spawn_time );
-            const float angle_max = __get_shape_value_seed( _effect, DZ_SHAPE_SEGMENT_ANGLE_MAX, _life, _spawn_time );
+            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MIN, _life, _spawn_time );
+            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MAX, _life, _spawn_time );
 
-            const float angle = __get_randf2( &_effect->seed, angle_min, angle_max );
+            const float angle = __get_randf2( &_instance->seed, angle_min, angle_max );
 
             p->angle += angle;
         }break;
     case DZ_SHAPE_CIRCLE:
         {
-            const float radius_min = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_RADIUS_MIN, _life, _spawn_time );
-            const float radius_max = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_RADIUS_MAX, _life, _spawn_time );
+            const float radius_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MIN, _life, _spawn_time );
+            const float radius_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MAX, _life, _spawn_time );
 
-            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
-            const float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_effect->seed ) ) * (radius_max - radius_min);
+            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
+            const float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_instance->seed ) ) * (radius_max - radius_min);
 
             const float rx = radius * DZ_COSF( _service, angle );
             const float ry = radius * DZ_SINF( _service, angle );
@@ -1692,23 +1751,23 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
             p->x += rx;
             p->y += ry;
 
-            const float angle_min = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_ANGLE_MIN, _life, _spawn_time );
-            const float angle_max = __get_shape_value_seed( _effect, DZ_SHAPE_CIRCLE_ANGLE_MAX, _life, _spawn_time );
+            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MIN, _life, _spawn_time );
+            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MAX, _life, _spawn_time );
 
-            const float angle_dispersion = __get_randf2( &_effect->seed, angle_min, angle_max );
+            const float angle_dispersion = __get_randf2( &_instance->seed, angle_min, angle_max );
 
             p->angle += angle + angle_dispersion;
         }break;
     case DZ_SHAPE_LINE:
         {
-            const float angle = __get_shape_value_seed( _effect, DZ_SHAPE_LINE_ANGLE, _life, _spawn_time );
+            const float angle = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_ANGLE, _life, _spawn_time );
 
             const float dx = DZ_COSF( _service, angle );
             const float dy = DZ_SINF( _service, angle );
 
-            const float size = __get_shape_value_seed( _effect, DZ_SHAPE_LINE_SIZE, _life, _spawn_time );
+            const float size = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_SIZE, _life, _spawn_time );
 
-            const float l = (__get_randf( &_effect->seed ) - 0.5f) * size;
+            const float l = (__get_randf( &_instance->seed ) - 0.5f) * size;
 
             p->x += -dy * l;
             p->y += dx * l;
@@ -1717,21 +1776,21 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
         }break;
     case DZ_SHAPE_RECT:
         {
-            const float width_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MIN, _life, _spawn_time );
-            const float width_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_WIDTH_MAX, _life, _spawn_time );
-            const float height_min = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MIN, _life, _spawn_time );
-            const float height_max = __get_shape_value_seed( _effect, DZ_SHAPE_RECT_HEIGHT_MAX, _life, _spawn_time );
+            const float width_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MIN, _life, _spawn_time );
+            const float width_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MAX, _life, _spawn_time );
+            const float height_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MIN, _life, _spawn_time );
+            const float height_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MAX, _life, _spawn_time );
 
             DZ_TODO DZ_UNUSED( width_min );
             DZ_TODO DZ_UNUSED( height_min );
 
-            const float x = (__get_randf( &_effect->seed ) - 0.5f) * width_max;
-            const float y = (__get_randf( &_effect->seed ) - 0.5f) * height_max;
+            const float x = (__get_randf( &_instance->seed ) - 0.5f) * width_max;
+            const float y = (__get_randf( &_instance->seed ) - 0.5f) * height_max;
 
             p->x += x;
             p->y += y;
 
-            float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             p->angle += angle;
         }break;
@@ -1740,8 +1799,8 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
             float total_area = 0.f;
             float areas[1024];
 
-            const float * triangles = _effect->shape->triangles;
-            const uint32_t triangle_count = _effect->shape->triangle_count;
+            const float * triangles = effect->shape->triangles;
+            const uint32_t triangle_count = effect->shape->triangle_count;
 
             for( uint32_t index = 0; index != triangle_count; ++index )
             {
@@ -1759,7 +1818,7 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
                 areas[index] = total_area;
             }
 
-            const float triangle_rand = __get_randf( &_effect->seed );
+            const float triangle_rand = __get_randf( &_instance->seed );
 
             const float triangle_find_area = triangle_rand * total_area;
 
@@ -1786,8 +1845,8 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
             const float rcx = triangles[triangle_found_index * 6 + 4];
             const float rcy = triangles[triangle_found_index * 6 + 5];
 
-            const float r1 = __get_randf( &_effect->seed );
-            const float r2 = __get_randf( &_effect->seed );
+            const float r1 = __get_randf( &_instance->seed );
+            const float r2 = __get_randf( &_instance->seed );
 
             const float qr1 = DZ_SQRTF( _service, r1 );
 
@@ -1797,23 +1856,23 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
             p->x += tx;
             p->y += ty;
 
-            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             p->angle += angle;
         }break;
     case DZ_SHAPE_MASK:
         {
-            const void * mask_buffer = _effect->shape->mask_buffer;
-            const uint32_t mask_bites = _effect->shape->mask_bites;
-            const uint32_t mask_pitch = _effect->shape->mask_pitch;
-            const uint32_t mask_width = _effect->shape->mask_width;
-            const uint32_t mask_height = _effect->shape->mask_height;
-            const uint32_t mask_threshold = _effect->shape->mask_threshold;
-            const float mask_scale = _effect->shape->mask_scale;
+            const void * mask_buffer = effect->shape->mask_buffer;
+            const uint32_t mask_bites = effect->shape->mask_bites;
+            const uint32_t mask_pitch = effect->shape->mask_pitch;
+            const uint32_t mask_width = effect->shape->mask_width;
+            const uint32_t mask_height = effect->shape->mask_height;
+            const uint32_t mask_threshold = effect->shape->mask_threshold;
+            const float mask_scale = effect->shape->mask_scale;
 
             uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
 
-            const float r = __get_randf( &_effect->seed );
+            const float r = __get_randf( &_instance->seed );
 
             uint32_t threshold_value_index = (uint32_t)(r * (threshold_value_count - 1) + 0.5f);
 
@@ -1827,7 +1886,7 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
             p->x += w_found * mask_scale;
             p->y += h_found * mask_scale;
 
-            const float angle = __get_randf( &_effect->seed ) * DZ_PI2;
+            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             p->angle += angle;
         }break;
@@ -1836,10 +1895,10 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
         break;
     }
 
-    const float spin_min = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_SPIN_MIN, _life, _spawn_time );
-    const float spin_max = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_SPIN_MAX, _life, _spawn_time );
+    const float spin_min = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MIN, _life, _spawn_time );
+    const float spin_max = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MAX, _life, _spawn_time );
 
-    p->spin = (__get_randf( &_effect->seed ) * 2.f - 1.f) * __get_randf2( &_effect->seed, spin_min, spin_max );
+    p->spin = (__get_randf( &_instance->seed ) * 2.f - 1.f) * __get_randf2( &_instance->seed, spin_min, spin_max );
 
     const float sx = DZ_COSF( _service, p->spin );
     const float sy = DZ_SINF( _service, p->spin );
@@ -1847,56 +1906,56 @@ static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_effect_
     p->sx = sx;
     p->sy = sy;
 
-    __particle_update( _service, _effect, p, time );
+    __particle_update( _service, effect, p, time );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_position( dz_effect_t * _effect, float _x, float _y )
+void dz_instance_set_position( dz_instance_t * _instance, float _x, float _y )
 {
-    _effect->x = _x;
-    _effect->y = _y;
+    _instance->x = _x;
+    _instance->y = _y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_get_position( const dz_effect_t * _effect, float * _x, float * _y )
+void dz_instance_get_position( const dz_instance_t * _instance, float * _x, float * _y )
 {
-    *_x = _effect->x;
-    *_y = _effect->y;
+    *_x = _instance->x;
+    *_y = _instance->y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_rotate( dz_effect_t * _effect, float _angle )
+void dz_instance_set_rotate( dz_instance_t * _instance, float _angle )
 {
-    _effect->angle = _angle;
+    _instance->angle = _angle;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_effect_get_rotate( const dz_effect_t * _effect )
+float dz_instance_get_rotate( const dz_instance_t * _instance )
 {
-    return _effect->angle;
+    return _instance->angle;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_reset( dz_effect_t * _effect )
+void dz_instance_reset( dz_instance_t * _instance )
 {
-    _effect->seed = _effect->init_seed;
+    _instance->seed = _instance->init_seed;
 
-    _effect->time = 0.f;
-    _effect->emitter_time = 0.f;
+    _instance->time = 0.f;
+    _instance->emitter_time = 0.f;
 
-    _effect->partices_count = 0;
+    _instance->partices_count = 0;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_emit_pause( dz_effect_t * _effect )
+void dz_instance_emit_pause( dz_instance_t * _instance )
 {
-    _effect->emit_pause = DZ_TRUE;
+    _instance->emit_pause = DZ_TRUE;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_emit_resume( dz_effect_t * _effect )
+void dz_instance_emit_resume( dz_instance_t * _instance )
 {
-    _effect->emit_pause = DZ_FALSE;
+    _instance->emit_pause = DZ_FALSE;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_bool_t dz_effect_is_emit_pause( const dz_effect_t * _effect )
+dz_bool_t dz_instance_is_emit_pause( const dz_instance_t * _instance )
 {
-    return _effect->emit_pause;
+    return _instance->emit_pause;
 }
 //////////////////////////////////////////////////////////////////////////
 static dz_particle_t * __find_dead_particle( dz_particle_t * _p, dz_particle_t * _end )
@@ -1912,15 +1971,17 @@ static dz_particle_t * __find_dead_particle( dz_particle_t * _p, dz_particle_t *
     return _end;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time )
+dz_result_t dz_instance_update( dz_service_t * _service, dz_instance_t * _instance, float _time )
 {
-    dz_particle_t * p = _effect->partices;
-    dz_particle_t * p_end = _effect->partices + _effect->partices_count;
+    const dz_effect_t * effect = _instance->effect;
+
+    dz_particle_t * p = _instance->partices;
+    dz_particle_t * p_end = _instance->partices + _instance->partices_count;
     while( p != p_end )
     {
         if( p->time + _time < p->life )
         {
-            __particle_update( _service, _effect, p, _time );
+            __particle_update( _service, effect, p, _time );
         }
         else
         {
@@ -1930,7 +1991,7 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
         ++p;
     }
 
-    dz_particle_t * p_dead = __find_dead_particle( _effect->partices, p_end );
+    dz_particle_t * p_dead = __find_dead_particle( _instance->partices, p_end );
 
     if( p_dead != p_end )
     {
@@ -1944,60 +2005,62 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
             }
             else
             {
-                --_effect->partices_count;
+                --_instance->partices_count;
             }
         }
     }
 
-    if( _effect->emit_pause == DZ_TRUE )
+    if( _instance->emit_pause == DZ_TRUE )
     {
         return DZ_SUCCESSFUL;
     }
 
-    if( _effect->time + _time > _effect->life )
+    float effect_life = effect->life;
+
+    if( _instance->time + _time > effect_life )
     {
-        if( _effect->loop == DZ_FALSE )
+        if( _instance->loop == DZ_FALSE )
         {
-            _effect->time = _effect->life;
+            _instance->time = effect_life;
         }
         else
         {
-            _effect->time += _time - _effect->life;
-            _effect->emitter_time -= _effect->life;
+            _instance->time += _time - effect_life;
+            _instance->emitter_time -= effect_life;
         }
     }
     else
     {
-        _effect->time += _time;
+        _instance->time += _time;
     }
 
     for( ;;)
     {
-        float delay = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_DELAY, _effect->life, _effect->emitter_time );
+        float delay = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_DELAY, effect_life, _instance->emitter_time );
 
-        if( _effect->loop == DZ_FALSE && _effect->emitter_time + delay > _effect->life )
+        if( _instance->loop == DZ_FALSE && _instance->emitter_time + delay > effect_life )
         {
             break;
         }
 
-        if( _effect->time - _effect->emitter_time < delay )
+        if( _instance->time - _instance->emitter_time < delay )
         {
             break;
         }
 
-        float spawn_time = _effect->emitter_time + delay;
+        float spawn_time = _instance->emitter_time + delay;
 
-        float count = __get_emitter_value_seed( _effect, DZ_EMITTER_SPAWN_COUNT, _effect->life, spawn_time );
+        float count = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_COUNT, effect_life, spawn_time );
 
         while( count > 0.f )
         {
-            float life = __get_affector_value_seed( _effect, DZ_AFFECTOR_TIMELINE_LIFE, _effect->life, spawn_time );
+            float life = __get_affector_value_seed( _instance, DZ_AFFECTOR_TIMELINE_LIFE, effect_life, spawn_time );
 
-            float ptime = _effect->time - spawn_time;
+            float ptime = _instance->time - spawn_time;
 
-            if( life > ptime && _effect->partices_count < _effect->particle_limit )
+            if( life > ptime && _instance->partices_count < _instance->particle_limit )
             {
-                if( __emitter_spawn_particle( _service, _effect, life, spawn_time ) == DZ_FAILURE )
+                if( __emitter_spawn_particle( _service, _instance, life, spawn_time ) == DZ_FAILURE )
                 {
                     return DZ_FAILURE;
                 }
@@ -2006,42 +2069,44 @@ dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, fl
             count -= 1.f;
         }
 
-        _effect->emitter_time += delay;
+        _instance->emitter_time += delay;
     }
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_effect_state_e dz_effect_get_state( const dz_effect_t * _effect )
+dz_instance_state_e dz_instance_get_state( const dz_instance_t * _instance )
 {
-    dz_effect_state_e state = DZ_EFFECT_PROCESS;
+    dz_instance_state_e state = DZ_INSTANCE_PROCESS;
 
-    if( _effect->loop == DZ_TRUE )
+    if( _instance->loop == DZ_TRUE )
     {
         return state;
     }
 
-    if( _effect->time < _effect->life )
+    const dz_effect_t * effect = _instance->effect;
+
+    if( _instance->time < effect->life )
     {
         return state;
     }
 
-    state |= DZ_EFFECT_EMIT_COMPLETE;
+    state |= DZ_INSTANCE_EMIT_COMPLETE;
 
-    if( _effect->partices_count == 0U )
+    if( _instance->partices_count == 0U )
     {
-        state |= DZ_EFFECT_PARTICLE_COMPLETE;
+        state |= DZ_INSTANCE_PARTICLE_COMPLETE;
     }
 
     return state;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_effect_get_particle_count( const dz_effect_t * _effect )
+uint32_t dz_instance_get_particle_count( const dz_instance_t * _instance )
 {
-    return _effect->partices_count;
+    return _instance->partices_count;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_effect_mesh_t * _mesh )
+static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     const float hs = _p->size * 0.5f;
 
@@ -2075,7 +2140,7 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
     p3[1] = _p->y - uy - vy;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _iterator, dz_effect_mesh_t * _mesh )
+static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     const uint8_t r8 = (uint8_t)(_mesh->r * _p->color_r * 255.5f);
     const uint8_t g8 = (uint8_t)(_mesh->g * _p->color_g * 255.5f);
@@ -2101,7 +2166,7 @@ static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _itera
     c3[0] = color;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator, dz_effect_mesh_t * _mesh )
+static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     DZ_UNUSED( _p );
 
@@ -2126,7 +2191,7 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
     uv3[1] = 1.f;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_index( uint16_t _iterator, dz_effect_mesh_t * _mesh )
+static void __particle_compute_index( uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     uint16_t * index_buffer = (uint16_t *)(_mesh->index_buffer) + _iterator * 6;
     index_buffer[0] = _iterator * 4 + 0;
@@ -2137,14 +2202,14 @@ static void __particle_compute_index( uint16_t _iterator, dz_effect_mesh_t * _me
     index_buffer[5] = _iterator * 4 + 2;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _mesh, dz_effect_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count )
+void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * _mesh, dz_instance_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count )
 {
     DZ_UNUSED( _capacity );
 
     uint16_t particle_iterator = 0;
 
-    const dz_particle_t * p_begin = _effect->partices + _effect->partices_count;
-    const dz_particle_t * p_end = _effect->partices;
+    const dz_particle_t * p_begin = _instance->partices + _instance->partices_count;
+    const dz_particle_t * p_end = _instance->partices;
     for( ; p_begin != p_end; --p_begin )
     {
         const dz_particle_t * p = p_begin - 1;
@@ -2164,12 +2229,14 @@ void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _me
         return;
     }
 
-    dz_effect_mesh_chunk_t * chunk = _chunks + 0;
+    dz_instance_mesh_chunk_t * chunk = _chunks + 0;
     chunk->offset = 0;
     chunk->vertex_size = particle_iterator * 4;
     chunk->index_size = particle_iterator * 6;
 
-    const dz_material_t * material = _effect->material;
+    const dz_effect_t * effect = _instance->effect;
+
+    const dz_material_t * material = effect->material;
 
     chunk->blend_type = material->blend_type;
     chunk->surface = material->atlas->surface;
@@ -2390,8 +2457,6 @@ dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_stream_write_t _wri
     {
         return DZ_FAILURE;
     }
-
-    DZ_WRITE( _write, _ud, _effect->init_seed );
 
     DZ_WRITE( _write, _ud, _effect->life );
 
@@ -2705,14 +2770,11 @@ dz_result_t dz_effect_read( dz_service_t * _service, dz_effect_t ** _effect, dz_
         return DZ_FAILURE;
     }
 
-    uint32_t init_seed;
-    DZ_READ( _read, _ud, init_seed );
-
     float life;
     DZ_READ( _read, _ud, life );
 
     dz_effect_t * effect;
-    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, init_seed, life, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }

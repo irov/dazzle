@@ -109,8 +109,9 @@ public:
     dz_shape_t * m_shape;
     dz_emitter_t * m_emitter;
     dz_affector_t * m_affector;
-
     dz_effect_t * m_effect;
+
+    dz_instance_t * m_instance;
 
     dz_bool_t m_loop;
 

@@ -351,7 +351,7 @@ void dz_render_set_camera( const dz_render_desc_t * _desc, float _offsetX, float
     }
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t * _effect )
+dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instance )
 {
     glPushClientAttrib( GL_CLIENT_ALL_ATTRIB_BITS );
 
@@ -371,7 +371,7 @@ dz_result_t dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t 
     void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
     void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
 
-    dz_effect_mesh_t mesh;
+    dz_instance_mesh_t mesh;
     mesh.position_buffer = vertices;
     mesh.position_offset = offsetof( gl_vertex_t, x );
     mesh.position_stride = sizeof( gl_vertex_t );
@@ -392,17 +392,17 @@ dz_result_t dz_render_effect( const dz_render_desc_t * _desc, const dz_effect_t 
     mesh.b = 1.f;
     mesh.a = 1.f;
 
-    dz_effect_mesh_chunk_t chunks[16];
+    dz_instance_mesh_chunk_t chunks[16];
     uint32_t chunk_count;
 
-    dz_effect_compute_mesh( _effect, &mesh, chunks, 16, &chunk_count );
+    dz_instance_compute_mesh( _instance, &mesh, chunks, 16, &chunk_count );
 
     glUnmapBuffer( GL_ARRAY_BUFFER );
     glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 
     for( uint32_t index = 0; index != chunk_count; ++index )
     {
-        dz_effect_mesh_chunk_t * chunk = chunks + index;
+        dz_instance_mesh_chunk_t * chunk = chunks + index;
 
         GLuint textureId = *(GLuint *)chunk->surface;
 

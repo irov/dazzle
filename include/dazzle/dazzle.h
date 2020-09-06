@@ -305,7 +305,7 @@ void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_tim
 
 typedef struct dz_effect_t dz_effect_t;
 
-dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, uint32_t _seed, float _life, dz_userdata_t _ud );
+dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector,  float _life, dz_userdata_t _ud );
 void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect );
 
 void dz_effect_set_ud( dz_effect_t * _effect, dz_userdata_t _ud );
@@ -326,50 +326,61 @@ const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect );
 void dz_effect_set_life( dz_effect_t * _effect, float _life );
 float dz_effect_get_life( const dz_effect_t * _effect );
 
-void dz_effect_set_loop( dz_effect_t * _effect, dz_bool_t _loop );
-dz_bool_t dz_effect_get_loop( const dz_effect_t * _effect );
+typedef struct dz_instance_t dz_instance_t;
 
-void dz_effect_set_time( dz_effect_t * _effect, float _time );
-float dz_effect_get_time( const dz_effect_t * _effect );
+dz_result_t dz_instance_create( dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud );
+void dz_instance_destroy( dz_service_t * _service, const dz_instance_t * _instance );
 
-void dz_effect_set_seed( dz_effect_t * _effect, uint32_t _seed );
-uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
+void dz_instance_set_ud( dz_instance_t * _instance, dz_userdata_t _ud );
+dz_userdata_t dz_instance_get_ud( const dz_instance_t * _instance );
 
-void dz_effect_set_particle_limit( dz_effect_t * _effect, uint32_t _limit );
-uint32_t dz_effect_get_particle_limit( const dz_effect_t * _effect );
+void dz_instance_set_effect( dz_instance_t * _instance, const dz_effect_t * _effect );
+const dz_effect_t * dz_instance_get_effect( const dz_instance_t * _instance );
 
-void dz_effect_set_position( dz_effect_t * _effect, float _x, float _y );
-void dz_effect_get_position( const dz_effect_t * _effect, float * _x, float * _y );
+void dz_instance_set_loop( dz_instance_t * _instance, dz_bool_t _loop );
+dz_bool_t dz_instance_get_loop( const dz_instance_t * _instance );
 
-void dz_effect_set_rotate( dz_effect_t * _effect, float _angle );
-float dz_effect_get_rotate( const dz_effect_t * _effect );
+void dz_instance_set_time( dz_instance_t * _instance, float _time );
+float dz_instance_get_time( const dz_instance_t * _instance );
 
-void dz_effect_reset( dz_effect_t * _effect );
+void dz_instance_set_seed( dz_instance_t * _instance, uint32_t _seed );
+uint32_t dz_instance_get_seed( const dz_instance_t * _instance );
 
-void dz_effect_emit_pause( dz_effect_t * _effect );
-void dz_effect_emit_resume( dz_effect_t * _effect );
-dz_bool_t dz_effect_is_emit_pause( const dz_effect_t * _effect );
+void dz_instance_set_particle_limit( dz_instance_t * _instance, uint32_t _limit );
+uint32_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
 
-dz_result_t dz_effect_update( dz_service_t * _service, dz_effect_t * _effect, float _time );
+void dz_instance_set_position( dz_instance_t * _instance, float _x, float _y );
+void dz_instance_get_position( const dz_instance_t * _instance, float * _x, float * _y );
 
-typedef enum dz_effect_state_e
+void dz_instance_set_rotate( dz_instance_t * _instance, float _angle );
+float dz_instance_get_rotate( const dz_instance_t * _instance );
+
+void dz_instance_reset( dz_instance_t * _instance );
+
+void dz_instance_emit_pause( dz_instance_t * _instance );
+void dz_instance_emit_resume( dz_instance_t * _instance );
+dz_bool_t dz_instance_is_emit_pause( const dz_instance_t * _instance );
+
+dz_result_t dz_instance_update( dz_service_t * _service, dz_instance_t * _instance, float _time );
+
+typedef enum dz_instance_state_e
 {
-    DZ_EFFECT_PROCESS = 0x00000001,
-    DZ_EFFECT_EMIT_COMPLETE = 0x00000002,
-    DZ_EFFECT_PARTICLE_COMPLETE = 0x00000004,
-} dz_effect_state_e;
+    DZ_INSTANCE_PROCESS = 0x00000001,
+    DZ_INSTANCE_EMIT_COMPLETE = 0x00000002,
+    DZ_INSTANCE_PARTICLE_COMPLETE = 0x00000004,
+} dz_instance_state_e;
 
-dz_effect_state_e dz_effect_get_state( const dz_effect_t * _effect );
+dz_instance_state_e dz_instance_get_state( const dz_instance_t * _effect );
 
-uint32_t dz_effect_get_particle_count( const dz_effect_t * _effect );
+uint32_t dz_instance_get_particle_count( const dz_instance_t * _effect );
 
-typedef enum dz_effect_mesh_flags_e
+typedef enum dz_instance_mesh_flags_e
 {
     DZ_EFFECT_MESH_FLAG_NONE = 0x00000000,
     DZ_EFFECT_MESH_FLAG_INDEX32 = 0x00000001,
-} dz_effect_mesh_flags_e;
+} dz_instance_mesh_flags_e;
 
-typedef struct dz_effect_mesh_chunk_t
+typedef struct dz_instance_mesh_chunk_t
 {
     uint16_t offset;
     uint16_t vertex_size;
@@ -378,9 +389,9 @@ typedef struct dz_effect_mesh_chunk_t
     dz_blend_type_e blend_type;
 
     const dz_userdata_t * surface;
-} dz_effect_mesh_chunk_t;
+} dz_instance_mesh_chunk_t;
 
-typedef struct dz_effect_mesh_t
+typedef struct dz_instance_mesh_t
 {
     void * position_buffer;
     dz_size_t position_offset;
@@ -396,16 +407,16 @@ typedef struct dz_effect_mesh_t
 
     void * index_buffer;
 
-    dz_effect_mesh_flags_e flags;
+    dz_instance_mesh_flags_e flags;
     float r;
     float g;
     float b;
     float a;
 
     float m[16];
-} dz_effect_mesh_t;
+} dz_instance_mesh_t;
 
-void dz_effect_compute_mesh( const dz_effect_t * _effect, dz_effect_mesh_t * _mesh, dz_effect_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count );
+void dz_instance_compute_mesh( const dz_instance_t * _effect, dz_instance_mesh_t * _mesh, dz_instance_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count );
 
 typedef dz_result_t( *dz_stream_write_t )(const void * _data, dz_size_t _size, dz_userdata_t _ud);
 
