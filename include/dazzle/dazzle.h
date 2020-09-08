@@ -427,8 +427,9 @@ typedef dz_result_t( *dz_stream_read_t )(void * _data, dz_size_t _size, dz_userd
 
 typedef enum dz_effect_read_status_e
 {
-    DZ_EFFECT_LOAD_INVALID_MAGIC = 0x00000001,
-    DZ_EFFECT_LOAD_INVALID_VERSION = 0x00000002,
+    DZ_EFFECT_LOAD_STATUS_SUCCESSFUL = 0x00000000,
+    DZ_EFFECT_LOAD_STATUS_INVALID_MAGIC = 0x00000001,
+    DZ_EFFECT_LOAD_STATUS_INVALID_VERSION = 0x00000002,
 } dz_effect_read_status_e;
 
 dz_result_t dz_header_read( dz_stream_read_t _load, dz_userdata_t _ud, dz_effect_read_status_e * _status );

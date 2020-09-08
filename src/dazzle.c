@@ -2487,7 +2487,7 @@ dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect
 
     if( read_magic != magic )
     {
-        *_status = DZ_EFFECT_LOAD_INVALID_MAGIC;
+        *_status = DZ_EFFECT_LOAD_STATUS_INVALID_MAGIC;
 
         return DZ_FAILURE;
     }
@@ -2499,10 +2499,12 @@ dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect
 
     if( read_version != version )
     {
-        *_status = DZ_EFFECT_LOAD_INVALID_MAGIC;
+        *_status = DZ_EFFECT_LOAD_STATUS_INVALID_VERSION;
 
         return DZ_FAILURE;
     }
+
+    *_status = DZ_EFFECT_LOAD_STATUS_SUCCESSFUL;
 
     return DZ_SUCCESSFUL;
 }
