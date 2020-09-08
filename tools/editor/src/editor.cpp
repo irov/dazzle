@@ -80,10 +80,12 @@ static const char * ER_WINDOW_TYPE_NAMES[] = {
     "Emitter",           //ER_WINDOW_TYPE_EMITTER_DATA
     "Material",          //ER_WINDOW_TYPE_MATERIAL_DATA
 };
+//////////////////////////////////////////////////////////////////////////
 static const char * ER_TIMELINE_KEY_MODE_NAMES[] = {
     "Normal",            // ER_CURVE_POINT_MODE_NORMAL
     "Random",            // ER_CURVE_POINT_MODE_RANDOM
 };
+//////////////////////////////////////////////////////////////////////////
 static const char * ER_BLEND_MODE_NAMES[] = {
     "Normal",            //DZ_BLEND_NORNAL
     "Add",               //DZ_BLEND_ADD
@@ -105,6 +107,7 @@ static const char * ER_SHAPE_DATA_NAMES[] = {
     "Rect height min",   //DZ_SHAPE_RECT_HEIGHT_MIN
     "Rect height max",   //DZ_SHAPE_RECT_HEIGHT_MAX
 };
+//////////////////////////////////////////////////////////////////////////
 const char * ER_SHAPE_TYPE_NAMES[] = {
     "Point",             //DZ_SHAPE_POINT
     "Segment",           //DZ_SHAPE_SEGMENT
@@ -114,12 +117,14 @@ const char * ER_SHAPE_TYPE_NAMES[] = {
     "Polygon",           //DZ_SHAPE_POLYGON
     "Mask",              //DZ_SHAPE_MASK
 };
+//////////////////////////////////////////////////////////////////////////
 const char * ER_EMITTER_DATA_NAMES[] = {
     "Spawn delay (inv)", //DZ_EMITTER_SPAWN_DELAY inverted, means value = 1 / DZ_EMITTER_SPAWN_DELAY
     "Spawn count",       //DZ_EMITTER_SPAWN_COUNT
     "Spawn spin min",    //DZ_EMITTER_SPAWN_SPIN_MIN
     "Spawn spin max",    //DZ_EMITTER_SPAWN_SPIN_MAX
 };
+//////////////////////////////////////////////////////////////////////////
 const char * ER_AFFECTOR_DATA_NAMES[] = {
     "Life",              //DZ_AFFECTOR_TIMELINE_LIFE
     "Move speed",        //DZ_AFFECTOR_TIMELINE_MOVE_SPEED
@@ -145,8 +150,6 @@ struct my_json_load_data_t
     size_t carriage;
     size_t capacity;
 };
-//////////////////////////////////////////////////////////////////////////
-
 //////////////////////////////////////////////////////////////////////////
 static void * dz_malloc( dz_size_t _size, dz_userdata_t _ud )
 {

@@ -28,12 +28,12 @@ typedef struct dz_service_providers_t
 dz_result_t dz_service_create( dz_service_t ** _service, const dz_service_providers_t * _providers, dz_userdata_t _ud );
 void dz_service_destroy( dz_service_t * _service );
 
-void dz_service_get_providers( dz_service_t * _service, dz_service_providers_t * _providers );
+void dz_service_get_providers( const dz_service_t * _service, dz_service_providers_t * _providers );
 
 typedef struct dz_texture_t dz_texture_t;
 
-dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud );
-void dz_texture_destroy( dz_service_t * _service, const dz_texture_t * _texture );
+dz_result_t dz_texture_create( const dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud );
+void dz_texture_destroy( const dz_service_t * _service, const dz_texture_t * _texture );
 
 void dz_texture_set_ud( dz_texture_t * _texture, dz_userdata_t _ud );
 dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture );
@@ -55,8 +55,8 @@ float dz_texture_get_sequence_delay( const dz_texture_t * _texture );
 
 typedef struct dz_atlas_t dz_atlas_t;
 
-dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud );
-void dz_atlas_destroy( dz_service_t * _service, const dz_atlas_t * _atlas );
+dz_result_t dz_atlas_create( const dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud );
+void dz_atlas_destroy( const dz_service_t * _service, const dz_atlas_t * _atlas );
 
 void dz_atlas_set_ud( dz_atlas_t * _atlas, dz_userdata_t _ud );
 dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas );
@@ -85,8 +85,8 @@ const char * dz_blend_type_stringize( dz_blend_type_e _type );
 
 typedef struct dz_material_t dz_material_t;
 
-dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud );
-void dz_material_destroy( dz_service_t * _service, const dz_material_t * _material );
+dz_result_t dz_material_create( const dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud );
+void dz_material_destroy( const dz_service_t * _service, const dz_material_t * _material );
 
 void dz_material_set_ud( dz_material_t * _material, dz_userdata_t _ud );
 dz_userdata_t dz_material_get_ud( const dz_material_t * _material );
@@ -121,8 +121,8 @@ const char * dz_timeline_key_type_stringize( dz_timeline_key_type_e _type );
 
 typedef struct dz_timeline_key_t dz_timeline_key_t;
 
-dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
-void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key );
+dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
+void dz_timeline_key_destroy( const dz_service_t * _service, const dz_timeline_key_t * _key );
 
 void dz_timeline_key_set_ud( dz_timeline_key_t * _key, dz_userdata_t _ud );
 dz_userdata_t dz_timeline_key_get_ud( const dz_timeline_key_t * _key );
@@ -151,8 +151,8 @@ const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_typ
 
 typedef struct dz_timeline_interpolate_t dz_timeline_interpolate_t;
 
-dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud );
-void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate );
+dz_result_t dz_timeline_interpolate_create( const dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud );
+void dz_timeline_interpolate_destroy( const dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate );
 
 void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * _interpolate, dz_userdata_t _ud );
 dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * _interpolate );
@@ -170,8 +170,8 @@ void dz_timeline_key_set_interpolate( dz_timeline_key_t * _key, dz_timeline_inte
 
 typedef struct dz_affector_t dz_affector_t;
 
-dz_result_t dz_affector_create( dz_service_t * _service, dz_affector_t ** _affector, dz_userdata_t _ud );
-void dz_affector_destroy( dz_service_t * _service, const dz_affector_t * _affector );
+dz_result_t dz_affector_create( const dz_service_t * _service, dz_affector_t ** _affector, dz_userdata_t _ud );
+void dz_affector_destroy( const dz_service_t * _service, const dz_affector_t * _affector );
 
 dz_userdata_t dz_affector_get_ud( const dz_affector_t * _affector );
 
@@ -227,8 +227,8 @@ typedef enum dz_shape_type_e
 
 typedef struct dz_shape_t dz_shape_t;
 
-dz_result_t dz_shape_create( dz_service_t * _service, dz_shape_t ** _shape, dz_shape_type_e _type, dz_userdata_t _ud );
-void dz_shape_destroy( dz_service_t * _service, const dz_shape_t * _shape );
+dz_result_t dz_shape_create( const dz_service_t * _service, dz_shape_t ** _shape, dz_shape_type_e _type, dz_userdata_t _ud );
+void dz_shape_destroy( const dz_service_t * _service, const dz_shape_t * _shape );
 
 void dz_shape_set_ud( dz_shape_t * _shape, dz_userdata_t _ud );
 dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape );
@@ -277,8 +277,8 @@ uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape );
 
 typedef struct dz_emitter_t dz_emitter_t;
 
-dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter, dz_userdata_t _ud );
-void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter );
+dz_result_t dz_emitter_create( const dz_service_t * _service, dz_emitter_t ** _emitter, dz_userdata_t _ud );
+void dz_emitter_destroy( const dz_service_t * _service, const dz_emitter_t * _emitter );
 
 void dz_emitter_set_ud( dz_emitter_t * _emitter, dz_userdata_t _ud );
 dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter );
@@ -305,8 +305,8 @@ void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_tim
 
 typedef struct dz_effect_t dz_effect_t;
 
-dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector,  float _life, dz_userdata_t _ud );
-void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect );
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector,  float _life, dz_userdata_t _ud );
+void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effect );
 
 void dz_effect_set_ud( dz_effect_t * _effect, dz_userdata_t _ud );
 dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect );
@@ -328,8 +328,8 @@ float dz_effect_get_life( const dz_effect_t * _effect );
 
 typedef struct dz_instance_t dz_instance_t;
 
-dz_result_t dz_instance_create( dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud );
-void dz_instance_destroy( dz_service_t * _service, const dz_instance_t * _instance );
+dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud );
+void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _instance );
 
 void dz_instance_set_ud( dz_instance_t * _instance, dz_userdata_t _ud );
 dz_userdata_t dz_instance_get_ud( const dz_instance_t * _instance );
@@ -361,7 +361,7 @@ void dz_instance_emit_pause( dz_instance_t * _instance );
 void dz_instance_emit_resume( dz_instance_t * _instance );
 dz_bool_t dz_instance_is_emit_pause( const dz_instance_t * _instance );
 
-dz_result_t dz_instance_update( dz_service_t * _service, dz_instance_t * _instance, float _time );
+dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _instance, float _time );
 
 typedef enum dz_instance_state_e
 {
@@ -432,6 +432,6 @@ typedef enum dz_effect_read_status_e
 } dz_effect_read_status_e;
 
 dz_result_t dz_header_read( dz_stream_read_t _load, dz_userdata_t _ud, dz_effect_read_status_e * _status );
-dz_result_t dz_effect_read( dz_service_t * _service, dz_effect_t ** _effect, dz_stream_read_t _read, dz_userdata_t _ud );
+dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effect, dz_stream_read_t _read, dz_userdata_t _ud );
 
 #endif

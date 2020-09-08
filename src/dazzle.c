@@ -94,12 +94,12 @@ void dz_service_destroy( dz_service_t * _service )
     DZ_FREE( _service, _service );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_service_get_providers( dz_service_t * _service, dz_service_providers_t * _providers )
+void dz_service_get_providers( const dz_service_t * _service, dz_service_providers_t * _providers )
 {
     *_providers = _service->providers;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud )
+dz_result_t dz_texture_create( const dz_service_t * _service, dz_texture_t ** _texture, dz_userdata_t _ud )
 {
     dz_texture_t * texture = DZ_NEW( _service, dz_texture_t );
 
@@ -128,7 +128,7 @@ dz_result_t dz_texture_create( dz_service_t * _service, dz_texture_t ** _texture
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_destroy( dz_service_t * _service, const dz_texture_t * _texture )
+void dz_texture_destroy( const dz_service_t * _service, const dz_texture_t * _texture )
 {
     DZ_FREE( _service, _texture );
 }
@@ -211,7 +211,7 @@ float dz_texture_get_sequence_delay( const dz_texture_t * _texture )
     return _texture->sequence_delay;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud )
+dz_result_t dz_atlas_create( const dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud )
 {
     dz_atlas_t * atlas = DZ_NEW( _service, dz_atlas_t );
 
@@ -225,7 +225,7 @@ dz_result_t dz_atlas_create( dz_service_t * _service, dz_atlas_t ** _atlas, dz_u
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_atlas_destroy( dz_service_t * _service, const dz_atlas_t * _atlas )
+void dz_atlas_destroy( const dz_service_t * _service, const dz_atlas_t * _atlas )
 {
     DZ_FREE( _service, _atlas );
 }
@@ -304,7 +304,7 @@ const char * dz_blend_type_stringize( dz_blend_type_e _type )
     return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud )
+dz_result_t dz_material_create( const dz_service_t * _service, dz_material_t ** _material, dz_userdata_t _ud )
 {
     dz_material_t * material = DZ_NEW( _service, dz_material_t );
 
@@ -322,7 +322,7 @@ dz_result_t dz_material_create( dz_service_t * _service, dz_material_t ** _mater
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_destroy( dz_service_t * _service, const dz_material_t * _material )
+void dz_material_destroy( const dz_service_t * _service, const dz_material_t * _material )
 {
     DZ_FREE( _service, _material );
 }
@@ -403,7 +403,7 @@ const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_typ
     return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud )
+dz_result_t dz_timeline_interpolate_create( const dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_timeline_interpolate_type_e _type, dz_userdata_t _ud )
 {
     dz_timeline_interpolate_t * interpolate = DZ_NEW( _service, dz_timeline_interpolate_t );
 
@@ -419,7 +419,7 @@ dz_result_t dz_timeline_interpolate_create( dz_service_t * _service, dz_timeline
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_destroy( dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate )
+void dz_timeline_interpolate_destroy( const dz_service_t * _service, const dz_timeline_interpolate_t * _interpolate )
 {
     if( _interpolate->key != DZ_NULLPTR )
     {
@@ -481,7 +481,7 @@ const char * dz_timeline_key_type_stringize( dz_timeline_key_type_e _type )
     return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
+dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _p < 0.f || _p > 1.f )
@@ -505,7 +505,7 @@ dz_result_t dz_timeline_key_create( dz_service_t * _service, dz_timeline_key_t *
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_destroy( dz_service_t * _service, const dz_timeline_key_t * _key )
+void dz_timeline_key_destroy( const dz_service_t * _service, const dz_timeline_key_t * _key )
 {
     if( _key->interpolate != DZ_NULLPTR )
     {
@@ -591,7 +591,7 @@ void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, floa
     *_max = _key->randomize_max_value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_affector_create( dz_service_t * _service, dz_affector_t ** _affector, dz_userdata_t _ud )
+dz_result_t dz_affector_create( const dz_service_t * _service, dz_affector_t ** _affector, dz_userdata_t _ud )
 {
     dz_affector_t * affector = DZ_NEW( _service, dz_affector_t );
 
@@ -607,7 +607,7 @@ dz_result_t dz_affector_create( dz_service_t * _service, dz_affector_t ** _affec
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_destroy( dz_service_t * _service, const dz_affector_t * _affector )
+void dz_affector_destroy( const dz_service_t * _service, const dz_affector_t * _affector )
 {
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
@@ -711,7 +711,7 @@ const dz_timeline_key_t * dz_affector_get_timeline( const dz_affector_t * _affec
     return timeline;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_shape_create( dz_service_t * _service, dz_shape_t ** _shape, dz_shape_type_e _type, dz_userdata_t _ud )
+dz_result_t dz_shape_create( const dz_service_t * _service, dz_shape_t ** _shape, dz_shape_type_e _type, dz_userdata_t _ud )
 {
     dz_shape_t * shape = DZ_NEW( _service, dz_shape_t );
 
@@ -741,7 +741,7 @@ dz_result_t dz_shape_create( dz_service_t * _service, dz_shape_t ** _shape, dz_s
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_destroy( dz_service_t * _service, const dz_shape_t * _shape )
+void dz_shape_destroy( const dz_service_t * _service, const dz_shape_t * _shape )
 {
     for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
@@ -986,7 +986,7 @@ uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape )
     return _shape->mask_threshold;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter, dz_userdata_t _ud )
+dz_result_t dz_emitter_create( const dz_service_t * _service, dz_emitter_t ** _emitter, dz_userdata_t _ud )
 {
     dz_emitter_t * emitter = DZ_NEW( _service, dz_emitter_t );
 
@@ -1004,7 +1004,7 @@ dz_result_t dz_emitter_create( dz_service_t * _service, dz_emitter_t ** _emitter
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_destroy( dz_service_t * _service, const dz_emitter_t * _emitter )
+void dz_emitter_destroy( const dz_service_t * _service, const dz_emitter_t * _emitter )
 {
     for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
@@ -1186,7 +1186,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_userdata_t _ud )
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _service == DZ_NULLPTR )
@@ -1236,7 +1236,7 @@ dz_result_t dz_effect_create( dz_service_t * _service, dz_effect_t ** _effect, c
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_destroy( dz_service_t * _service, const dz_effect_t * _effect )
+void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effect )
 {
     DZ_FREE( _service, _effect );
 }
@@ -1301,7 +1301,7 @@ float dz_effect_get_life( const dz_effect_t * _effect )
     return _effect->life;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_create( dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud )
+dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _service == DZ_NULLPTR )
@@ -1345,7 +1345,7 @@ dz_result_t dz_instance_create( dz_service_t * _service, dz_instance_t ** _insta
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_destroy( dz_service_t * _service, const dz_instance_t * _instance )
+void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _instance )
 {
     DZ_FREE( _service, _instance );
 }
@@ -1429,7 +1429,7 @@ static float __get_affector_value_rands( dz_particle_t * _p, const dz_effect_t *
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_update( dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, float _time )
+static void __particle_update( const dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, float _time )
 {
     _p->time += _time;
 
@@ -1668,7 +1668,7 @@ static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _p
     return DZ_FAILURE;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __emitter_spawn_particle( dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
+static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
 {
     const float time = _instance->time - _spawn_time;
 
@@ -1971,7 +1971,7 @@ static dz_particle_t * __find_dead_particle( dz_particle_t * _p, dz_particle_t *
     return _end;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_update( dz_service_t * _service, dz_instance_t * _instance, float _time )
+dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _instance, float _time )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -2507,7 +2507,7 @@ dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_texture( dz_service_t * _service, dz_texture_t ** _texture, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_texture( const dz_service_t * _service, dz_texture_t ** _texture, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_texture_t * texture;
     if( dz_texture_create( _service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
@@ -2532,7 +2532,7 @@ static dz_result_t __read_texture( dz_service_t * _service, dz_texture_t ** _tex
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_atlas( dz_service_t * _service, dz_atlas_t ** _atlas, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_atlas( const dz_service_t * _service, dz_atlas_t ** _atlas, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_atlas_t * atlas;
     if( dz_atlas_create( _service, &atlas, DZ_NULLPTR, DZ_NULLPTR ) == DZ_FAILURE )
@@ -2558,7 +2558,7 @@ static dz_result_t __read_atlas( dz_service_t * _service, dz_atlas_t ** _atlas, 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_material( dz_service_t * _service, dz_material_t ** _material, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_material( const dz_service_t * _service, dz_material_t ** _material, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_material_t * material;
     if( dz_material_create( _service, &material, DZ_NULLPTR ) == DZ_FAILURE )
@@ -2594,9 +2594,9 @@ static dz_result_t __read_material( dz_service_t * _service, dz_material_t ** _m
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_timeline_key( dz_service_t * _service, dz_timeline_key_t ** _key, dz_stream_read_t _read, dz_userdata_t _ud );
+static dz_result_t __read_timeline_key( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_stream_read_t _read, dz_userdata_t _ud );
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_timeline_interpolate( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_timeline_interpolate( const dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_timeline_interpolate_type_e type;
     DZ_READ( _read, _ud, type );
@@ -2629,7 +2629,7 @@ static dz_result_t __read_timeline_interpolate( dz_service_t * _service, dz_time
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_timeline_key( dz_service_t * _service, dz_timeline_key_t ** _key, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_timeline_key( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     float p;
     DZ_READ( _read, _ud, p );
@@ -2667,7 +2667,7 @@ static dz_result_t __read_timeline_key( dz_service_t * _service, dz_timeline_key
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_shape( dz_service_t * _service, dz_shape_t ** _shape, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_shape( const dz_service_t * _service, dz_shape_t ** _shape, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_shape_type_e type;
     DZ_READ( _read, _ud, type );
@@ -2694,7 +2694,7 @@ static dz_result_t __read_shape( dz_service_t * _service, dz_shape_t ** _shape, 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_emitter( dz_service_t * _service, dz_emitter_t ** _emitter, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_emitter( const dz_service_t * _service, dz_emitter_t ** _emitter, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_emitter_t * emitter;
     if( dz_emitter_create( _service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
@@ -2720,7 +2720,7 @@ static dz_result_t __read_emitter( dz_service_t * _service, dz_emitter_t ** _emi
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_affector( dz_service_t * _service, dz_affector_t ** _affector, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_affector( const dz_service_t * _service, dz_affector_t ** _affector, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_affector_t * affector;
     if( dz_affector_create( _service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
@@ -2744,7 +2744,7 @@ static dz_result_t __read_affector( dz_service_t * _service, dz_affector_t ** _a
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_read( dz_service_t * _service, dz_effect_t ** _effect, dz_stream_read_t _read, dz_userdata_t _ud )
+dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effect, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_material_t * material;
     if( __read_material( _service, &material, _read, _ud ) == DZ_FAILURE )
