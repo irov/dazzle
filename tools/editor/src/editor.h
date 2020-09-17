@@ -65,6 +65,8 @@ protected:
     int saveEffect();
     int loadEffect();
 
+    int exportEffect();
+
     int readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * _pointsData, size_t _index );
 
     int resetEffectData();

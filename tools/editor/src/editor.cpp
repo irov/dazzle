@@ -41,6 +41,7 @@ static const char * ER_TITLE = "Dazzle particle editor";
 static const char * ER_MENU_FILE = "File";
 static const char * ER_MENU_FILE_ITEM_OPEN = "Open";
 static const char * ER_MENU_FILE_ITEM_SAVE = "Save";
+static const char * ER_MENU_FILE_ITEM_EXPORT = "Export";
 static const char * ER_MENU_EDIT = "Edit";
 static const char * ER_MENU_EDIT_ITEM_UNDO = "Undo";
 static const char * ER_MENU_EDIT_ITEM_REDO = "Redo";
@@ -1174,6 +1175,46 @@ int editor::loadEffect()
     return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////////
+int editor::exportEffect()
+{
+    nfdchar_t * outPath = NULL;
+    nfdresult_t result = NFD_SaveDialog( NULL, NULL, &outPath );
+
+    if( result == NFD_OKAY )
+    {
+        puts( "Success!" );
+        puts( outPath );
+
+        // write dump json to file
+        std::fstream myfile = std::fstream( outPath, std::ios::out | std::ios::binary );
+
+        auto lambda_write = []( const void * _data, dz_size_t _size, dz_userdata_t _ud )
+        {
+            std::fstream * file = static_cast<std::fstream *>(_ud);
+
+            file->write( (char *)_data, _size );
+
+            return DZ_SUCCESSFUL;
+        };
+
+        dz_effect_write( m_effect, lambda_write, &myfile );
+
+        myfile.close();
+
+        free( outPath );
+    }
+    else if( result == NFD_CANCEL )
+    {
+        puts( "User pressed cancel." );
+    }
+    else
+    {
+        printf( "Error: %s\n", NFD_GetError() );
+    }
+
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////
 int editor::showMenuBar()
 {
     if( ImGui::BeginMenuBar() )
@@ -1190,6 +1231,13 @@ int editor::showMenuBar()
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_SAVE ) ) // todo
             {
                 if( this->saveEffect() == EXIT_FAILURE )
+                {
+                    return EXIT_FAILURE;
+                }
+            }
+            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_EXPORT ) ) // todo
+            {
+                if( this->exportEffect() == EXIT_FAILURE )
                 {
                     return EXIT_FAILURE;
                 }
