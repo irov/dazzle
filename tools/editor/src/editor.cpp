@@ -1185,7 +1185,6 @@ int editor::exportEffect()
         puts( "Success!" );
         puts( outPath );
 
-        // write dump json to file
         std::fstream myfile = std::fstream( outPath, std::ios::out | std::ios::binary );
 
         auto lambda_write = []( const void * _data, dz_size_t _size, dz_userdata_t _ud )
