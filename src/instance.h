@@ -14,9 +14,9 @@ typedef struct dz_instance_t
     uint32_t seed;
 
     dz_particle_t * partices;
-    uint32_t partices_count;
-    uint32_t partices_capacity;
-    uint32_t particle_limit;
+    uint16_t partices_count;
+    uint16_t partices_capacity;
+    uint16_t particle_limit;
 
     dz_bool_t loop;
     dz_bool_t emit_pause;

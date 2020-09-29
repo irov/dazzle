@@ -434,7 +434,7 @@ dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instanc
             return DZ_FAILURE;
         }
 
-        glDrawElements( GL_TRIANGLES, chunk->index_size, GL_UNSIGNED_SHORT, DZ_NULLPTR );
+        glDrawElements( GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_SHORT, DZ_NULLPTR );
     }
 
     glBindBuffer( GL_ARRAY_BUFFER, 0 );

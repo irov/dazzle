@@ -1325,7 +1325,7 @@ dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** 
     instance->partices = DZ_NULLPTR;
     instance->partices_count = 0;
     instance->partices_capacity = 0;
-    instance->particle_limit = ~0U;
+    instance->particle_limit = 0xffff;
 
     instance->loop = DZ_FALSE;
     instance->emit_pause = DZ_FALSE;
@@ -1360,12 +1360,12 @@ uint32_t dz_instance_get_seed( const dz_instance_t * _effect )
     return _effect->init_seed;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_particle_limit( dz_instance_t * _effect, uint32_t _limit )
+void dz_instance_set_particle_limit( dz_instance_t * _effect, uint16_t _limit )
 {
     _effect->particle_limit = _limit;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_instance_get_particle_limit( const dz_instance_t * _effect )
+uint16_t dz_instance_get_particle_limit( const dz_instance_t * _effect )
 {
     return _effect->particle_limit;
 }
@@ -2101,7 +2101,7 @@ dz_instance_state_e dz_instance_get_state( const dz_instance_t * _instance )
     return state;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_instance_get_particle_count( const dz_instance_t * _instance )
+uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance )
 {
     return _instance->partices_count;
 }
@@ -2202,6 +2202,12 @@ static void __particle_compute_index( uint16_t _iterator, dz_instance_mesh_t * _
     index_buffer[5] = _iterator * 4 + 2;
 }
 //////////////////////////////////////////////////////////////////////////
+void dz_instance_compute_bounds( const dz_instance_t * _instance, uint16_t * _vertex_count, uint16_t * _index_count )
+{
+    *_vertex_count = _instance->partices_count * 4;
+    *_index_count = _instance->partices_count * 6;
+}
+//////////////////////////////////////////////////////////////////////////
 void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * _mesh, dz_instance_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count )
 {
     DZ_UNUSED( _capacity );
@@ -2230,9 +2236,12 @@ void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh
     }
 
     dz_instance_mesh_chunk_t * chunk = _chunks + 0;
-    chunk->offset = 0;
-    chunk->vertex_size = particle_iterator * 4;
-    chunk->index_size = particle_iterator * 6;
+
+    chunk->vertex_offset = 0;
+    chunk->vertex_count = particle_iterator * 4;
+
+    chunk->index_offset = 0;
+    chunk->index_count = particle_iterator * 6;
 
     const dz_effect_t * effect = _instance->effect;
 

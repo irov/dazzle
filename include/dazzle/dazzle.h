@@ -346,8 +346,8 @@ float dz_instance_get_time( const dz_instance_t * _instance );
 void dz_instance_set_seed( dz_instance_t * _instance, uint32_t _seed );
 uint32_t dz_instance_get_seed( const dz_instance_t * _instance );
 
-void dz_instance_set_particle_limit( dz_instance_t * _instance, uint32_t _limit );
-uint32_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
+void dz_instance_set_particle_limit( dz_instance_t * _instance, uint16_t _limit );
+uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
 
 void dz_instance_set_position( dz_instance_t * _instance, float _x, float _y );
 void dz_instance_get_position( const dz_instance_t * _instance, float * _x, float * _y );
@@ -372,7 +372,7 @@ typedef enum dz_instance_state_e
 
 dz_instance_state_e dz_instance_get_state( const dz_instance_t * _effect );
 
-uint32_t dz_instance_get_particle_count( const dz_instance_t * _effect );
+uint16_t dz_instance_get_particle_count( const dz_instance_t * _effect );
 
 typedef enum dz_instance_mesh_flags_e
 {
@@ -382,9 +382,11 @@ typedef enum dz_instance_mesh_flags_e
 
 typedef struct dz_instance_mesh_chunk_t
 {
-    uint16_t offset;
-    uint16_t vertex_size;
-    uint16_t index_size;
+    uint16_t vertex_offset;
+    uint16_t vertex_count;
+
+    uint16_t index_offset;
+    uint16_t index_count;
 
     dz_blend_type_e blend_type;
 
@@ -416,7 +418,8 @@ typedef struct dz_instance_mesh_t
     float m[16];
 } dz_instance_mesh_t;
 
-void dz_instance_compute_mesh( const dz_instance_t * _effect, dz_instance_mesh_t * _mesh, dz_instance_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count );
+void dz_instance_compute_bounds( const dz_instance_t * _instance, uint16_t * _vertex_count, uint16_t * _index_count );
+void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * _mesh, dz_instance_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count );
 
 typedef dz_result_t( *dz_stream_write_t )(const void * _data, dz_size_t _size, dz_userdata_t _ud);
 
