@@ -3,7 +3,14 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 
-#include <nfd.h>
+#include "nfd.h"
+#include "zip.h"
+
+#ifdef _WIN32
+#   define USEWIN32IOAPI
+#   include "iowin32.h"
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -1076,7 +1083,7 @@ int editor::resetEffect()
 int editor::saveEffect()
 {
     nfdchar_t * outPath = NULL;
-    nfdresult_t result = NFD_SaveDialog( NULL, NULL, &outPath );
+    nfdresult_t result = NFD_SaveDialog( "dz", nullptr, &outPath );
 
     if( result == NFD_OKAY )
     {
@@ -1089,10 +1096,69 @@ int editor::saveEffect()
 
         this->dumpJSON_( json, &dumpJson, /*_needCompactDump*/ false );
 
-        // write dump json to file
-        std::ofstream MyFile( outPath );
-        MyFile << dumpJson;
-        MyFile.close();
+        zipFile zf = zipOpen64( outPath, 0 );
+
+        int err = 0;
+
+        {
+            zip_fileinfo zi;
+            zi.tmz_date.tm_sec = 0;
+            zi.tmz_date.tm_min = 0;
+            zi.tmz_date.tm_hour = 0;
+            zi.tmz_date.tm_mday = 0;
+            zi.tmz_date.tm_mon = 0;
+            zi.tmz_date.tm_year = 0;
+            zi.dosDate = 0;
+            zi.internal_fa = 0;
+            zi.external_fa = 0;
+            
+            err = zipOpenNewFileInZip3_64( zf, "data.json", &zi,
+                NULL, 0, NULL, 0, NULL /* comment*/,
+                Z_DEFLATED, 6, 0,
+                -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+                NULL, 0, 0 );
+
+            err = zipWriteInFileInZip( zf, dumpJson.data(), dumpJson.size() );
+
+            err = zipCloseFileInZip( zf );
+        }
+
+        if( m_texturePath.empty() == false )
+        {
+            zip_fileinfo zi;
+            zi.tmz_date.tm_sec = 0;
+            zi.tmz_date.tm_min = 0;
+            zi.tmz_date.tm_hour = 0;
+            zi.tmz_date.tm_mday = 0;
+            zi.tmz_date.tm_mon = 0;
+            zi.tmz_date.tm_year = 0;
+            zi.dosDate = 0;
+            zi.internal_fa = 0;
+            zi.external_fa = 0;
+
+            FILE * f = fopen( m_texturePath.c_str(), "rb" );
+            fseek( f, 0L, SEEK_END );
+            size_t sz = ftell( f );
+            rewind( f );
+
+            void * buf = malloc( sz );
+            fread( buf, sz, 1, f );
+            fclose( f );
+
+            err = zipOpenNewFileInZip3_64( zf, "atlas.png", &zi,
+                NULL, 0, NULL, 0, NULL /* comment*/,
+                Z_DEFLATED, 6, 0,
+                -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+                NULL, 0, 0 );
+
+            err = zipWriteInFileInZip( zf, buf, sz );
+
+            err = zipCloseFileInZip( zf );
+
+            free( buf );
+        }
+
+        err = zipClose( zf, NULL );
 
         free( outPath );
     }
@@ -2720,21 +2786,23 @@ int editor::showMaterialData()
 
     if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_BROWSE ) == true )
     {
-        nfdchar_t * outPath = NULL;
-        nfdresult_t result = NFD_OpenDialog( NULL, NULL, &outPath );
+        nfdchar_t * texturePath = NULL;
+        nfdresult_t result = NFD_OpenDialog( NULL, NULL, &texturePath );
 
         if( result == NFD_OKAY )
         {
             puts( "Success!" );
-            puts( outPath );
+            puts( texturePath );
 
             dz_render_delete_texture( m_textureId );
 
-            m_textureId = dz_render_make_texture( outPath, &m_textureWidth, &m_textureHeight );
+            m_textureId = dz_render_make_texture( texturePath, &m_textureWidth, &m_textureHeight );
 
             dz_atlas_set_surface( m_atlas, &m_textureId );
 
-            free( outPath );
+            m_texturePath = texturePath;
+
+            free( texturePath );
         }
         else if( result == NFD_CANCEL )
         {

@@ -120,6 +120,7 @@ public:
     int m_textureWidth;
     int m_textureHeight;
 
+    std::string m_texturePath;
     GLuint m_textureId;
 
     dz_render_desc_t m_openglDesc;
