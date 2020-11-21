@@ -52,6 +52,8 @@ MESSAGE("ZLIB_INCLUDE_DIR: ${ZLIB_INCLUDE_DIR}")
 set(MINIZIP_SOURCES
     ${DAZZLE_THIRDPARTY_DIR}/zlib/contrib/minizip/zip.h
     ${DAZZLE_THIRDPARTY_DIR}/zlib/contrib/minizip/zip.c
+    ${DAZZLE_THIRDPARTY_DIR}/zlib/contrib/minizip/unzip.h
+    ${DAZZLE_THIRDPARTY_DIR}/zlib/contrib/minizip/unzip.c
     ${DAZZLE_THIRDPARTY_DIR}/zlib/contrib/minizip/ioapi.c
 )
 

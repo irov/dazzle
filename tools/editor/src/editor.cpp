@@ -5,6 +5,7 @@
 
 #include "nfd.h"
 #include "zip.h"
+#include "unzip.h"
 
 #ifdef _WIN32
 #   define USEWIN32IOAPI
@@ -639,7 +640,7 @@ int editor::init()
     {
         if( glfwInit() == 0 )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
@@ -656,7 +657,7 @@ int editor::init()
         {
             glfwTerminate();
 
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         glfwMakeContextCurrent( m_fwWindow );
@@ -674,7 +675,7 @@ int editor::init()
 
         if( gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress ) == 0 )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         glfwSwapInterval( 1 );
@@ -687,7 +688,7 @@ int editor::init()
 
         if( dz_render_initialize( &m_openglDesc, max_vertex_count, max_index_count ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
@@ -708,24 +709,24 @@ int editor::init()
 
         if( dz_service_create( &m_service, &providers, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         if( dz_atlas_create( m_service, &m_atlas, &m_textureId, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         if( dz_texture_create( m_service, &m_texture, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         dz_atlas_add_texture( m_atlas, m_texture );
 
         if( dz_material_create( m_service, &m_material, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         dz_blend_type_e blend_type = dz_material_get_default_blend();
@@ -736,7 +737,7 @@ int editor::init()
         // shape data
         if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
@@ -755,7 +756,7 @@ int editor::init()
 
             if( __set_shape_timeline_const( m_service, m_shape, data.type, default ) == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
@@ -767,7 +768,7 @@ int editor::init()
         // emitter data
         if( dz_emitter_create( m_service, &m_emitter, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         dz_emitter_set_life( m_emitter, 1000.f );
@@ -788,7 +789,7 @@ int editor::init()
 
             if( __set_emitter_timeline_const( m_service, m_emitter, data.type, default ) == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
@@ -800,7 +801,7 @@ int editor::init()
         // affector data
         if( dz_affector_create( m_service, &m_affector, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
@@ -819,7 +820,7 @@ int editor::init()
 
             if( __set_affector_timeline_const( m_service, m_affector, data.type, default ) == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
@@ -831,12 +832,12 @@ int editor::init()
         // emitter
         if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         if( dz_instance_create( m_service, &m_instance, m_effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         dz_instance_set_loop( m_instance, m_loop );
@@ -849,33 +850,33 @@ int editor::init()
 
         if( context == nullptr )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         if( ImGui_ImplGlfw_InitForOpenGL( m_fwWindow, true ) == false )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         const char * glsl_version = "#version 330";
 
         if( ImGui_ImplOpenGL3_Init( glsl_version ) == false )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         if( ImGui_ImplOpenGL3_CreateFontsTexture() == false )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         if( ImGui_ImplOpenGL3_CreateDeviceObjects() == false )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::update()
@@ -902,9 +903,9 @@ int editor::update()
         if( ImGui::Begin( "LAYOUT", NULL, window_flags ) )
         {
             // menu bar
-            if( this->showMenuBar() == EXIT_FAILURE )
+            if( this->showMenuBar() == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
 
             // left panel
@@ -936,41 +937,41 @@ int editor::update()
                 {
                 case ER_WINDOW_TYPE_EFFECT_DATA:
                     {
-                        if( this->showEffectData() )
+                        if( this->showEffectData() == DZ_FAILURE )
                         {
-                            return EXIT_FAILURE;
+                            return DZ_FAILURE;
                         }
                     } 
                     break;
                 case ER_WINDOW_TYPE_SHAPE_DATA:
                     {
-                        if( this->showShapeData() )
+                        if( this->showShapeData() == DZ_FAILURE )
                         {
-                            return EXIT_FAILURE;
+                            return DZ_FAILURE;
                         }
                     } 
                     break;
                 case ER_WINDOW_TYPE_AFFECTOR_DATA:
                     {
-                        if( this->showAffectorData() )
+                        if( this->showAffectorData() == DZ_FAILURE )
                         {
-                            return EXIT_FAILURE;
+                            return DZ_FAILURE;
                         }
                     }
                     break;
                 case ER_WINDOW_TYPE_EMITTER_DATA:
                     {
-                        if( this->showEmitterData() )
+                        if( this->showEmitterData() == DZ_FAILURE )
                         {
-                            return EXIT_FAILURE;
+                            return DZ_FAILURE;
                         }
                     }
                     break;
                 case ER_WINDOW_TYPE_MATERIAL_DATA:
                     {
-                        if( this->showMaterialData() )
+                        if( this->showMaterialData() == DZ_FAILURE )
                         {
-                            return EXIT_FAILURE;
+                            return DZ_FAILURE;
                         }
                     }
                     break;
@@ -988,9 +989,9 @@ int editor::update()
 
                 ImGui::BeginChild( "ITEM_VIEW", ImVec2( 0, 0 ), true );
 
-                if ( this->showContentPane() == EXIT_FAILURE )
+                if ( this->showContentPane() == DZ_FAILURE )
                 {
-                    return EXIT_FAILURE;
+                    return DZ_FAILURE;
                 }
 
                 ImGui::EndChild();
@@ -1015,7 +1016,7 @@ int editor::update()
     // update camera
     dz_render_set_camera( &m_openglDesc, camera_offset_x, camera_offset_y, camera_scale );
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::render()
@@ -1030,33 +1031,33 @@ int editor::render()
 
     glfwSwapBuffers( m_fwWindow );
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::run()
 {
-    if( this->init() == EXIT_FAILURE )
+    if( this->init() == DZ_FAILURE )
     {
-        return EXIT_FAILURE;
+        return DZ_FAILURE;
     }
 
     // update loop
     while( glfwWindowShouldClose( m_fwWindow ) == 0 )
     {
-        if( this->update() == EXIT_FAILURE )
+        if( this->update() == DZ_FAILURE )
         {
-            return EXIT_FAILURE; // maybe break loop?
+            return DZ_FAILURE; // maybe break loop?
         }
 
-        if( this->render() == EXIT_FAILURE )
+        if( this->render() == DZ_FAILURE )
         {
-            return EXIT_FAILURE; // maybe break loop?
+            return DZ_FAILURE; // maybe break loop?
         }
     }
 
     this->finalize();
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 const ImVec2 & editor::getDzWindowPos() const
@@ -1077,7 +1078,7 @@ int editor::resetEffect()
 
     dz_instance_emit_resume( m_instance );
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::saveEffect()
@@ -1171,7 +1172,7 @@ int editor::saveEffect()
         printf( "Error: %s\n", NFD_GetError() );
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::loadEffect()
@@ -1184,21 +1185,51 @@ int editor::loadEffect()
         puts( "Success!" );
         puts( outPath );
 
-        // read file to buf
-        std::ostringstream buf;
-        std::ifstream input( outPath );
-        buf << input.rdbuf();
-        std::string content = buf.str();
+        unzFile uf = unzOpen64( outPath );
 
-        size_t size = content.length() * sizeof( char );
+        unz_global_info64 gi;
+        if( unzGetGlobalInfo64( uf, &gi ) != UNZ_OK )
+        {
+            return DZ_FAILURE;
+        }
 
+        if( unzLocateFile( uf, "data.json", 0 ) != UNZ_OK )
+        {
+            return DZ_FAILURE;
+        }
+
+        char filename_inzip[256];
+        unz_file_info64 file_info;
+        uLong ratio = 0;
+        if( unzGetCurrentFileInfo64( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL, 0 ) != UNZ_OK )
+        {
+            return DZ_FAILURE;
+        }
+
+        if( unzOpenCurrentFile( uf ) != UNZ_OK )
+        {
+            return DZ_FAILURE;
+        }
+
+        void * content_buffer = malloc( file_info.uncompressed_size );
+        size_t content_size = file_info.uncompressed_size;
+
+        int rb = unzReadCurrentFile( uf, content_buffer, content_size );
+        
+        unzCloseCurrentFile( uf );
+
+        if( rb < 0 )
+        {
+            return DZ_FAILURE;
+        }
+                
         jpp::object data;
 
-        this->loadJSON_( content.c_str(), size, &data );
+        this->loadJSON_( content_buffer, content_size, &data );
 
         if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
@@ -1207,7 +1238,7 @@ int editor::loadEffect()
 
         if( dz_atlas_get_texture( m_atlas, m_textureId, const_cast<const dz_texture_t * *>(&m_texture) ) == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
 
         m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
@@ -1222,10 +1253,12 @@ int editor::loadEffect()
 
         dz_atlas_set_surface( m_atlas, &m_textureId );
 
-        if( this->resetEffectData() == EXIT_FAILURE )
+        if( this->resetEffectData() == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
+
+        unzCloseCurrentFile( uf );
 
         free( outPath );
     }
@@ -1238,7 +1271,7 @@ int editor::loadEffect()
         printf( "Error: %s\n", NFD_GetError() );
     }
 
-    return EXIT_SUCCESS;
+    return DZ_FAILURE;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::exportEffect()
@@ -1277,7 +1310,7 @@ int editor::exportEffect()
         printf( "Error: %s\n", NFD_GetError() );
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showMenuBar()
@@ -1288,23 +1321,23 @@ int editor::showMenuBar()
         {
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_OPEN ) ) // todo
             {
-                if( this->loadEffect() == EXIT_FAILURE )
+                if( this->loadEffect() == DZ_FAILURE )
                 {
-                    return EXIT_FAILURE;
+                    return DZ_FAILURE;
                 }
             }
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_SAVE ) ) // todo
             {
-                if( this->saveEffect() == EXIT_FAILURE )
+                if( this->saveEffect() == DZ_FAILURE )
                 {
-                    return EXIT_FAILURE;
+                    return DZ_FAILURE;
                 }
             }
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_EXPORT ) ) // todo
             {
-                if( this->exportEffect() == EXIT_FAILURE )
+                if( this->exportEffect() == DZ_FAILURE )
                 {
-                    return EXIT_FAILURE;
+                    return DZ_FAILURE;
                 }
             }
             ImGui::EndMenu();
@@ -1328,7 +1361,7 @@ int editor::showMenuBar()
         ImGui::EndMenuBar();
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, float _min, float _range )
@@ -2280,7 +2313,7 @@ int editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * 
 {
     if( _index + 1 >= ER_CURVE_MAX_POINTS )
     {
-        return EXIT_FAILURE;
+        return DZ_FAILURE;
     }
 
     dz_timeline_key_type_e key_type = dz_timeline_key_get_type( _key );
@@ -2314,7 +2347,7 @@ int editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * 
     }
     else
     {
-        return EXIT_FAILURE;
+        return DZ_FAILURE;
     }
 
     _pointsData[_index + 1].x = -1.f; // init data so editor knows to take it from here
@@ -2327,14 +2360,14 @@ int editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * 
 
         if( key != DZ_NULLPTR )
         {
-            if( this->readTimelineKey( key, _pointsData, _index + 1 ) == EXIT_FAILURE )
+            if( this->readTimelineKey( key, _pointsData, _index + 1 ) == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
         }
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::resetEffectData()
@@ -2355,9 +2388,9 @@ int editor::resetEffectData()
 
         if( key != DZ_NULLPTR )
         {
-            if( this->readTimelineKey( key, data.pointsData, 0 ) == EXIT_FAILURE )
+            if( this->readTimelineKey( key, data.pointsData, 0 ) == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
         }
 
@@ -2389,9 +2422,9 @@ int editor::resetEffectData()
 
         if( key != DZ_NULLPTR )
         {
-            if( this->readTimelineKey( key, data.pointsData, 0 ) == EXIT_FAILURE )
+            if( this->readTimelineKey( key, data.pointsData, 0 ) == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
         }
 
@@ -2424,9 +2457,9 @@ int editor::resetEffectData()
 
         if( key != DZ_NULLPTR )
         {
-            if( this->readTimelineKey( key, data.pointsData, 0 ) == EXIT_FAILURE )
+            if( this->readTimelineKey( key, data.pointsData, 0 ) == DZ_FAILURE )
             {
-                return EXIT_FAILURE;
+                return DZ_FAILURE;
             }
         }
 
@@ -2450,7 +2483,7 @@ int editor::resetEffectData()
         __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showEffectData()
@@ -2471,7 +2504,7 @@ int editor::showEffectData()
         this->resetEffect();
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showShapeData()
@@ -2485,9 +2518,9 @@ int editor::showShapeData()
     {
         m_shapeType = static_cast<dz_shape_type_e>(selected_type);
 
-        if( this->resetEffect() == EXIT_FAILURE )
+        if( this->resetEffect() == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
     }
 
@@ -2568,7 +2601,7 @@ int editor::showShapeData()
 
                     if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.pointsData ) == DZ_FAILURE )
                     {
-                        return EXIT_FAILURE;
+                        return DZ_FAILURE;
                     }
                 }
 
@@ -2576,7 +2609,7 @@ int editor::showShapeData()
                 {
                     if( __reset_shape_timeline_linear_from_points( m_service, m_shape, data.type, data.pointsData ) == DZ_FAILURE )
                     {
-                        return EXIT_FAILURE;
+                        return DZ_FAILURE;
                     }
                 }
             }
@@ -2587,7 +2620,7 @@ int editor::showShapeData()
         }
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showAffectorData()
@@ -2643,7 +2676,7 @@ int editor::showAffectorData()
 
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.pointsData ) == DZ_FAILURE )
                 {
-                    return EXIT_FAILURE;
+                    return DZ_FAILURE;
                 }
             }
 
@@ -2651,7 +2684,7 @@ int editor::showAffectorData()
             {
                 if( __reset_affector_timeline_linear_from_points( m_service, m_affector, data.type, data.pointsData ) == DZ_FAILURE )
                 {
-                    return EXIT_FAILURE;
+                    return DZ_FAILURE;
                 }
             }
         }
@@ -2661,7 +2694,7 @@ int editor::showAffectorData()
         ImGui::PopID();
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showEmitterData()
@@ -2714,7 +2747,7 @@ int editor::showEmitterData()
 
                     if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
                     {
-                        return EXIT_FAILURE;
+                        return DZ_FAILURE;
                     }
                 }
 
@@ -2722,7 +2755,7 @@ int editor::showEmitterData()
                 {
                     if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
                     {
-                        return EXIT_FAILURE;
+                        return DZ_FAILURE;
                     }
                 }
             }
@@ -2740,7 +2773,7 @@ int editor::showEmitterData()
 
                     if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
                     {
-                        return EXIT_FAILURE;
+                        return DZ_FAILURE;
                     }
                 }
 
@@ -2748,7 +2781,7 @@ int editor::showEmitterData()
                 {
                     if( __reset_emitter_timeline_linear_from_points( m_service, m_emitter, data.type, data.pointsData ) == DZ_FAILURE )
                     {
-                        return EXIT_FAILURE;
+                        return DZ_FAILURE;
                     }
                 }
             }
@@ -2759,7 +2792,7 @@ int editor::showEmitterData()
         ImGui::PopID();
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showMaterialData()
@@ -2816,7 +2849,7 @@ int editor::showMaterialData()
 
     ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( (float)m_textureWidth, (float)m_textureHeight ) );
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 static void __draw_callback( const ImDrawList * parent_list, const ImDrawCmd * cmd )
@@ -2933,7 +2966,9 @@ int editor::showContentPane()
     ImGuiWindow * window = ImGui::GetCurrentWindow();
     const ImGuiID id = window->GetID( "DAZZLE_RENDER_CANVAS" );
     if( window->SkipItems )
-        return EXIT_FAILURE;
+    {
+        return DZ_FAILURE;
+    }
 
     ImVec2 cursorPos = window->DC.CursorPos;
 
@@ -3047,15 +3082,15 @@ int editor::showContentPane()
 
     ImGui::Spacing();
 
-    if (this->showContentPaneControls() == EXIT_FAILURE)
+    if( this->showContentPaneControls() == DZ_FAILURE )
     {
-        return EXIT_FAILURE;
+        return DZ_FAILURE;
     }
 
     ImGui::EndChild();
     ImGui::EndGroup();
     
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::showContentPaneControls()
@@ -3066,9 +3101,9 @@ int editor::showContentPaneControls()
     // buttons
     if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_RESET_TEXT ) )
     {
-        if( this->resetEffect() == EXIT_FAILURE )
+        if( this->resetEffect() == DZ_FAILURE )
         {
-            return EXIT_FAILURE;
+            return DZ_FAILURE;
         }
     }
     ImGui::SameLine();
@@ -3151,7 +3186,7 @@ int editor::showContentPaneControls()
         lamdba_addBoolIndicator( emitter_state & DZ_INSTANCE_PARTICLE_COMPLETE, ER_WINDOW_CONTROLS_PARTICLE_COMPLETE_STATE_TEXT );
     }
 
-    return EXIT_SUCCESS;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void editor::finalize()

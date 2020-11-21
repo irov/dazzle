@@ -9,5 +9,10 @@ int main( int argc, char ** argv )
 
     editor editorApp = editor();
 
-    return editorApp.run();
+    if( editorApp.run() == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
