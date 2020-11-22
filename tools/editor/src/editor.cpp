@@ -14,11 +14,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <cmath>
+#include <math.h>
 
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_window_type_e
@@ -210,6 +210,102 @@ static float dz_sinf( float _a, dz_userdata_t _ud )
     float value = sinf( _a );
 
     return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t addZipFile( zipFile _zf, const char * _file, const void * _buffer, size_t _size )
+{
+    zip_fileinfo zi;
+    zi.tmz_date.tm_sec = 0;
+    zi.tmz_date.tm_min = 0;
+    zi.tmz_date.tm_hour = 0;
+    zi.tmz_date.tm_mday = 0;
+    zi.tmz_date.tm_mon = 0;
+    zi.tmz_date.tm_year = 0;
+    zi.dosDate = 0;
+    zi.internal_fa = 0;
+    zi.external_fa = 0;
+
+    if( zipOpenNewFileInZip3_64( _zf, _file, &zi,
+        NULL, 0, NULL, 0, NULL /* comment*/,
+        Z_DEFLATED, 6, 0,
+        -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+        NULL, 0, 0 ) != ZIP_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( zipWriteInFileInZip( _zf, _buffer, _size ) != ZIP_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( zipCloseFileInZip( _zf ) != ZIP_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t copyZipFile( zipFile _zf, const char * _from, const char * _to )
+{
+    FILE * f = fopen( _from, "rb" );
+    fseek( f, 0L, SEEK_END );
+    size_t sz = ftell( f );
+    rewind( f );
+
+    void * buf = malloc( sz );
+    fread( buf, sz, 1, f );
+    fclose( f );
+
+    if( addZipFile( _zf, _to, buf, sz ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    free( buf );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<uint8_t> * _buffer )
+{
+    unz_global_info64 gi;
+    if( unzGetGlobalInfo64( _uf, &gi ) != UNZ_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( unzLocateFile( _uf, _file, 0 ) != UNZ_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    char filename_inzip[256];
+    unz_file_info64 file_info;
+    uLong ratio = 0;
+    if( unzGetCurrentFileInfo64( _uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL, 0 ) != UNZ_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( unzOpenCurrentFile( _uf ) != UNZ_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    void * content_buffer = malloc( file_info.uncompressed_size );
+    size_t content_size = file_info.uncompressed_size;
+
+    int rb = unzReadCurrentFile( _uf, content_buffer, content_size );
+
+    _buffer->assign( reinterpret_cast<const uint8_t *>(content_buffer), reinterpret_cast<const uint8_t *>(content_buffer) + content_size );
+
+    free( content_buffer );
+
+    unzCloseCurrentFile( _uf );
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
@@ -1099,67 +1195,20 @@ int editor::saveEffect()
 
         zipFile zf = zipOpen64( outPath, 0 );
 
-        int err = 0;
-
+        if( addZipFile( zf, "data.json", dumpJson.data(), dumpJson.size() ) == DZ_FAILURE )
         {
-            zip_fileinfo zi;
-            zi.tmz_date.tm_sec = 0;
-            zi.tmz_date.tm_min = 0;
-            zi.tmz_date.tm_hour = 0;
-            zi.tmz_date.tm_mday = 0;
-            zi.tmz_date.tm_mon = 0;
-            zi.tmz_date.tm_year = 0;
-            zi.dosDate = 0;
-            zi.internal_fa = 0;
-            zi.external_fa = 0;
-            
-            err = zipOpenNewFileInZip3_64( zf, "data.json", &zi,
-                NULL, 0, NULL, 0, NULL /* comment*/,
-                Z_DEFLATED, 6, 0,
-                -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-                NULL, 0, 0 );
-
-            err = zipWriteInFileInZip( zf, dumpJson.data(), dumpJson.size() );
-
-            err = zipCloseFileInZip( zf );
+            return DZ_FAILURE;
         }
 
-        if( m_texturePath.empty() == false )
+        if( copyZipFile( zf, m_texturePath.c_str(), "atlas.png" ) == DZ_FAILURE )
         {
-            zip_fileinfo zi;
-            zi.tmz_date.tm_sec = 0;
-            zi.tmz_date.tm_min = 0;
-            zi.tmz_date.tm_hour = 0;
-            zi.tmz_date.tm_mday = 0;
-            zi.tmz_date.tm_mon = 0;
-            zi.tmz_date.tm_year = 0;
-            zi.dosDate = 0;
-            zi.internal_fa = 0;
-            zi.external_fa = 0;
-
-            FILE * f = fopen( m_texturePath.c_str(), "rb" );
-            fseek( f, 0L, SEEK_END );
-            size_t sz = ftell( f );
-            rewind( f );
-
-            void * buf = malloc( sz );
-            fread( buf, sz, 1, f );
-            fclose( f );
-
-            err = zipOpenNewFileInZip3_64( zf, "atlas.png", &zi,
-                NULL, 0, NULL, 0, NULL /* comment*/,
-                Z_DEFLATED, 6, 0,
-                -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
-                NULL, 0, 0 );
-
-            err = zipWriteInFileInZip( zf, buf, sz );
-
-            err = zipCloseFileInZip( zf );
-
-            free( buf );
+            return DZ_FAILURE;
         }
 
-        err = zipClose( zf, NULL );
+        if( zipClose( zf, NULL ) != ZIP_OK )
+        {
+            return DZ_FAILURE;
+        }
 
         free( outPath );
     }
@@ -1193,39 +1242,11 @@ int editor::loadEffect()
             return DZ_FAILURE;
         }
 
-        if( unzLocateFile( uf, "data.json", 0 ) != UNZ_OK )
-        {
-            return DZ_FAILURE;
-        }
-
-        char filename_inzip[256];
-        unz_file_info64 file_info;
-        uLong ratio = 0;
-        if( unzGetCurrentFileInfo64( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL, 0 ) != UNZ_OK )
-        {
-            return DZ_FAILURE;
-        }
-
-        if( unzOpenCurrentFile( uf ) != UNZ_OK )
-        {
-            return DZ_FAILURE;
-        }
-
-        void * content_buffer = malloc( file_info.uncompressed_size );
-        size_t content_size = file_info.uncompressed_size;
-
-        int rb = unzReadCurrentFile( uf, content_buffer, content_size );
-        
-        unzCloseCurrentFile( uf );
-
-        if( rb < 0 )
-        {
-            return DZ_FAILURE;
-        }
+        std::vector<uint8_t> buffer;
+        openZipFile( uf, "data.json", &buffer );
                 
         jpp::object data;
-
-        this->loadJSON_( content_buffer, content_size, &data );
+        this->loadJSON_( buffer.data(), buffer.size(), &data );
 
         if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
         {
