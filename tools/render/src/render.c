@@ -147,6 +147,67 @@ GLuint dz_render_make_texture( const char * _path, int * _out_width, int * _out_
     return id;
 }
 //////////////////////////////////////////////////////////////////////////
+GLuint dz_render_make_texture_from_memory( const void * _buffer, size_t _size, int * _out_width, int * _out_height )
+{
+    int width;
+    int height;
+    int comp;
+
+    uint8_t * data = stbi_load_from_memory( _buffer, _size, &width, &height, &comp, STBI_default );
+
+    if( data == DZ_NULLPTR )
+    {
+        return 0;
+    }
+
+    GLint internal_format;
+    GLenum format;
+    switch( comp )
+    {
+    case 1:
+        {
+            internal_format = GL_R8;
+            format = GL_RED;
+        }break;
+    case 2:
+        {
+            internal_format = GL_RG8;
+            format = GL_RG;
+        }break;
+    case 3:
+        {
+            internal_format = GL_RGB8;
+            format = GL_RGB;
+        }break;
+    case 4:
+        {
+            internal_format = GL_RGBA8;
+            format = GL_RGBA;
+        }break;
+    default:
+        return 0;
+    }
+
+    GLuint id;
+    glGenTextures( 1, &id );
+    glBindTexture( GL_TEXTURE_2D, id );
+    glTexImage2D( GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data );
+
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+
+    glBindTexture( GL_TEXTURE_2D, 0 );
+
+    stbi_image_free( data );
+
+    *_out_width = width;
+    *_out_height = height;
+
+    return id;
+}
+//////////////////////////////////////////////////////////////////////////
 void dz_render_delete_texture( GLuint _id )
 {
     glDeleteTextures( 1, &_id );

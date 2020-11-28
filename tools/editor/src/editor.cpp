@@ -283,7 +283,6 @@ static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<uin
 
     char filename_inzip[256];
     unz_file_info64 file_info;
-    uLong ratio = 0;
     if( unzGetCurrentFileInfo64( _uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL, 0 ) != UNZ_OK )
     {
         return DZ_FAILURE;
@@ -297,7 +296,7 @@ static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<uin
     void * content_buffer = malloc( file_info.uncompressed_size );
     size_t content_size = file_info.uncompressed_size;
 
-    int rb = unzReadCurrentFile( _uf, content_buffer, content_size );
+    unzReadCurrentFile( _uf, content_buffer, content_size );
 
     _buffer->assign( reinterpret_cast<const uint8_t *>(content_buffer), reinterpret_cast<const uint8_t *>(content_buffer) + content_size );
 
@@ -1242,11 +1241,11 @@ int editor::loadEffect()
             return DZ_FAILURE;
         }
 
-        std::vector<uint8_t> buffer;
-        openZipFile( uf, "data.json", &buffer );
+        std::vector<uint8_t> data_buffer;
+        openZipFile( uf, "data.json", &data_buffer );
                 
         jpp::object data;
-        this->loadJSON_( buffer.data(), buffer.size(), &data );
+        this->loadJSON_( data_buffer.data(), data_buffer.size(), &data );
 
         if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
         {
@@ -1257,7 +1256,7 @@ int editor::loadEffect()
 
         m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
 
-        if( dz_atlas_get_texture( m_atlas, m_textureId, const_cast<const dz_texture_t * *>(&m_texture) ) == DZ_FAILURE )
+        if( dz_atlas_get_texture( m_atlas, 0, const_cast<const dz_texture_t * *>(&m_texture) ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
@@ -1271,6 +1270,13 @@ int editor::loadEffect()
         m_shapeType = dz_shape_get_type( m_shape );
         
         m_loop = dz_instance_get_loop( m_instance );
+
+        std::vector<uint8_t> atlas_buffer;
+        openZipFile( uf, "atlas.png", &atlas_buffer );
+
+        dz_render_delete_texture( m_textureId );
+
+        m_textureId = dz_render_make_texture_from_memory( atlas_buffer.data(), atlas_buffer.size(), &m_textureWidth, &m_textureHeight );
 
         dz_atlas_set_surface( m_atlas, &m_textureId );
 
@@ -1292,7 +1298,7 @@ int editor::loadEffect()
         printf( "Error: %s\n", NFD_GetError() );
     }
 
-    return DZ_FAILURE;
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 int editor::exportEffect()
