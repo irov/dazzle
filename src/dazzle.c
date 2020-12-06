@@ -920,13 +920,20 @@ static float __get_shape_timeline_default( dz_shape_timeline_type_e _timeline )
 {
     const dz_timeline_limits_t * limit = shape_timeline_limits + _timeline;
 
-    float default_value = limit->default_value;
+    const float default_value = limit->default_value;
 
     return default_value;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_shape_set_polygon( dz_shape_t * _shape, const float * _triangles, uint32_t _count )
 {
+#ifdef DZ_DEBUG
+    if( _count > 1024 )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
     _shape->triangles = _triangles;
     _shape->triangle_count = _count;
 
@@ -1103,14 +1110,14 @@ static float __get_emitter_timeline_default( dz_emitter_timeline_type_e _timelin
 {
     const dz_timeline_limits_t * limit = emitter_timeline_limits + _timeline;
 
-    float default_value = limit->default_value;
+    const float default_value = limit->default_value;
 
     return default_value;
 }
 //////////////////////////////////////////////////////////////////////////
 static uint16_t __get_rand( uint32_t * _seed )
 {
-    uint32_t value = (*_seed * 1103515245U) + 12345U;
+    const uint32_t value = (*_seed * 1103515245U) + 12345U;
 
     *_seed = value;
 
@@ -1119,22 +1126,22 @@ static uint16_t __get_rand( uint32_t * _seed )
 //////////////////////////////////////////////////////////////////////////
 static float __get_randf( uint32_t * _seed )
 {
-    uint16_t value = __get_rand( _seed );
+    const uint16_t value = __get_rand( _seed );
 
     const float inv_65535 = 1.f / 65535.f;
 
-    float valuef = (float)value * inv_65535;
+    const float valuef = (float)value * inv_65535;
 
     return valuef;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_randf2( uint32_t * _seed, float _min, float _max )
 {
-    uint16_t value = __get_rand( _seed );
+    const uint16_t value = __get_rand( _seed );
 
     const float inv_65535 = 1.f / 65535.f;
 
-    float valuef = (float)value * inv_65535;
+    const float valuef = (float)value * inv_65535;
 
     return _min + (_max - _min) * valuef;
 }
@@ -1145,13 +1152,13 @@ static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key 
     {
     case DZ_TIMELINE_KEY_CONST:
         {
-            float value = _key->const_value;
+            const float value = _key->const_value;
 
             return value;
         }break;
     case DZ_TIMELINE_KEY_RANDOMIZE:
         {
-            float value = _key->randomize_min_value + (_key->randomize_max_value - _key->randomize_min_value) * _t;
+            const float value = _key->randomize_min_value + (_key->randomize_max_value - _key->randomize_min_value) * _t;
 
             return value;
         }break;
@@ -1167,7 +1174,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
 {
     for( ; _key->interpolate != DZ_NULLPTR && _key->interpolate->key->p * _life < _time; _key = _key->interpolate->key );
 
-    float current_value = __get_timeline_key_value( _t, _key );
+    const float current_value = __get_timeline_key_value( _t, _key );
 
     if( _key->interpolate == DZ_NULLPTR ||
         _key->p * _life > _time )
@@ -1177,11 +1184,11 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
 
     const dz_timeline_key_t * next = _key->interpolate->key;
 
-    float next_value = __get_timeline_key_value( _t, next );
+    const float next_value = __get_timeline_key_value( _t, next );
 
-    float t = (_time - _key->p * _life) / (next->p * _life - _key->p * _life);
+    const float t = (_time - _key->p * _life) / (next->p * _life - _key->p * _life);
 
-    float value = current_value + (next_value - current_value) * t;
+    const float value = current_value + (next_value - current_value) * t;
 
     return value;
 }
@@ -1417,14 +1424,14 @@ static float __get_affector_value_rands( dz_particle_t * _p, const dz_effect_t *
 
     if( timeline_key == DZ_NULLPTR )
     {
-        float default_value = __get_affector_timeline_default( _type );
+        const float default_value = __get_affector_timeline_default( _type );
 
         return default_value;
     }
 
-    float time = _p->time;
+    const float time = _p->time;
 
-    float value = __get_timeline_value( _p->rands[_type], timeline_key, _p->life, time );
+    const float value = __get_timeline_value( _p->rands[_type], timeline_key, _p->life, time );
 
     return value;
 }
@@ -1870,11 +1877,11 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
             const uint32_t mask_threshold = effect->shape->mask_threshold;
             const float mask_scale = effect->shape->mask_scale;
 
-            uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
+            const uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
 
             const float r = __get_randf( &_instance->seed );
 
-            uint32_t threshold_value_index = (uint32_t)(r * (threshold_value_count - 1) + 0.5f);
+            const uint32_t threshold_value_index = (uint32_t)(r * (threshold_value_count - 1) + 0.5f);
 
             uint32_t w_found;
             uint32_t h_found;
@@ -1976,7 +1983,7 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
     const dz_effect_t * effect = _instance->effect;
 
     dz_particle_t * p = _instance->partices;
-    dz_particle_t * p_end = _instance->partices + _instance->partices_count;
+    const dz_particle_t * p_end = _instance->partices + _instance->partices_count;
     while( p != p_end )
     {
         if( p->time + _time < p->life )
@@ -1995,7 +2002,7 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
 
     if( p_dead != p_end )
     {
-        dz_particle_t * p_sweep = p_dead;
+        const dz_particle_t * p_sweep = p_dead;
         ++p_sweep;
         for( ; p_sweep != p_end; ++p_sweep )
         {
@@ -2015,7 +2022,7 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
         return DZ_SUCCESSFUL;
     }
 
-    float effect_life = effect->life;
+    const float effect_life = effect->life;
 
     if( _instance->time + _time > effect_life )
     {
@@ -2036,7 +2043,7 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
 
     for( ;;)
     {
-        float delay = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_DELAY, effect_life, _instance->emitter_time );
+        const float delay = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_DELAY, effect_life, _instance->emitter_time );
 
         if( _instance->loop == DZ_FALSE && _instance->emitter_time + delay > effect_life )
         {
@@ -2048,15 +2055,15 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
             break;
         }
 
-        float spawn_time = _instance->emitter_time + delay;
+        const float spawn_time = _instance->emitter_time + delay;
 
         float count = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_COUNT, effect_life, spawn_time );
 
         while( count > 0.f )
         {
-            float life = __get_affector_value_seed( _instance, DZ_AFFECTOR_TIMELINE_LIFE, effect_life, spawn_time );
+            const float life = __get_affector_value_seed( _instance, DZ_AFFECTOR_TIMELINE_LIFE, effect_life, spawn_time );
 
-            float ptime = _instance->time - spawn_time;
+            const float ptime = _instance->time - spawn_time;
 
             if( life > ptime && _instance->partices_count < _instance->particle_limit )
             {
@@ -2258,7 +2265,7 @@ void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    uint8_t v = (uint8_t)_b;
+    const uint8_t v = (uint8_t)_b;
 
     DZ_WRITE( _write, _ud, v );
 
@@ -2269,11 +2276,11 @@ static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_user
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    uint32_t magic = dz_get_magic();
+    const uint32_t magic = dz_get_magic();
 
     DZ_WRITE( _write, _ud, magic );
 
-    uint32_t version = dz_get_version();
+    const uint32_t version = dz_get_version();
 
     DZ_WRITE( _write, _ud, version );
 
@@ -2504,7 +2511,7 @@ dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect
     uint32_t read_version;
     DZ_READ( _read, _ud, read_version );
 
-    uint32_t version = dz_get_version();
+    const uint32_t version = dz_get_version();
 
     if( read_version != version )
     {
@@ -2794,3 +2801,4 @@ dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effec
 
     return DZ_SUCCESSFUL;
 }
+//////////////////////////////////////////////////////////////////////////
