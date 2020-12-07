@@ -1359,6 +1359,8 @@ dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** 
 //////////////////////////////////////////////////////////////////////////
 void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _instance )
 {
+    DZ_FREE( _service, _instance->partices );
+
     DZ_FREE( _service, _instance );
 }
 //////////////////////////////////////////////////////////////////////////
