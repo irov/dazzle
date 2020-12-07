@@ -29,6 +29,11 @@ typedef struct dz_instance_t
 
     float angle;
 
+    float r;
+    float g;
+    float b;
+    float a;
+
     dz_userdata_t ud;
 } dz_instance_t;
 

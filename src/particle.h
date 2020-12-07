@@ -30,6 +30,11 @@ typedef struct dz_particle_t
     float color_b;
     float color_a;
 
+    float born_color_r;
+    float born_color_g;
+    float born_color_b;
+    float born_color_a;
+
     const dz_texture_t * texture;
 } dz_particle_t;
 

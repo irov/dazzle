@@ -352,6 +352,9 @@ uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
 void dz_instance_set_position( dz_instance_t * _instance, float _x, float _y );
 void dz_instance_get_position( const dz_instance_t * _instance, float * _x, float * _y );
 
+void dz_instance_set_color( dz_instance_t * _instance, float _r, float _g, float _b, float _a );
+void dz_instance_get_color( const dz_instance_t * _instance, float * _r, float * _g, float * _b, float * _a );
+
 void dz_instance_set_rotate( dz_instance_t * _instance, float _angle );
 float dz_instance_get_rotate( const dz_instance_t * _instance );
 

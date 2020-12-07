@@ -1345,6 +1345,11 @@ dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** 
 
     instance->angle = 0.f;
 
+    instance->r = 1.f;
+    instance->g = 1.f;
+    instance->b = 1.f;
+    instance->a = 1.f;
+
     instance->ud = _ud;
 
     *_instance = instance;
@@ -1451,10 +1456,15 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
 
     _p->size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SIZE );
 
-    _p->color_r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R );
-    _p->color_g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_G );
-    _p->color_b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_B );
-    _p->color_a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_A );
+    const float r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R );
+    const float g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_G );
+    const float b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_B );
+    const float a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_A );
+
+    _p->color_r = r * _p->born_color_r;
+    _p->color_g = g * _p->born_color_g;
+    _p->color_b = b * _p->born_color_b;
+    _p->color_a = a * _p->born_color_a;
 
     _p->rotate_accelerate_aux += rotate_accelerate * _time;
     _p->angle += rotate_speed * _time + _p->rotate_accelerate_aux * _time;
@@ -1913,6 +1923,11 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
     p->sx = sx;
     p->sy = sy;
 
+    p->born_color_r = _instance->r;
+    p->born_color_g = _instance->g;
+    p->born_color_b = _instance->b;
+    p->born_color_a = _instance->a;
+
     __particle_update( _service, effect, p, time );
 
     return DZ_SUCCESSFUL;
@@ -1928,6 +1943,22 @@ void dz_instance_get_position( const dz_instance_t * _instance, float * _x, floa
 {
     *_x = _instance->x;
     *_y = _instance->y;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_set_color( dz_instance_t * _instance, float _r, float _g, float _b, float _a )
+{
+    _instance->r = _r;
+    _instance->g = _g;
+    _instance->b = _b;
+    _instance->a = _a;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_get_color( const dz_instance_t * _instance, float * _r, float * _g, float * _b, float * _a )
+{
+    *_r = _instance->r;
+    *_g = _instance->g;
+    *_b = _instance->b;
+    *_a = _instance->a;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_instance_set_rotate( dz_instance_t * _instance, float _angle )
@@ -1965,7 +1996,7 @@ dz_bool_t dz_instance_is_emit_pause( const dz_instance_t * _instance )
     return _instance->emit_pause;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_particle_t * __find_dead_particle( dz_particle_t * _p, dz_particle_t * _end )
+static dz_particle_t * __find_dead_particle( dz_particle_t * _p, const dz_particle_t * _end )
 {
     for( ; _p != _end; ++_p )
     {
@@ -1975,7 +2006,7 @@ static dz_particle_t * __find_dead_particle( dz_particle_t * _p, dz_particle_t *
         }
     }
 
-    return _end;
+    return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _instance, float _time )
@@ -2000,10 +2031,12 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
 
     dz_particle_t * p_dead = __find_dead_particle( _instance->partices, p_end );
 
-    if( p_dead != p_end )
+    if( p_dead != DZ_NULLPTR )
     {
         const dz_particle_t * p_sweep = p_dead;
+
         ++p_sweep;
+
         for( ; p_sweep != p_end; ++p_sweep )
         {
             if( p_sweep->time >= 0.f )
