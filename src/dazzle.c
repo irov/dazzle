@@ -1689,8 +1689,6 @@ static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _p
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_particle_t * _p, float _life, float _spawn_time )
 {
-    const float time = _instance->time - _spawn_time;
-
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         _p->rands[index] = __get_randf( &_instance->seed );
@@ -1909,8 +1907,6 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     _p->born_color_b = _instance->b;
     _p->born_color_a = _instance->a;
 
-    __particle_update( _service, effect, _p, time );
-
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -1941,6 +1937,12 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
     {
         return DZ_FAILURE;
     }
+
+    const float time = _instance->time - _spawn_time;
+
+    const dz_effect_t * effect = _instance->effect;
+
+    __particle_update( _service, effect, p, time );
 
     return DZ_SUCCESSFUL;
 }
