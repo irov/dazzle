@@ -1687,47 +1687,26 @@ static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _p
     return DZ_FAILURE;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
+static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_particle_t * _p, float _life, float _spawn_time )
 {
     const float time = _instance->time - _spawn_time;
 
-    if( _instance->partices_count >= _instance->partices_capacity )
-    {
-        if( _instance->partices_capacity == 0 )
-        {
-            _instance->partices_capacity = 16;
-        }
-        else
-        {
-            _instance->partices_capacity *= 2;
-        }
-
-        _instance->partices = DZ_REALLOCN( _service, _instance->partices, dz_particle_t, _instance->partices_capacity );
-
-        if( _instance->partices == DZ_NULLPTR )
-        {
-            return DZ_FAILURE;
-        }
-    }
-
-    dz_particle_t * p = _instance->partices + _instance->partices_count++;
-
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
-        p->rands[index] = __get_randf( &_instance->seed );
+        _p->rands[index] = __get_randf( &_instance->seed );
     }
 
-    p->life = _life;
-    p->time = 0.f;
+    _p->life = _life;
+    _p->time = 0.f;
 
-    p->move_accelerate_aux = 0.f;
-    p->rotate_accelerate_aux = 0.f;
-    p->spin_accelerate_aux = 0.f;
+    _p->move_accelerate_aux = 0.f;
+    _p->rotate_accelerate_aux = 0.f;
+    _p->spin_accelerate_aux = 0.f;
 
-    p->x = _instance->x;
-    p->y = _instance->y;
+    _p->x = _instance->x;
+    _p->y = _instance->y;
 
-    p->angle = _instance->angle;
+    _p->angle = _instance->angle;
 
     const dz_effect_t * effect = _instance->effect;
 
@@ -1737,24 +1716,24 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
     {
     case DZ_SHAPE_POINT:
         {
-            p->x += 0.f;
-            p->y += 0.f;
+            _p->x += 0.f;
+            _p->y += 0.f;
 
             const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
-            p->angle += angle;
+            _p->angle += angle;
         }break;
     case DZ_SHAPE_SEGMENT:
         {
-            p->x += 0.f;
-            p->y += 0.f;
+            _p->x += 0.f;
+            _p->y += 0.f;
 
             const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MIN, _life, _spawn_time );
             const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MAX, _life, _spawn_time );
 
             const float angle = __get_randf2( &_instance->seed, angle_min, angle_max );
 
-            p->angle += angle;
+            _p->angle += angle;
         }break;
     case DZ_SHAPE_CIRCLE:
         {
@@ -1767,15 +1746,15 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
             const float rx = radius * DZ_COSF( _service, angle );
             const float ry = radius * DZ_SINF( _service, angle );
 
-            p->x += rx;
-            p->y += ry;
+            _p->x += rx;
+            _p->y += ry;
 
             const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MIN, _life, _spawn_time );
             const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MAX, _life, _spawn_time );
 
             const float angle_dispersion = __get_randf2( &_instance->seed, angle_min, angle_max );
 
-            p->angle += angle + angle_dispersion;
+            _p->angle += angle + angle_dispersion;
         }break;
     case DZ_SHAPE_LINE:
         {
@@ -1788,10 +1767,10 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
 
             const float l = (__get_randf( &_instance->seed ) - 0.5f) * size;
 
-            p->x += -dy * l;
-            p->y += dx * l;
+            _p->x += -dy * l;
+            _p->y += dx * l;
 
-            p->angle += angle;
+            _p->angle += angle;
         }break;
     case DZ_SHAPE_RECT:
         {
@@ -1806,12 +1785,12 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
             const float x = (__get_randf( &_instance->seed ) - 0.5f) * width_max;
             const float y = (__get_randf( &_instance->seed ) - 0.5f) * height_max;
 
-            p->x += x;
-            p->y += y;
+            _p->x += x;
+            _p->y += y;
 
             float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
-            p->angle += angle;
+            _p->angle += angle;
         }break;
     case DZ_SHAPE_POLYGON:
         {
@@ -1872,12 +1851,12 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
             const float tx = (1.f - qr1) * rax + (qr1 * (1.f - r2)) * rbx + (qr1 * r2) * rcx;
             const float ty = (1.f - qr1) * ray + (qr1 * (1.f - r2)) * rby + (qr1 * r2) * rcy;
 
-            p->x += tx;
-            p->y += ty;
+            _p->x += tx;
+            _p->y += ty;
 
             const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
-            p->angle += angle;
+            _p->angle += angle;
         }break;
     case DZ_SHAPE_MASK:
         {
@@ -1902,12 +1881,12 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
                 return DZ_FAILURE;
             }
 
-            p->x += w_found * mask_scale;
-            p->y += h_found * mask_scale;
+            _p->x += w_found * mask_scale;
+            _p->y += h_found * mask_scale;
 
             const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
-            p->angle += angle;
+            _p->angle += angle;
         }break;
     case __DZ_SHAPE_MAX__:
     default:
@@ -1917,20 +1896,51 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
     const float spin_min = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MIN, _life, _spawn_time );
     const float spin_max = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MAX, _life, _spawn_time );
 
-    p->spin = (__get_randf( &_instance->seed ) * 2.f - 1.f) * __get_randf2( &_instance->seed, spin_min, spin_max );
+    _p->spin = (__get_randf( &_instance->seed ) * 2.f - 1.f) * __get_randf2( &_instance->seed, spin_min, spin_max );
 
-    const float sx = DZ_COSF( _service, p->spin );
-    const float sy = DZ_SINF( _service, p->spin );
+    const float sx = DZ_COSF( _service, _p->spin );
+    const float sy = DZ_SINF( _service, _p->spin );
 
-    p->sx = sx;
-    p->sy = sy;
+    _p->sx = sx;
+    _p->sy = sy;
 
-    p->born_color_r = _instance->r;
-    p->born_color_g = _instance->g;
-    p->born_color_b = _instance->b;
-    p->born_color_a = _instance->a;
+    _p->born_color_r = _instance->r;
+    _p->born_color_g = _instance->g;
+    _p->born_color_b = _instance->b;
+    _p->born_color_a = _instance->a;
 
-    __particle_update( _service, effect, p, time );
+    __particle_update( _service, effect, _p, time );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
+{
+    if( _instance->partices_count >= _instance->partices_capacity )
+    {
+        if( _instance->partices_capacity == 0 )
+        {
+            _instance->partices_capacity = 16;
+        }
+        else
+        {
+            _instance->partices_capacity *= 2;
+        }
+
+        _instance->partices = DZ_REALLOCN( _service, _instance->partices, dz_particle_t, _instance->partices_capacity );
+
+        if( _instance->partices == DZ_NULLPTR )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    dz_particle_t * p = _instance->partices + _instance->partices_count++;
+
+    if( __emitter_setup_particle( _service, _instance, p, _life, _spawn_time ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
 
     return DZ_SUCCESSFUL;
 }
@@ -2103,6 +2113,14 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
             if( life > ptime && _instance->partices_count < _instance->particle_limit )
             {
                 if( __emitter_spawn_particle( _service, _instance, life, spawn_time ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+            else
+            {
+                dz_particle_t p_fake;
+                if( __emitter_setup_particle( _service, _instance, &p_fake, life, spawn_time ) == DZ_FAILURE )
                 {
                     return DZ_FAILURE;
                 }

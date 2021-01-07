@@ -11,9 +11,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../download_template.cmake)
 
 DOWNLOAD_FILE(stb_image https://raw.githubusercontent.com/nothings/stb/master/stb_image.h stb_image.h)
 
-GIT_CLONE(glad https://github.com/Dav1dde/glad.git "v0.1.33")
+GIT_CLONE(glad https://github.com/Dav1dde/glad.git "v0.1.34")
 GIT_CLONE(glfw3 https://github.com/glfw/glfw.git "3.3.2")
-GIT_CLONE(imgui https://github.com/ocornut/imgui.git "v1.78")
+GIT_CLONE(imgui https://github.com/ocornut/imgui.git "v1.79")
 GIT_CLONE(jansson https://github.com/akheron/jansson.git "v2.13.1")
 GIT_CLONE(jpp https://github.com/irov/jpp.git)
 GIT_CLONE(nativefiledialog https://github.com/mlabbe/nativefiledialog.git)
