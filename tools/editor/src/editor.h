@@ -53,7 +53,7 @@ protected:
     int render();
 
 public:
-    int run();
+    int run( int argc, char ** argv );
 
 public:
     const ImVec2 & getDzWindowPos() const;

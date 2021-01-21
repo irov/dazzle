@@ -1129,8 +1129,11 @@ int editor::render()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::run()
+int editor::run( int argc, char ** argv )
 {
+    DZ_UNUSED( argc );
+    DZ_UNUSED( argv );
+
     if( this->init() == DZ_FAILURE )
     {
         return DZ_FAILURE;
@@ -1321,6 +1324,8 @@ int editor::exportEffect()
 
             return DZ_SUCCESSFUL;
         };
+
+        dz_header_write( lambda_write, &myfile );
 
         dz_effect_write( m_effect, lambda_write, &myfile );
 
