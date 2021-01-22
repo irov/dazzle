@@ -18,7 +18,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_window_type_e
@@ -1202,7 +1201,7 @@ int editor::saveEffect()
             return DZ_FAILURE;
         }
 
-        if( copyZipFile( zf, m_texturePath.c_str(), "atlas.png" ) == DZ_FAILURE )
+        if( addZipFile( zf, "atlas.png", m_atlasBuffer.data(), m_atlasBuffer.size() ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
@@ -1287,12 +1286,13 @@ int editor::loadEffect()
 
         m_shapeType = dz_shape_get_type( m_shape );
 
-        std::vector<uint8_t> atlas_buffer;
-        openZipFile( uf, "atlas.png", &atlas_buffer );
+        m_atlasBuffer.clear();
+
+        openZipFile( uf, "atlas.png", &m_atlasBuffer );
 
         dz_render_delete_texture( m_textureId );
 
-        m_textureId = dz_render_make_texture_from_memory( atlas_buffer.data(), atlas_buffer.size(), &m_textureWidth, &m_textureHeight );
+        m_textureId = dz_render_make_texture_from_memory( m_atlasBuffer.data(), m_atlasBuffer.size(), &m_textureWidth, &m_textureHeight );
 
         dz_atlas_set_surface( m_atlas, &m_textureId );
 
@@ -2878,7 +2878,27 @@ int editor::showMaterialData()
 
             dz_atlas_set_surface( m_atlas, &m_textureId );
 
-            m_texturePath = texturePath;
+            // open the file:
+            std::ifstream file( texturePath, std::ios::binary );
+
+            // Stop eating new lines in binary mode!!!
+            file.unsetf( std::ios::skipws );
+
+            // get its size:
+            std::streampos fileSize;
+
+            file.seekg( 0, std::ios::end );
+            fileSize = file.tellg();
+            file.seekg( 0, std::ios::beg );
+
+            // reserve capacity
+            m_atlasBuffer.clear();
+            m_atlasBuffer.reserve( fileSize );
+
+            // read the data:
+            m_atlasBuffer.insert( m_atlasBuffer.begin(),
+                std::istream_iterator<BYTE>( file ),
+                std::istream_iterator<BYTE>() );
 
             free( texturePath );
         }
