@@ -397,6 +397,7 @@ int main( int argc, char ** argv )
         {DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f},
         {DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f},
         {DZ_AFFECTOR_TIMELINE_SIZE, 0.5f, 1.f, 15.f, 25.f, 100.f},
+        {DZ_AFFECTOR_TIMELINE_ASPECT, 0.f, 1.f, 1.f, 2.f, 10.f},
         {DZ_AFFECTOR_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
         {DZ_AFFECTOR_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
         {DZ_AFFECTOR_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },

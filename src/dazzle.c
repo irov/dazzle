@@ -51,6 +51,7 @@ static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELIN
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 10.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_PI2N, DZ_PI2, 0.f, 0.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 50.f, 100.f}, //DZ_AFFECTOR_TIMELINE_SIZE
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 1.f, 5.f}, //DZ_AFFECTOR_TIMELINE_ASPECT
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_R
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_G
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_B
@@ -674,6 +675,10 @@ const char * dz_affector_timeline_type_stringize( dz_affector_timeline_type_e _t
     case DZ_AFFECTOR_TIMELINE_SIZE:
         {
             return "size";
+        }break;
+    case DZ_AFFECTOR_TIMELINE_ASPECT:
+        {
+            return "aspect";
         }break;
     case DZ_AFFECTOR_TIMELINE_COLOR_R:
         {
@@ -1461,7 +1466,11 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
     const float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED );
     const float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE );
 
-    _p->size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SIZE );
+    const float size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SIZE );
+    const float aspect = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ASPECT );
+
+    _p->size = size;
+    _p->aspect = aspect;
 
     const float r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R );
     const float g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_G );
@@ -2025,7 +2034,7 @@ dz_bool_t dz_instance_is_emit_pause( const dz_instance_t * _instance )
     return _instance->emit_pause;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_particle_t * __find_dead_particle( dz_particle_t * _p, const dz_particle_t * _end )
+static dz_particle_t * __find_first_dead_particle( dz_particle_t * _p, const dz_particle_t * _end )
 {
     for( ; _p != _end; ++_p )
     {
@@ -2046,6 +2055,13 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
     const dz_particle_t * p_end = _instance->partices + _instance->partices_count;
     while( p != p_end )
     {
+#ifdef DZ_DEBUG
+        if( p->time < 0.f )
+        {
+            return DZ_FAILURE;
+        }
+#endif
+
         if( p->time + _time < p->life )
         {
             __particle_update( _service, effect, p, _time );
@@ -2058,10 +2074,19 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
         ++p;
     }
 
-    dz_particle_t * p_dead = __find_dead_particle( _instance->partices, p_end );
+    dz_particle_t * p_dead = __find_first_dead_particle( _instance->partices, p_end );
 
     if( p_dead != DZ_NULLPTR )
     {
+#ifdef DZ_DEBUG
+        if( _instance->partices_count == 0 )
+        {
+            return DZ_FAILURE;
+        }
+#endif
+
+        --_instance->partices_count;
+
         const dz_particle_t * p_sweep = p_dead;
 
         ++p_sweep;
@@ -2080,6 +2105,7 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
                     return DZ_FAILURE;
                 }
 #endif
+
                 --_instance->partices_count;
             }
         }
@@ -2196,8 +2222,10 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
     const float hsx = _p->sx * hs;
     const float hsy = _p->sy * hs;
 
-    const float ux = hsx;
-    const float uy = hsy;
+    const float ha = _p->aspect;
+
+    const float ux = hsx * ha;
+    const float uy = hsy * ha;
 
     const float vx = -hsy;
     const float vy = hsx;

@@ -24,6 +24,7 @@ typedef struct dz_particle_t
     float spin_accelerate_aux;
 
     float size;
+    float aspect;
 
     float color_r;
     float color_g;

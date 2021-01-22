@@ -146,6 +146,7 @@ const char * ER_AFFECTOR_DATA_NAMES[] = {
     "Strafe size",       //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
     "Strafe shift",      //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
     "Size",              //DZ_AFFECTOR_TIMELINE_SIZE
+    "Aspect",            //DZ_AFFECTOR_TIMELINE_ASPECT
     "Color Red",         //DZ_AFFECTOR_TIMELINE_COLOR_R
     "Color Green",       //DZ_AFFECTOR_TIMELINE_COLOR_G
     "Color Blue",        //DZ_AFFECTOR_TIMELINE_COLOR_B
