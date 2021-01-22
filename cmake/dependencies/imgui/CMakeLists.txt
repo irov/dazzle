@@ -8,6 +8,7 @@ add_library(${PROJECT_NAME} STATIC
     ${IMGUI_SOURCE_DIR}/imgui.cpp
     ${IMGUI_SOURCE_DIR}/imgui_draw.cpp
     ${IMGUI_SOURCE_DIR}/imgui_widgets.cpp
+    ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

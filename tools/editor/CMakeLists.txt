@@ -13,7 +13,7 @@ include_directories(${DAZZLE_THIRDPARTY_DIR}/zlib/contrib/minizip)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/glfw3/include)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/glad/include)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/imgui)
-include_directories(${DAZZLE_THIRDPARTY_DIR}/imgui/examples)
+include_directories(${DAZZLE_THIRDPARTY_DIR}/imgui/backends)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/nativefiledialog/src/include)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/jpp/include)
 

@@ -42,6 +42,9 @@ typedef void * dz_userdata_t;
 #define DZ_UNUSED(X) ((void)(X))
 #endif
 
+#define DZ_MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+#define DZ_MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+
 #define DZ_NULLPTR (0)
 
 #endif

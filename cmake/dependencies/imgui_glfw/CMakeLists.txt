@@ -9,8 +9,8 @@ include_directories(${DAZZLE_THIRDPARTY_DIR}/glfw3/include)
 include_directories(${DAZZLE_THIRDPARTY_DIR}/glad/include)
 
 add_library(${PROJECT_NAME} STATIC
-    ${IMGUI_SOURCE_DIR}/examples/imgui_impl_glfw.cpp
+    ${IMGUI_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
-install(FILES ${IMGUI_SOURCE_DIR}/examples/imgui_impl_glfw.h DESTINATION include)
+install(FILES ${IMGUI_SOURCE_DIR}/backends/imgui_impl_glfw.h DESTINATION include)

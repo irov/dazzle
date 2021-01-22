@@ -1912,6 +1912,13 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
 {
+#ifdef DZ_DEBUG
+    if( _instance->partices_count >= 16383 )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
     if( _instance->partices_count >= _instance->partices_capacity )
     {
         if( _instance->partices_capacity == 0 )
@@ -1925,10 +1932,12 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
 
         _instance->partices = DZ_REALLOCN( _service, _instance->partices, dz_particle_t, _instance->partices_capacity );
 
+#ifdef DZ_DEBUG
         if( _instance->partices == DZ_NULLPTR )
         {
             return DZ_FAILURE;
         }
+#endif
     }
 
     dz_particle_t * p = _instance->partices + _instance->partices_count++;
@@ -2059,6 +2068,12 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
             }
             else
             {
+#ifdef DZ_DEBUG
+                if( _instance->partices_count == 0 )
+                {
+                    return DZ_FAILURE;
+                }
+#endif
                 --_instance->partices_count;
             }
         }
@@ -2181,22 +2196,25 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
     const float vx = -hsy;
     const float vy = hsx;
 
-    float * p0 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 0));
+    const dz_size_t base_position_buffer_offset = _mesh->position_offset + _mesh->position_stride * (_iterator * 4);
+    uint8_t * base_position_buffer = (uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
+
+    float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
 
     p0[0] = _p->x - ux + vx;
     p0[1] = _p->y - uy + vy;
 
-    float * p1 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 1));
+    float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
 
     p1[0] = _p->x + ux + vx;
     p1[1] = _p->y + uy + vy;
 
-    float * p2 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 2));
+    float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
 
     p2[0] = _p->x + ux - vx;
     p2[1] = _p->y + uy - vy;
 
-    float * p3 = (float *)((uint8_t *)(_mesh->position_buffer) + _mesh->position_offset + _mesh->position_stride * (_iterator * 4 + 3));
+    float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
 
     p3[0] = _p->x - ux - vx;
     p3[1] = _p->y - uy - vy;
@@ -2211,19 +2229,22 @@ static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _itera
 
     const uint32_t color = (a8 << 24) | (r8 << 16) | (g8 << 8) | (b8 << 0);
 
-    uint32_t * c0 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 0));
+    const dz_size_t base_color_buffer_offset = _mesh->color_offset + _mesh->color_stride * (_iterator * 4);
+    uint8_t * base_color_buffer = (uint8_t *)_mesh->color_buffer + base_color_buffer_offset;
+
+    uint32_t * c0 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 0);
 
     c0[0] = color;
 
-    uint32_t * c1 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 1));
+    uint32_t * c1 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 1);
 
     c1[0] = color;
 
-    uint32_t * c2 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 2));
+    uint32_t * c2 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 2);
 
     c2[0] = color;
 
-    uint32_t * c3 = (uint32_t *)((uint8_t *)(_mesh->color_buffer) + _mesh->color_offset + _mesh->color_stride * (_iterator * 4 + 3));
+    uint32_t * c3 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 3);
 
     c3[0] = color;
 }
@@ -2232,22 +2253,25 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
 {
     DZ_UNUSED( _p );
 
-    float * uv0 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 0));
+    const dz_size_t base_uv_buffer_offset = _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4);
+    uint8_t * base_uv_buffer = (uint8_t *)_mesh->uv_buffer + base_uv_buffer_offset;
+
+    float * uv0 = (float *)(base_uv_buffer + _mesh->uv_stride * 0);
 
     uv0[0] = 0.f;
     uv0[1] = 0.f;
 
-    float * uv1 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 1));
+    float * uv1 = (float *)(base_uv_buffer + _mesh->uv_stride * 1);
 
     uv1[0] = 1.f;
     uv1[1] = 0.f;
 
-    float * uv2 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 2));
+    float * uv2 = (float *)(base_uv_buffer + _mesh->uv_stride * 2);
 
     uv2[0] = 1.f;
     uv2[1] = 1.f;
 
-    float * uv3 = (float *)((uint8_t *)(_mesh->uv_buffer) + _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4 + 3));
+    float * uv3 = (float *)(base_uv_buffer + _mesh->uv_stride * 3);
 
     uv3[0] = 0.f;
     uv3[1] = 1.f;
@@ -2256,12 +2280,15 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
 static void __particle_compute_index( uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     uint16_t * index_buffer = (uint16_t *)(_mesh->index_buffer) + _iterator * 6;
-    index_buffer[0] = _iterator * 4 + 0;
-    index_buffer[1] = _iterator * 4 + 1;
-    index_buffer[2] = _iterator * 4 + 3;
-    index_buffer[3] = _iterator * 4 + 3;
-    index_buffer[4] = _iterator * 4 + 1;
-    index_buffer[5] = _iterator * 4 + 2;
+
+    const uint16_t vertex_offset = _iterator * 4;
+
+    index_buffer[0] = vertex_offset + 0;
+    index_buffer[1] = vertex_offset + 1;
+    index_buffer[2] = vertex_offset + 3;
+    index_buffer[3] = vertex_offset + 3;
+    index_buffer[4] = vertex_offset + 1;
+    index_buffer[5] = vertex_offset + 2;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_instance_compute_bounds( const dz_instance_t * _instance, uint16_t * _vertex_count, uint16_t * _index_count )
