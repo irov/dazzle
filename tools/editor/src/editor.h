@@ -10,7 +10,9 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
 #include <string>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 // prefix ER_ means editor
@@ -120,7 +122,8 @@ public:
     int m_textureWidth;
     int m_textureHeight;
 
-    std::string m_texturePath;
+    std::vector<uint8_t> m_atlasBuffer;
+
     GLuint m_textureId;
 
     dz_render_desc_t m_openglDesc;
