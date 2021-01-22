@@ -1254,8 +1254,20 @@ int editor::loadEffect()
         dz_emitter_destroy( m_service, m_emitter );
         dz_affector_destroy( m_service, m_affector );
         dz_shape_destroy( m_service, m_shape );
+        dz_instance_destroy( m_service, m_instance );
+
+        m_effect = nullptr;
+        m_emitter = nullptr;
+        m_affector = nullptr;
+        m_shape = nullptr;
+        m_instance = nullptr;
 
         if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        if( dz_instance_create( m_service, &m_instance, m_effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
@@ -1269,24 +1281,11 @@ int editor::loadEffect()
             return DZ_FAILURE;
         }
 
-        m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
-
         m_shape = const_cast<dz_shape_t *>(dz_effect_get_shape( m_effect ));
         m_emitter = const_cast<dz_emitter_t *>(dz_effect_get_emitter( m_effect ));
         m_affector = const_cast<dz_affector_t *>(dz_effect_get_affector( m_effect ));
 
         m_shapeType = dz_shape_get_type( m_shape );
-
-        dz_instance_destroy( m_service, m_instance );
-
-        m_instance = nullptr;
-
-        if( dz_instance_create( m_service, &m_instance, m_effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        m_loop = dz_instance_get_loop( m_instance );
 
         std::vector<uint8_t> atlas_buffer;
         openZipFile( uf, "atlas.png", &atlas_buffer );
