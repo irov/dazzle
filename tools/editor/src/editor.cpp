@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <fstream>
 #include <sstream>
 
 //////////////////////////////////////////////////////////////////////////
@@ -242,27 +241,6 @@ static dz_result_t addZipFile( zipFile _zf, const char * _file, const void * _bu
     {
         return DZ_FAILURE;
     }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t copyZipFile( zipFile _zf, const char * _from, const char * _to )
-{
-    FILE * f = fopen( _from, "rb" );
-    fseek( f, 0L, SEEK_END );
-    size_t sz = ftell( f );
-    rewind( f );
-
-    void * buf = malloc( sz );
-    fread( buf, sz, 1, f );
-    fclose( f );
-
-    if( addZipFile( _zf, _to, buf, sz ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    free( buf );
 
     return DZ_SUCCESSFUL;
 }
@@ -1327,22 +1305,22 @@ int editor::exportEffect()
         puts( "Success!" );
         puts( outPath );
 
-        std::fstream myfile = std::fstream( outPath, std::ios::out | std::ios::binary );
+        FILE * f = fopen( outPath, "wb" );
 
         auto lambda_write = []( const void * _data, dz_size_t _size, dz_userdata_t _ud )
         {
-            std::fstream * file = static_cast<std::fstream *>(_ud);
+            FILE * f = (FILE *)(_ud);
 
-            file->write( (char *)_data, _size );
+            fwrite( _data, _size, 1, f );
 
             return DZ_SUCCESSFUL;
         };
 
-        dz_header_write( lambda_write, &myfile );
+        dz_header_write( lambda_write, (dz_userdata_t)f );
 
-        dz_effect_write( m_effect, lambda_write, &myfile );
+        dz_effect_write( m_effect, lambda_write, (dz_userdata_t)f );
 
-        myfile.close();
+        fclose( f );
 
         free( outPath );
     }
@@ -2878,27 +2856,14 @@ int editor::showMaterialData()
 
             dz_atlas_set_surface( m_atlas, &m_textureId );
 
-            // open the file:
-            std::ifstream file( texturePath, std::ios::binary );
+            FILE * f = fopen( texturePath, "rb" );
+            fseek( f, 0L, SEEK_END );
+            size_t sz = ftell( f );
+            rewind( f );
 
-            // Stop eating new lines in binary mode!!!
-            file.unsetf( std::ios::skipws );
-
-            // get its size:
-            std::streampos fileSize;
-
-            file.seekg( 0, std::ios::end );
-            fileSize = file.tellg();
-            file.seekg( 0, std::ios::beg );
-
-            // reserve capacity
-            m_atlasBuffer.clear();
-            m_atlasBuffer.reserve( fileSize );
-
-            // read the data:
-            m_atlasBuffer.insert( m_atlasBuffer.begin(),
-                std::istream_iterator<uint8_t>( file ),
-                std::istream_iterator<uint8_t>() );
+            m_atlasBuffer.resize( sz );
+            fread( m_atlasBuffer.data(), sz, 1, f );
+            fclose( f );
 
             free( texturePath );
         }
