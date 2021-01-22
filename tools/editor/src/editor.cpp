@@ -2897,8 +2897,8 @@ int editor::showMaterialData()
 
             // read the data:
             m_atlasBuffer.insert( m_atlasBuffer.begin(),
-                std::istream_iterator<BYTE>( file ),
-                std::istream_iterator<BYTE>() );
+                std::istream_iterator<uint8_t>( file ),
+                std::istream_iterator<uint8_t>() );
 
             free( texturePath );
         }
