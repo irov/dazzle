@@ -109,6 +109,7 @@ static const char * ER_SHAPE_DATA_NAMES[] = {
     "Circle angle max",  //DZ_SHAPE_CIRCLE_ANGLE_MAX
     "Line angle",        //DZ_SHAPE_LINE_ANGLE
     "Line size",         //DZ_SHAPE_LINE_SIZE
+    "Line offset",       //DZ_SHAPE_LINE_OFFSET
     "Rect width min",    //DZ_SHAPE_RECT_WIDTH_MIN
     "Rect width max",    //DZ_SHAPE_RECT_WIDTH_MAX
     "Rect height min",   //DZ_SHAPE_RECT_HEIGHT_MIN
@@ -819,20 +820,20 @@ int editor::init()
             data.type = static_cast<dz_shape_timeline_type_e>(index);
             data.name = ER_SHAPE_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
             
             data.zoom = 1;
 
             data.selectedPoint = ER_CURVE_POINT_NONE;
 
-            if( __set_shape_timeline_const( m_service, m_shape, data.type, default ) == DZ_FAILURE )
+            if( __set_shape_timeline_const( m_service, m_shape, data.type, default_value ) == DZ_FAILURE )
             {
                 return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
-            data.pointsData[0].y = default;
+            data.pointsData[0].y = default_value;
 
             data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
         }
@@ -2579,7 +2580,7 @@ int editor::showShapeData()
             }
             break;
         case DZ_SHAPE_LINE:
-            if( data.type >= DZ_SHAPE_LINE_ANGLE && data.type <= DZ_SHAPE_LINE_SIZE )
+            if( data.type >= DZ_SHAPE_LINE_ANGLE && data.type <= DZ_SHAPE_LINE_OFFSET )
             {
                 show = true;
             }

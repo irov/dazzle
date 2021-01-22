@@ -854,6 +854,10 @@ const char * dz_shape_timeline_type_stringize( dz_shape_timeline_type_e _type )
         {
             return "line_size";
         }break;
+    case DZ_SHAPE_LINE_OFFSET:
+        {
+            return "line_offset";
+        }break;
     case DZ_SHAPE_RECT_WIDTH_MIN:
         {
             return "rect_width_min";
@@ -899,6 +903,7 @@ static const dz_timeline_limits_t shape_timeline_limits[__DZ_SHAPE_TIMELINE_MAX_
     {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, DZ_PI * 0.05f, DZ_PI2}, //DZ_SHAPE_CIRCLE_ANGLE_MAX
     {DZ_TIMELINE_LIMIT_NORMAL, -DZ_PI2, DZ_PI2, 0.f, DZ_PI2}, //DZ_SHAPE_LINE_ANGLE
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_LINE_SIZE
+    {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 100.f}, //DZ_SHAPE_LINE_OFFSET
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f, 100.f}, //DZ_SHAPE_RECT_WIDTH_MIN
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_RECT_WIDTH_MAX
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 0.f, 100.f}, //DZ_SHAPE_RECT_HEIGHT_MIN
@@ -1762,11 +1767,12 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             const float dy = DZ_SINF( _service, angle );
 
             const float size = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_SIZE, _life, _spawn_time );
+            const float offset = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_OFFSET, _life, _spawn_time );
 
             const float l = (__get_randf( &_instance->seed ) - 0.5f) * size;
 
-            _p->x += -dy * l;
-            _p->y += dx * l;
+            _p->x += dy * (offset - l);
+            _p->y += dx * (offset + l);
 
             _p->angle += angle;
         }break;
