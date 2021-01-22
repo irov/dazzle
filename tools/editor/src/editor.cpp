@@ -1250,6 +1250,11 @@ int editor::loadEffect()
         jpp::object data;
         this->loadJSON_( data_buffer.data(), data_buffer.size(), &data );
 
+        dz_effect_destroy( m_service, m_effect );
+        dz_emitter_destroy( m_service, m_emitter );
+        dz_affector_destroy( m_service, m_affector );
+        dz_shape_destroy( m_service, m_shape );
+
         if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -1271,7 +1276,16 @@ int editor::loadEffect()
         m_affector = const_cast<dz_affector_t *>(dz_effect_get_affector( m_effect ));
 
         m_shapeType = dz_shape_get_type( m_shape );
-        
+
+        dz_instance_destroy( m_service, m_instance );
+
+        m_instance = nullptr;
+
+        if( dz_instance_create( m_service, &m_instance, m_effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
         m_loop = dz_instance_get_loop( m_instance );
 
         std::vector<uint8_t> atlas_buffer;
@@ -1283,14 +1297,14 @@ int editor::loadEffect()
 
         dz_atlas_set_surface( m_atlas, &m_textureId );
 
+        unzCloseCurrentFile( uf );
+
+        free( outPath );
+
         if( this->resetEffectData() == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
-
-        unzCloseCurrentFile( uf );
-
-        free( outPath );
     }
     else if( result == NFD_CANCEL )
     {
