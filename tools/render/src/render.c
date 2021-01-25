@@ -361,25 +361,15 @@ void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _rig
     float projOrtho[16];
     __make_ortho( _left, _right, _top, _bottom, zNear, zFar, projOrtho );
 
-    GLuint shaderColorProgram = _desc->shaderColorProgram;
-    GLuint shaderTextureProgram = _desc->shaderTextureProgram;
+    GLuint shaderProgram = _desc->shaderCurrentProgram;
 
-    glUseProgram( shaderColorProgram );
+    glUseProgram( shaderProgram );
 
-    GLint wvpColorLocation = glGetUniformLocation( shaderColorProgram, "uWVP" );
+    GLint wvpLocation = glGetUniformLocation( shaderProgram, "uWVP" );
 
-    if( wvpColorLocation >= 0 )
+    if( wvpLocation >= 0 )
     {
-        glUniformMatrix4fv( wvpColorLocation, 1, GL_FALSE, projOrtho );
-    }
-
-    glUseProgram( shaderTextureProgram );
-
-    GLint wvpTextureLocation = glGetUniformLocation( shaderTextureProgram, "uWVP" );
-
-    if( wvpTextureLocation >= 0 )
-    {
-        glUniformMatrix4fv( wvpTextureLocation, 1, GL_FALSE, projOrtho );
+        glUniformMatrix4fv( wvpLocation, 1, GL_FALSE, projOrtho );
     }
 }
 //////////////////////////////////////////////////////////////////////////
@@ -475,7 +465,7 @@ dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instanc
         switch( chunk->blend_type )
         {
         case DZ_BLEND_NORMAL:
-            {                
+            {
                 glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
             }break;
         case DZ_BLEND_ADD:

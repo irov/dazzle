@@ -2898,7 +2898,14 @@ void editor::showDazzleCanvas()
     // render dazzle
     dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
 
-    dz_render_use_texture_program( &m_openglDesc );
+    if( m_textureId != 0 )
+    {
+        dz_render_use_texture_program( &m_openglDesc );
+    }
+    else
+    {
+        dz_render_use_color_program( &m_openglDesc );
+    }
 
     GLint oldViewport[4];
     glGetIntegerv( GL_VIEWPORT, oldViewport );
