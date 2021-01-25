@@ -613,6 +613,12 @@ void dz_affector_destroy( const dz_service_t * _service, const dz_affector_t * _
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _affector->timelines[index];
+
+        if( timeline == DZ_NULLPTR )
+        {
+            continue;
+        }
+
         dz_timeline_key_destroy( _service, timeline );
     }
 
