@@ -1,5 +1,7 @@
 #include "evict/evict.hpp"
 
+#include "dazzle/dazzle_aux.hpp"
+
 //////////////////////////////////////////////////////////////////////////
 static jpp::object __evict_texture_write( const dz_texture_t * _texture )
 {

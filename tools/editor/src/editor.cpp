@@ -12,6 +12,9 @@
 #   include "iowin32.h"
 #endif
 
+#include "dazzle/dazzle_read.hpp"
+#include "dazzle/dazzle_write.hpp"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

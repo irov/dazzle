@@ -32,6 +32,71 @@ include_directories(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(${PROJECT_NAME} STATIC ${DAZZLE_SOURCES} ${DAZZLE_HEADERS})
 
+PROJECT(dazzle_aux C)
+
+set(DAZZLE_AUX_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dazzle_aux.c
+)
+
+set(DAZZLE_AUX_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle_aux.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle_aux.hpp
+)
+
+include_directories(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_library(${PROJECT_NAME} STATIC ${DAZZLE_AUX_SOURCES} ${DAZZLE_AUX_HEADERS})
+
+if(DAZZLE_INSTALL)
+    install(DIRECTORY include
+        DESTINATION .
+        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+
+    install(TARGETS ${PROJECT_NAME}
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib)
+endif()
+
+PROJECT(dazzle_read C)
+
+set(DAZZLE_READ_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dazzle_read.c
+)
+
+set(DAZZLE_READ_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle_read.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle_read.hpp
+)
+
+include_directories(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_library(${PROJECT_NAME} STATIC ${DAZZLE_READ_SOURCES} ${DAZZLE_READ_HEADERS})
+
+if(DAZZLE_INSTALL)
+    install(DIRECTORY include
+        DESTINATION .
+        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+
+    install(TARGETS ${PROJECT_NAME}
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib)
+endif()
+
+PROJECT(dazzle_write C)
+
+set(DAZZLE_WRITE_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dazzle_write.c
+)
+
+set(DAZZLE_WRITE_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle_write.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/dazzle/dazzle_write.hpp
+)
+
+include_directories(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_library(${PROJECT_NAME} STATIC ${DAZZLE_WRITE_SOURCES} ${DAZZLE_WRITE_HEADERS})
+
 if(DAZZLE_INSTALL)
     install(DIRECTORY include
         DESTINATION .
