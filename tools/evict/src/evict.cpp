@@ -176,6 +176,11 @@ static jpp::object __evict_shape_write( const dz_shape_t * _shape )
 
         const dz_timeline_key_t * key = dz_shape_get_timeline( _shape, timeline_type );
 
+        if( key == DZ_NULLPTR )
+        {
+            continue;
+        }
+
         jpp::object obj_key = __evict_timeline_key_write( key );
 
         const char * timeline_type_str = dz_shape_timeline_type_stringize( timeline_type );
@@ -204,6 +209,11 @@ static jpp::object __evict_emitter_write( const dz_emitter_t * _emitter )
 
         const dz_timeline_key_t * key = dz_emitter_get_timeline( _emitter, timeline_type );
 
+        if( key == DZ_NULLPTR )
+        {
+            continue;
+        }
+
         jpp::object obj_key = __evict_timeline_key_write( key );
 
         const char * timeline_type_str = dz_emitter_timeline_type_stringize( timeline_type );
@@ -227,6 +237,11 @@ static jpp::object __evict_affector_write( const dz_affector_t * _affector )
         dz_affector_timeline_type_e timeline_type = (dz_affector_timeline_type_e)index;
 
         const dz_timeline_key_t * key = dz_affector_get_timeline( _affector, timeline_type );
+
+        if( key == DZ_NULLPTR )
+        {
+            continue;
+        }
 
         jpp::object obj_key = __evict_timeline_key_write( key );
 

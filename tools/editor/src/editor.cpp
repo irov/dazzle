@@ -375,7 +375,10 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
     // destroy old timeline
     const dz_timeline_key_t * oldKey0 = dz_shape_get_timeline( _shape, _type );
 
-    dz_timeline_key_destroy( _service, oldKey0 );
+    if( oldKey0 != DZ_NULLPTR )
+    {
+        dz_timeline_key_destroy( _service, oldKey0 );
+    }
 
     // set new timeline to affector
     dz_shape_set_timeline( _shape, _type, key0 );
@@ -2411,6 +2414,10 @@ int editor::resetEffectData()
 
         data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
 
+        dz_timeline_limit_status_e status;
+        float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
+
         if( key != DZ_NULLPTR )
         {
             if( this->readTimelineKey( key, data.pointsData, 0 ) == DZ_FAILURE )
@@ -2418,10 +2425,13 @@ int editor::resetEffectData()
                 return DZ_FAILURE;
             }
         }
+        else
+        {
+            data.pointsData[0].x = 0.f;
+            data.pointsData[0].y = default_value;
 
-        dz_timeline_limit_status_e status;
-        float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-        dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
+        }
 
         // curve
         float y_min = min;
@@ -2445,6 +2455,10 @@ int editor::resetEffectData()
 
         data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
 
+        dz_timeline_limit_status_e status;
+        float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
+
         if( key != DZ_NULLPTR )
         {
             if( this->readTimelineKey( key, data.pointsData, 0 ) == DZ_FAILURE )
@@ -2452,10 +2466,13 @@ int editor::resetEffectData()
                 return DZ_FAILURE;
             }
         }
+        else
+        {
+            data.pointsData[0].x = 0.f;
+            data.pointsData[0].y = default_value;
 
-        dz_timeline_limit_status_e status;
-        float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-        dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
+        }
 
         // curve
         float y_min = min;
@@ -2480,6 +2497,10 @@ int editor::resetEffectData()
 
         data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
 
+        dz_timeline_limit_status_e status;
+        float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
+
         if( key != DZ_NULLPTR )
         {
             if( this->readTimelineKey( key, data.pointsData, 0 ) == DZ_FAILURE )
@@ -2487,15 +2508,18 @@ int editor::resetEffectData()
                 return DZ_FAILURE;
             }
         }
+        else
+        {
+            data.pointsData[0].x = 0.f;
+            data.pointsData[0].y = default_value;
+
+            data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
+        }
 
         if( index == DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT )
         {
             continue;
         }
-
-        dz_timeline_limit_status_e status;
-        float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-        dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
 
         // curve
         float y_min = min;

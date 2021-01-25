@@ -2377,6 +2377,7 @@ void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh
 }
 //////////////////////////////////////////////////////////////////////////
 #define DZ_WRITE(W, U, V) if( (*W)(&V, sizeof(V), U) == DZ_FAILURE ) return DZ_FAILURE
+#define DZ_WRITEB(W, U, V) uint8_t __write_value##__LINE__ = (V); if( (*W)(&__write_value##__LINE__, sizeof(uint8_t), U) == DZ_FAILURE ) return DZ_FAILURE
 #define DZ_WRITEN(W, U, V, N) if( (*W)(V, sizeof(*V) * N, U) == DZ_FAILURE ) return DZ_FAILURE
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_userdata_t _ud )
@@ -2527,6 +2528,15 @@ static dz_result_t __write_shape( const dz_shape_t * _shape, dz_stream_write_t _
     {
         const dz_timeline_key_t * timeline = _shape->timelines[index];
 
+        if( timeline == DZ_NULLPTR )
+        {
+            DZ_WRITEB( _write, _ud, DZ_FALSE );
+
+            continue;
+        }
+
+        DZ_WRITEB( _write, _ud, DZ_TRUE );
+
         if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -2544,6 +2554,15 @@ static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_stream_wri
     {
         const dz_timeline_key_t * timeline = _emitter->timelines[index];
 
+        if( timeline == DZ_NULLPTR )
+        {
+            DZ_WRITEB( _write, _ud, DZ_FALSE );
+
+            continue;
+        }
+
+        DZ_WRITEB( _write, _ud, DZ_TRUE );
+
         if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -2558,6 +2577,15 @@ static dz_result_t __write_affector( const dz_affector_t * _affector, dz_stream_
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _affector->timelines[index];
+
+        if( timeline == DZ_NULLPTR )
+        {
+            DZ_WRITEB( _write, _ud, DZ_FALSE );
+
+            continue;
+        }
+
+        DZ_WRITEB( _write, _ud, DZ_TRUE );
 
         if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
         {
@@ -2814,6 +2842,14 @@ static dz_result_t __read_shape( const dz_service_t * _service, dz_shape_t ** _s
 
     for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
+        uint8_t exist;
+        DZ_READ( _read, _ud, exist );
+
+        if( exist == DZ_FALSE )
+        {
+            continue;
+        }
+
         dz_timeline_key_t * timeline;
         if( __read_timeline_key( _service, &timeline, _read, _ud ) == DZ_FAILURE )
         {
@@ -2840,6 +2876,14 @@ static dz_result_t __read_emitter( const dz_service_t * _service, dz_emitter_t *
 
     for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
+        uint8_t exist;
+        DZ_READ( _read, _ud, exist );
+
+        if( exist == DZ_FALSE )
+        {
+            continue;
+        }
+
         dz_timeline_key_t * key;
         if( __read_timeline_key( _service, &key, _read, _ud ) == DZ_FAILURE )
         {
@@ -2864,6 +2908,14 @@ static dz_result_t __read_affector( const dz_service_t * _service, dz_affector_t
 
     for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
+        uint8_t exist;
+        DZ_READ( _read, _ud, exist );
+
+        if( exist == DZ_FALSE )
+        {
+            continue;
+        }
+
         dz_timeline_key_t * key;
         if( __read_timeline_key( _service, &key, _read, _ud ) == DZ_FAILURE )
         {
