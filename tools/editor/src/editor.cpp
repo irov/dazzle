@@ -1086,6 +1086,10 @@ int editor::update()
         // update and render dazzle
         dz_instance_update( m_service, m_instance, 0.005f );
     }
+    else
+    {
+        dz_instance_update( m_service, m_instance, 0.f );
+    }
 
     // update camera
     dz_render_set_camera( &m_openglDesc, camera_offset_x, camera_offset_y, camera_scale );
