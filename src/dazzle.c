@@ -58,7 +58,7 @@ static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELIN
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f} //DZ_AFFECTOR_TIMELINE_COLOR_A
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor )
+void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor )
 {
     const dz_timeline_limits_t * limit = affector_timeline_limits + _timeline;
 
@@ -156,7 +156,7 @@ void dz_texture_set_uv( dz_texture_t * _texture, const float * _u, const float *
     _texture->v[3] = _v[3];
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_get_uv( const dz_texture_t * _texture, float * _u, float * _v )
+void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float * const _v )
 {
     _u[0] = _texture->u[0];
     _v[0] = _texture->v[0];
@@ -174,7 +174,7 @@ void dz_texture_set_trim_offset( dz_texture_t * _texture, float _x, float _y )
     _texture->trim_offset_y = _y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * _x, float * _y )
+void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * const _x, float * const _y )
 {
     *_x = _texture->trim_offset_x;
     *_y = _texture->trim_offset_y;
@@ -186,7 +186,7 @@ void dz_texture_set_trim_size( dz_texture_t * _texture, float _width, float _hei
     _texture->trim_height = _height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_get_trim_size( const dz_texture_t * _texture, float * _width, float * _height )
+void dz_texture_get_trim_size( const dz_texture_t * _texture, float * const _width, float * const _height )
 {
     *_width = _texture->trim_width;
     *_height = _texture->trim_height;
@@ -328,7 +328,7 @@ void dz_material_set_color( dz_material_t * _material, float _r, float _g, float
     _material->a = _a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_get_color( const dz_material_t * _material, float * _r, float * _g, float * _b, float * _a )
+void dz_material_get_color( const dz_material_t * _material, float * const _r, float * const _g, float * const _b, float * const _a )
 {
     *_r = _material->r;
     *_g = _material->g;
@@ -408,7 +408,7 @@ void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * _interpola
     _interpolate->p1 = _p1;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, float * _p0, float * _p1 )
+void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, float * const _p0, float * const _p1 )
 {
     *_p0 = _interpolate->p0;
     *_p1 = _interpolate->p1;
@@ -507,7 +507,7 @@ void dz_timeline_key_set_const_value( dz_timeline_key_t * _key, float _value )
     _key->const_value = _value;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * _value )
+void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * const _value )
 {
     *_value = _key->const_value;
 }
@@ -518,7 +518,7 @@ void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * _key, float _min
     _key->randomize_max_value = _max;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * _min, float * _max )
+void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * const _min, float * const _max )
 {
     *_min = _key->randomize_min_value;
     *_max = _key->randomize_max_value;
@@ -669,7 +669,7 @@ static const dz_timeline_limits_t shape_timeline_limits[__DZ_SHAPE_TIMELINE_MAX_
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_RECT_HEIGHT_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor )
+void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor )
 {
     const dz_timeline_limits_t * limit = shape_timeline_limits + _timeline;
 
@@ -831,7 +831,7 @@ static const dz_timeline_limits_t emitter_timeline_limits[__DZ_EMITTER_TIMELINE_
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 10.f}, //DZ_EMITTER_SPAWN_SPIN_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor )
+void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor )
 {
     const dz_timeline_limits_t * limit = emitter_timeline_limits + _timeline;
 
@@ -1703,7 +1703,7 @@ void dz_instance_set_position( dz_instance_t * _instance, float _x, float _y )
     _instance->y = _y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_get_position( const dz_instance_t * _instance, float * _x, float * _y )
+void dz_instance_get_position( const dz_instance_t * _instance, float * const _x, float * const _y )
 {
     *_x = _instance->x;
     *_y = _instance->y;
@@ -1717,7 +1717,7 @@ void dz_instance_set_color( dz_instance_t * _instance, float _r, float _g, float
     _instance->a = _a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_get_color( const dz_instance_t * _instance, float * _r, float * _g, float * _b, float * _a )
+void dz_instance_get_color( const dz_instance_t * _instance, float * const _r, float * const _g, float * const _b, float * const _a )
 {
     *_r = _instance->r;
     *_g = _instance->g;

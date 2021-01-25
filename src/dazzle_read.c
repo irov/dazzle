@@ -25,7 +25,7 @@ static dz_result_t __read_bool( dz_bool_t * _b, dz_stream_read_t _read, dz_userd
 //////////////////////////////////////////////////////////////////////////
 #define DZ_LOAD_BOOL(L, U, V) __read_bool(&V, L, U)
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect_read_status_e * _status )
+dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect_read_status_e * const _status )
 {
     uint32_t read_magic;
     DZ_READ( _read, _ud, read_magic );

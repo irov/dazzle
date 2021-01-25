@@ -39,13 +39,13 @@ void dz_texture_set_ud( dz_texture_t * _texture, dz_userdata_t _ud );
 dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture );
 
 void dz_texture_set_uv( dz_texture_t * _texture, const float * _u, const float * _v );
-void dz_texture_get_uv( const dz_texture_t * _texture, float * _u, float * _v );
+void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float * const _v );
 
 void dz_texture_set_trim_offset( dz_texture_t * _texture, float _x, float _y );
-void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * _x, float * _y );
+void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * const _x, float * const _y );
 
 void dz_texture_set_trim_size( dz_texture_t * _texture, float _width, float _height );
-void dz_texture_get_trim_size( const dz_texture_t * _texture, float * _width, float * _height );
+void dz_texture_get_trim_size( const dz_texture_t * _texture, float * const _width, float * const _height );
 
 void dz_texture_set_random_weight( dz_texture_t * _texture, float _weight );
 float dz_texture_get_random_weight( const dz_texture_t * _texture );
@@ -93,7 +93,7 @@ void dz_material_set_blend( dz_material_t * _material, dz_blend_type_e _blend );
 dz_blend_type_e dz_material_get_blend( const dz_material_t * _material );
 
 void dz_material_set_color( dz_material_t * _material, float _r, float _g, float _b, float _a );
-void dz_material_get_color( const dz_material_t * _material, float * _r, float * _g, float * _b, float * _a );
+void dz_material_get_color( const dz_material_t * _material, float * const _r, float * const _g, float * const _b, float * const _a );
 
 void dz_material_set_atlas( dz_material_t * _material, const dz_atlas_t * _atlas );
 const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material );
@@ -130,10 +130,10 @@ void dz_timeline_key_set_p( dz_timeline_key_t * _key, float _p );
 float dz_timeline_key_get_p( const dz_timeline_key_t * _key );
 
 void dz_timeline_key_set_const_value( dz_timeline_key_t * _key, float _value );
-void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * _value );
+void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * const _value );
 
 void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * _key, float _min, float _max );
-void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * _min, float * _max );
+void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * const _min, float * const _max );
 
 typedef enum dz_timeline_interpolate_type_e
 {
@@ -155,7 +155,7 @@ void dz_timeline_interpolate_set_type( dz_timeline_interpolate_t * _interpolate,
 dz_timeline_interpolate_type_e dz_timeline_interpolate_get_type( const dz_timeline_interpolate_t * _interpolate );
 
 void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * _interpolate, float _p0, float _p1 );
-void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, float * _p0, float * _p1 );
+void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, float * const _p0, float * const _p1 );
 
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate );
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );
@@ -203,7 +203,7 @@ typedef enum dz_timeline_limit_status_e
     DZ_TIMELINE_LIMIT_MINMAX = 0x00000003
 } dz_timeline_limit_status_e;
 
-void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor );
+void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor );
 
 typedef enum dz_shape_type_e
 {
@@ -251,7 +251,7 @@ typedef enum dz_shape_timeline_type_e
 void dz_shape_set_timeline( dz_shape_t * _shape, dz_shape_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_shape_get_timeline( const dz_shape_t * _shape, dz_shape_timeline_type_e _type );
 
-void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor );
+void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor );
 
 dz_result_t dz_shape_set_polygon( dz_shape_t * _shape, const float * _triangles, uint32_t _count );
 void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles, uint32_t * _count );
@@ -289,7 +289,7 @@ typedef enum dz_emitter_timeline_type_e
 void dz_emitter_set_timeline( dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, const dz_timeline_key_t * _timeline );
 const dz_timeline_key_t * dz_emitter_get_timeline( const dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type );
 
-void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * _min, float * _max, float * _default, float * _factor );
+void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor );
 
 typedef struct dz_effect_t dz_effect_t;
 
@@ -338,10 +338,10 @@ void dz_instance_set_particle_limit( dz_instance_t * _instance, uint16_t _limit 
 uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
 
 void dz_instance_set_position( dz_instance_t * _instance, float _x, float _y );
-void dz_instance_get_position( const dz_instance_t * _instance, float * _x, float * _y );
+void dz_instance_get_position( const dz_instance_t * _instance, float * const _x, float * const _y );
 
 void dz_instance_set_color( dz_instance_t * _instance, float _r, float _g, float _b, float _a );
-void dz_instance_get_color( const dz_instance_t * _instance, float * _r, float * _g, float * _b, float * _a );
+void dz_instance_get_color( const dz_instance_t * _instance, float * const _r, float * const _g, float * const _b, float * const _a );
 
 void dz_instance_set_rotate( dz_instance_t * _instance, float _angle );
 float dz_instance_get_rotate( const dz_instance_t * _instance );
