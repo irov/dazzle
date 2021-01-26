@@ -41,6 +41,9 @@ static constexpr float ER_TIMELINE_PANEL_WIDTH = 330.f;
 static constexpr int32_t ER_CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
 static constexpr ImGuiID ER_CURVE_ID_NONE = 0;
 static constexpr int ER_CURVE_POINT_NONE = -1;
+static constexpr float ER_CURVE_PLOT_BORDER_SIZE = 8.f;
+static constexpr float ER_CURVE_PLOT_HOVER_RADIUS = 4.f;
+static constexpr float ER_CURVE_PLOT_HOVER_RADIUS_POW_2 = ER_CURVE_PLOT_HOVER_RADIUS * ER_CURVE_PLOT_HOVER_RADIUS;
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME = "particle.png";
 //////////////////////////////////////////////////////////////////////////
@@ -1726,6 +1729,11 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     int max = 0;
     while( max < _maxpoints && _points[max].x >= 0 ) max++;
 
+    ImGui::RenderFrame( bb.Min, bb.Max, ImGui::GetColorU32( ImGuiCol_Border, 1 ), true, style.FrameRounding );
+    bb.Min.x += ER_CURVE_PLOT_BORDER_SIZE;
+    bb.Min.y += ER_CURVE_PLOT_BORDER_SIZE;
+    bb.Max.x -= ER_CURVE_PLOT_BORDER_SIZE;
+    bb.Max.y -= ER_CURVE_PLOT_BORDER_SIZE;
     ImGui::RenderFrame( bb.Min, bb.Max, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
 
     float ht = bb.Max.y - bb.Min.y;
@@ -1887,19 +1895,19 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                         if( _points[left].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
                             float p1d = abs( p.y );
-                            if( p1d < (1.f / 16.f) ) sel = left;
+                            if( p1d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) ) sel = left;
                         }
                         else if( _points[left].mode == ER_CURVE_POINT_MODE_RANDOM )
                         {
                             float p1d = abs( p.y );
-                            if( p1d < (1.f / 16.f) )
+                            if( p1d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left;
                                 is_active_y2 = false;
                             }
 
                             float p1d_y2 = abs( p_y2.y );
-                            if( p1d_y2 < (1.f / 16.f) )
+                            if( p1d_y2 < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left;
                                 is_active_y2 = true;
@@ -1921,17 +1929,17 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
                         if( _points[left].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
-                            if( p1d < (1.f / 16.f) ) sel = left;
+                            if( p1d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) ) sel = left;
                         }
                         else if( _points[left].mode == ER_CURVE_POINT_MODE_RANDOM )
                         {
-                            if( p1d < (1.f / 16.f) )
+                            if( p1d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left;
                                 is_active_y2 = false;
                             }
 
-                            if( p1d_y2 < (1.f / 16.f) )
+                            if( p1d_y2 < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left;
                                 is_active_y2 = true;
@@ -1940,17 +1948,17 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
                         if( _points[left + 1].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
-                            if( p2d < (1.f / 16.f) ) sel = left + 1;
+                            if( p2d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) ) sel = left + 1;
                         }
                         else if( _points[left + 1].mode == ER_CURVE_POINT_MODE_RANDOM )
                         {
-                            if( p2d < (1.f / 16.f) )
+                            if( p2d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left + 1;
                                 is_active_y2 = false;
                             }
 
-                            if( p2d_y2 < (1.f / 16.f) )
+                            if( p2d_y2 < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left + 1;
                                 is_active_y2 = true;
