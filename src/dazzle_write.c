@@ -12,7 +12,6 @@
 
 //////////////////////////////////////////////////////////////////////////
 #define DZ_WRITE(W, U, V) if( (*W)(&V, sizeof(V), U) == DZ_FAILURE ) return DZ_FAILURE
-#define DZ_WRITEB(W, U, V) uint8_t __write_value##__LINE__ = (V); if( (*W)(&__write_value##__LINE__, sizeof(uint8_t), U) == DZ_FAILURE ) return DZ_FAILURE
 #define DZ_WRITEN(W, U, V, N) if( (*W)(V, sizeof(*V) * N, U) == DZ_FAILURE ) return DZ_FAILURE
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_userdata_t _ud )
@@ -24,7 +23,7 @@ static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_user
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-#define DZ_WRITE_BOOL(W, U, V) __write_bool(V, W, U)
+#define DZ_WRITEB(W, U, V) if( __write_bool(V, W, U) == DZ_FAILURE ) return DZ_FAILURE
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud )
 {
@@ -86,11 +85,11 @@ static dz_result_t __write_material( const dz_material_t * _material, dz_stream_
 
     if( _material->atlas == DZ_NULLPTR )
     {
-        DZ_WRITE_BOOL( _write, _ud, DZ_FALSE );
+        DZ_WRITEB( _write, _ud, DZ_FALSE );
     }
     else
     {
-        DZ_WRITE_BOOL( _write, _ud, DZ_TRUE );
+        DZ_WRITEB( _write, _ud, DZ_TRUE );
 
         if( __write_atlas( _material->atlas, _write, _ud ) == DZ_FAILURE )
         {
@@ -112,11 +111,11 @@ static dz_result_t __write_timeline_interpolate( const dz_timeline_interpolate_t
 
     if( _interpolate->key == DZ_NULLPTR )
     {
-        DZ_WRITE_BOOL( _write, _ud, DZ_FALSE );
+        DZ_WRITEB( _write, _ud, DZ_FALSE );
     }
     else
     {
-        DZ_WRITE_BOOL( _write, _ud, DZ_TRUE );
+        DZ_WRITEB( _write, _ud, DZ_TRUE );
 
         if( __write_timeline_key( _interpolate->key, _write, _ud ) == DZ_FAILURE )
         {
@@ -140,11 +139,11 @@ static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_stre
 
     if( _key->interpolate == DZ_NULLPTR )
     {
-        DZ_WRITE_BOOL( _write, _ud, DZ_FALSE );
+        DZ_WRITEB( _write, _ud, DZ_FALSE );
     }
     else
     {
-        DZ_WRITE_BOOL( _write, _ud, DZ_TRUE );
+        DZ_WRITEB( _write, _ud, DZ_TRUE );
 
         if( __write_timeline_interpolate( _key->interpolate, _write, _ud ) == DZ_FAILURE )
         {

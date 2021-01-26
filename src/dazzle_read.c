@@ -23,7 +23,7 @@ static dz_result_t __read_bool( dz_bool_t * _b, dz_stream_read_t _read, dz_userd
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-#define DZ_LOAD_BOOL(L, U, V) __read_bool(&V, L, U)
+#define DZ_READB(L, U, V) if( __read_bool(&V, L, U) == DZ_FAILURE ) return DZ_FAILURE;
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect_read_status_e * const _status )
 {
@@ -125,7 +125,7 @@ static dz_result_t __read_material( const dz_service_t * _service, dz_material_t
     DZ_READ( _read, _ud, material->mode );
 
     dz_bool_t has_atlas;
-    DZ_LOAD_BOOL( _read, _ud, has_atlas );
+    DZ_READB( _read, _ud, has_atlas );
 
     if( has_atlas == DZ_TRUE )
     {
@@ -160,7 +160,7 @@ static dz_result_t __read_timeline_interpolate( const dz_service_t * _service, d
     DZ_READ( _read, _ud, interpolate->p1 );
 
     dz_bool_t has_timeline_key;
-    DZ_LOAD_BOOL( _read, _ud, has_timeline_key );
+    DZ_READB( _read, _ud, has_timeline_key );
 
     if( has_timeline_key == DZ_TRUE )
     {
@@ -198,7 +198,7 @@ static dz_result_t __read_timeline_key( const dz_service_t * _service, dz_timeli
     DZ_READ( _read, _ud, key->randomize_max_value );
 
     dz_bool_t has_interpolate;
-    DZ_LOAD_BOOL( _read, _ud, has_interpolate );
+    DZ_READB( _read, _ud, has_interpolate );
 
     if( has_interpolate == DZ_TRUE )
     {
