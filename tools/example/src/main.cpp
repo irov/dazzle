@@ -18,7 +18,7 @@ static void * dz_malloc( dz_size_t _size, dz_userdata_t _ud )
     return p;
 }
 //////////////////////////////////////////////////////////////////////////
-static void * dz_realloc( void * _ptr, dz_size_t _size, dz_userdata_t _ud )
+static void * dz_realloc( void * const _ptr, dz_size_t _size, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
@@ -171,14 +171,14 @@ float camera_offset_y = 0.f;
 float mouse_pos_x = 0.f;
 float mouse_pos_y = 0.f;
 //////////////////////////////////////////////////////////////////////////
-static void glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int _height )
+static void __glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int _height )
 {
     DZ_UNUSED( _window );
 
     glViewport( 0, 0, _width, _height );
 }
 //////////////////////////////////////////////////////////////////////////
-static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
+static void __glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 {
     DZ_UNUSED( _window );
     DZ_UNUSED( _x );
@@ -205,7 +205,7 @@ static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
     camera_offset_y += mouse_pos_y / camera_scale;
 }
 //////////////////////////////////////////////////////////////////////////
-static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
+static void __glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
 {
     if( glfwGetKey( _window, GLFW_KEY_SPACE ) == GLFW_PRESS &&
         glfwGetMouseButton( _window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS )
@@ -253,9 +253,9 @@ int main( int argc, char ** argv )
     }
 
     glfwMakeContextCurrent( fwWindow );
-    glfwSetFramebufferSizeCallback( fwWindow, &glfw_framebufferSizeCallback );
-    glfwSetScrollCallback( fwWindow, &glfw_scrollCallback );
-    glfwSetCursorPosCallback( fwWindow, &glfw_cursorPosCallback );
+    glfwSetFramebufferSizeCallback( fwWindow, &__glfw_framebufferSizeCallback );
+    glfwSetScrollCallback( fwWindow, &__glfw_scrollCallback );
+    glfwSetCursorPosCallback( fwWindow, &__glfw_cursorPosCallback );
 
     double cursorPosX;
     double cursorPosY;
@@ -271,8 +271,8 @@ int main( int argc, char ** argv )
 
     glfwSwapInterval( 1 );
 
-    uint32_t max_vertex_count = 8196 * 2;
-    uint32_t max_index_count = 32768;
+    uint16_t max_vertex_count = 65535;
+    uint16_t max_index_count = 65535;
 
     dz_render_desc_t opengl_desc;
     if( dz_render_initialize( &opengl_desc, max_vertex_count, max_index_count ) == DZ_FAILURE )
@@ -400,7 +400,7 @@ int main( int argc, char ** argv )
         {DZ_AFFECTOR_TIMELINE_ASPECT, 0.f, 1.f, 1.f, 2.f, 10.f},
         {DZ_AFFECTOR_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
         {DZ_AFFECTOR_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },
+        {DZ_AFFECTOR_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f},
         {DZ_AFFECTOR_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f},
     };
 

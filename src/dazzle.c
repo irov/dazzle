@@ -58,7 +58,7 @@ static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELIN
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f} //DZ_AFFECTOR_TIMELINE_COLOR_A
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor )
+void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor )
 {
     const dz_timeline_limits_t * limit = affector_timeline_limits + _timeline;
 
@@ -73,7 +73,7 @@ static float __get_affector_timeline_default( dz_affector_timeline_type_e _timel
 {
     const dz_timeline_limits_t * limit = affector_timeline_limits + _timeline;
 
-    float default_value = limit->default_value;
+    const float default_value = limit->default_value;
 
     return default_value;
 }
@@ -90,7 +90,7 @@ dz_result_t dz_service_create( dz_service_t ** _service, const dz_service_provid
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_service_destroy( dz_service_t * _service )
+void dz_service_destroy( dz_service_t * const _service )
 {
     DZ_FREE( _service, _service );
 }
@@ -134,7 +134,7 @@ void dz_texture_destroy( const dz_service_t * _service, const dz_texture_t * _te
     DZ_FREE( _service, _texture );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_ud( dz_texture_t * _texture, dz_userdata_t _ud )
+void dz_texture_set_ud( dz_texture_t * const _texture, dz_userdata_t _ud )
 {
     _texture->ud = _ud;
 }
@@ -144,7 +144,7 @@ dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture )
     return _texture->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_uv( dz_texture_t * _texture, const float * _u, const float * _v )
+void dz_texture_set_uv( dz_texture_t * const _texture, const float * _u, const float * _v )
 {
     _texture->u[0] = _u[0];
     _texture->v[0] = _v[0];
@@ -168,7 +168,7 @@ void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float *
     _v[3] = _texture->v[3];
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_trim_offset( dz_texture_t * _texture, float _x, float _y )
+void dz_texture_set_trim_offset( dz_texture_t * const _texture, float _x, float _y )
 {
     _texture->trim_offset_x = _x;
     _texture->trim_offset_y = _y;
@@ -192,7 +192,7 @@ void dz_texture_get_trim_size( const dz_texture_t * _texture, float * const _wid
     *_height = _texture->trim_height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_random_weight( dz_texture_t * _texture, float _weight )
+void dz_texture_set_random_weight( dz_texture_t * const _texture, float _weight )
 {
     _texture->random_weight = _weight;
 }
@@ -202,7 +202,7 @@ float dz_texture_get_random_weight( const dz_texture_t * _texture )
     return _texture->random_weight;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_sequence_delay( dz_texture_t * _texture, float _delay )
+void dz_texture_set_sequence_delay( dz_texture_t * const _texture, float _delay )
 {
     _texture->sequence_delay = _delay;
 }
@@ -231,7 +231,7 @@ void dz_atlas_destroy( const dz_service_t * _service, const dz_atlas_t * _atlas 
     DZ_FREE( _service, _atlas );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_atlas_set_surface( dz_atlas_t * _atlas, dz_userdata_t _surface )
+void dz_atlas_set_surface( dz_atlas_t * const _atlas, dz_userdata_t _surface )
 {
     _atlas->surface = _surface;
 }
@@ -241,7 +241,7 @@ dz_userdata_t dz_atlas_get_surface( const dz_atlas_t * _atlas )
     return _atlas->surface;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_atlas_set_ud( dz_atlas_t * _atlas, dz_userdata_t _ud )
+void dz_atlas_set_ud( dz_atlas_t * const _atlas, dz_userdata_t _ud )
 {
     _atlas->ud = _ud;
 }
@@ -256,7 +256,7 @@ uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
     return _atlas->texture_count;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_atlas_add_texture( dz_atlas_t * _atlas, const dz_texture_t * _texture )
+dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t * _texture )
 {
     _atlas->textures[_atlas->texture_count++] = _texture;
 
@@ -300,7 +300,7 @@ void dz_material_destroy( const dz_service_t * _service, const dz_material_t * _
     DZ_FREE( _service, _material );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_set_ud( dz_material_t * _material, dz_userdata_t _ud )
+void dz_material_set_ud( dz_material_t * const _material, dz_userdata_t _ud )
 {
     _material->ud = _ud;
 }
@@ -310,7 +310,7 @@ dz_userdata_t dz_material_get_ud( const dz_material_t * _material )
     return _material->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_set_blend( dz_material_t * _material, dz_blend_type_e _blend )
+void dz_material_set_blend( dz_material_t * const _material, dz_blend_type_e _blend )
 {
     _material->blend_type = _blend;
 }
@@ -320,7 +320,7 @@ dz_blend_type_e dz_material_get_blend( const dz_material_t * _material )
     return _material->blend_type;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_set_color( dz_material_t * _material, float _r, float _g, float _b, float _a )
+void dz_material_set_color( dz_material_t * const _material, float _r, float _g, float _b, float _a )
 {
     _material->r = _r;
     _material->g = _g;
@@ -336,7 +336,7 @@ void dz_material_get_color( const dz_material_t * _material, float * const _r, f
     *_a = _material->a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_set_atlas( dz_material_t * _material, const dz_atlas_t * _atlas )
+void dz_material_set_atlas( dz_material_t * const _material, const dz_atlas_t * _atlas )
 {
     _material->atlas = _atlas;
 }
@@ -346,7 +346,7 @@ const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material )
     return _material->atlas;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_set_mode( dz_material_t * _material, dz_material_mode_e _mode )
+void dz_material_set_mode( dz_material_t * const _material, dz_material_mode_e _mode )
 {
     _material->mode = _mode;
 }
@@ -382,7 +382,7 @@ void dz_timeline_interpolate_destroy( const dz_service_t * _service, const dz_ti
     DZ_FREE( _service, _interpolate );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * _interpolate, dz_userdata_t _ud )
+void dz_timeline_interpolate_set_ud( dz_timeline_interpolate_t * const _interpolate, dz_userdata_t _ud )
 {
     _interpolate->ud = _ud;
 }
@@ -392,7 +392,7 @@ dz_userdata_t dz_timeline_interpolate_get_ud( const dz_timeline_interpolate_t * 
     return _interpolate->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_set_type( dz_timeline_interpolate_t * _interpolate, dz_timeline_interpolate_type_e _type )
+void dz_timeline_interpolate_set_type( dz_timeline_interpolate_t * const _interpolate, dz_timeline_interpolate_type_e _type )
 {
     _interpolate->type = _type;
 }
@@ -402,7 +402,7 @@ dz_timeline_interpolate_type_e dz_timeline_interpolate_get_type( const dz_timeli
     return _interpolate->type;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * _interpolate, float _p0, float _p1 )
+void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * const _interpolate, float _p0, float _p1 )
 {
     _interpolate->p0 = _p0;
     _interpolate->p1 = _p1;
@@ -448,7 +448,7 @@ void dz_timeline_key_destroy( const dz_service_t * _service, const dz_timeline_k
     DZ_FREE( _service, _key );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_ud( dz_timeline_key_t * _key, dz_userdata_t _ud )
+void dz_timeline_key_set_ud( dz_timeline_key_t * const _key, dz_userdata_t _ud )
 {
     _key->ud = _ud;
 }
@@ -458,7 +458,7 @@ dz_userdata_t dz_timeline_key_get_ud( const dz_timeline_key_t * _key )
     return _key->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_type( dz_timeline_key_t * _key, dz_timeline_key_type_e _type )
+void dz_timeline_key_set_type( dz_timeline_key_t * const _key, dz_timeline_key_type_e _type )
 {
     _key->type = _type;
 }
@@ -482,17 +482,17 @@ const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_time
     return interpolate;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * _interpolate, dz_timeline_key_t * _key )
+void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpolate, dz_timeline_key_t * const _key )
 {
     _interpolate->key = _key;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_interpolate( dz_timeline_key_t * _key, dz_timeline_interpolate_t * _interpolate )
+void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate )
 {
     _key->interpolate = _interpolate;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_p( dz_timeline_key_t * _key, float _p )
+void dz_timeline_key_set_p( dz_timeline_key_t * const _key, float _p )
 {
     _key->p = _p;
 }
@@ -502,7 +502,7 @@ float dz_timeline_key_get_p( const dz_timeline_key_t * _key )
     return _key->p;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_const_value( dz_timeline_key_t * _key, float _value )
+void dz_timeline_key_set_const_value( dz_timeline_key_t * const _key, float _value )
 {
     _key->const_value = _value;
 }
@@ -512,7 +512,7 @@ void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * co
     *_value = _key->const_value;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * _key, float _min, float _max )
+void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * const _key, float _min, float _max )
 {
     _key->randomize_min_value = _min;
     _key->randomize_max_value = _max;
@@ -562,7 +562,7 @@ dz_userdata_t dz_affector_get_ud( const dz_affector_t * _affector )
     return _affector->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_set_timeline( dz_affector_t * _affector, dz_affector_timeline_type_e _type, const dz_timeline_key_t * _timeline )
+void dz_affector_set_timeline( dz_affector_t * const _affector, dz_affector_timeline_type_e _type, const dz_timeline_key_t * _timeline )
 {
     _affector->timelines[_type] = _timeline;
 }
@@ -596,7 +596,6 @@ dz_result_t dz_shape_create( const dz_service_t * _service, dz_shape_t ** _shape
     shape->mask_threshold = 0;
     shape->mask_scale = 1.f;
 
-
     shape->ud = _ud;
 
     *_shape = shape;
@@ -621,7 +620,7 @@ void dz_shape_destroy( const dz_service_t * _service, const dz_shape_t * _shape 
     DZ_FREE( _service, _shape );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_ud( dz_shape_t * _shape, dz_userdata_t _ud )
+void dz_shape_set_ud( dz_shape_t * const _shape, dz_userdata_t _ud )
 {
     _shape->ud = _ud;
 }
@@ -631,7 +630,7 @@ dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape )
     return _shape->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_type( dz_shape_t * _shape, dz_shape_type_e _type )
+void dz_shape_set_type( dz_shape_t * const _shape, dz_shape_type_e _type )
 {
     _shape->type = _type;
 }
@@ -641,7 +640,7 @@ dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape )
     return _shape->type;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_timeline( dz_shape_t * _shape, dz_shape_timeline_type_e _type, const dz_timeline_key_t * _timeline )
+void dz_shape_set_timeline( dz_shape_t * const _shape, dz_shape_timeline_type_e _type, const dz_timeline_key_t * _timeline )
 {
     _shape->timelines[_type] = _timeline;
 }
@@ -669,7 +668,7 @@ static const dz_timeline_limits_t shape_timeline_limits[__DZ_SHAPE_TIMELINE_MAX_
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_RECT_HEIGHT_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor )
+void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor )
 {
     const dz_timeline_limits_t * limit = shape_timeline_limits + _timeline;
 
@@ -689,7 +688,7 @@ static float __get_shape_timeline_default( dz_shape_timeline_type_e _timeline )
     return default_value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_shape_set_polygon( dz_shape_t * _shape, const float * _triangles, uint32_t _count )
+dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _triangles, uint32_t _count )
 {
 #ifdef DZ_DEBUG
     if( _count > 1024 )
@@ -710,7 +709,7 @@ void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles,
     *_count = _shape->triangle_count;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_shape_set_mask( dz_shape_t * _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height )
+dz_result_t dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height )
 {
 #ifdef DZ_DEBUG
     if( _bites != 1 && _bites != 2 && _bites != 4 )
@@ -737,7 +736,7 @@ void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, uint32
     *_height = _shape->mask_height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_mask_scale( dz_shape_t * _shape, float _scale )
+void dz_shape_set_mask_scale( dz_shape_t * const _shape, float _scale )
 {
     _shape->mask_scale = _scale;
 }
@@ -747,7 +746,7 @@ float dz_shape_get_mask_scale( const dz_shape_t * _shape )
     return _shape->mask_scale;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_mask_threshold( dz_shape_t * _shape, uint32_t _threshold )
+void dz_shape_set_mask_threshold( dz_shape_t * const _shape, uint32_t _threshold )
 {
     _shape->mask_threshold = _threshold;
 }
@@ -792,7 +791,7 @@ void dz_emitter_destroy( const dz_service_t * _service, const dz_emitter_t * _em
     DZ_FREE( _service, _emitter );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_set_ud( dz_emitter_t * _emitter, dz_userdata_t _ud )
+void dz_emitter_set_ud( dz_emitter_t * const _emitter, dz_userdata_t _ud )
 {
     _emitter->ud = _ud;
 }
@@ -802,7 +801,7 @@ dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter )
     return _emitter->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_set_life( dz_emitter_t * _emitter, float _life )
+void dz_emitter_set_life( dz_emitter_t * const _emitter, float _life )
 {
     _emitter->life = _life;
 }
@@ -831,7 +830,7 @@ static const dz_timeline_limits_t emitter_timeline_limits[__DZ_EMITTER_TIMELINE_
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 10.f}, //DZ_EMITTER_SPAWN_SPIN_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * _status, float * const _min, float * const _max, float * const _default, float * const _factor )
+void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor )
 {
     const dz_timeline_limits_t * limit = emitter_timeline_limits + _timeline;
 
@@ -984,7 +983,7 @@ void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effe
     DZ_FREE( _service, _effect );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_ud( dz_effect_t * _effect, dz_userdata_t _ud )
+void dz_effect_set_ud( dz_effect_t * const _effect, dz_userdata_t _ud )
 {
     _effect->ud = _ud;
 }
@@ -994,7 +993,7 @@ dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect )
     return _effect->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_material( dz_effect_t * _effect, const dz_material_t * _material )
+void dz_effect_set_material( dz_effect_t * const _effect, const dz_material_t * _material )
 {
     _effect->material = _material;
 }
@@ -1004,7 +1003,7 @@ const dz_material_t * dz_effect_get_material( const dz_effect_t * _effect )
     return _effect->material;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_shape( dz_effect_t * _effect, const dz_shape_t * _shape )
+void dz_effect_set_shape( dz_effect_t * const _effect, const dz_shape_t * _shape )
 {
     _effect->shape = _shape;
 }
@@ -1014,7 +1013,7 @@ const dz_shape_t * dz_effect_get_shape( const dz_effect_t * _effect )
     return _effect->shape;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_emitter( dz_effect_t * _effect, const dz_emitter_t * _emitter )
+void dz_effect_set_emitter( dz_effect_t * const _effect, const dz_emitter_t * _emitter )
 {
     _effect->emitter = _emitter;
 }
@@ -1024,7 +1023,7 @@ const dz_emitter_t * dz_effect_get_emitter( const dz_effect_t * _effect )
     return _effect->emitter;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_affector( dz_effect_t * _effect, const dz_affector_t * _affector )
+void dz_effect_set_affector( dz_effect_t * const _effect, const dz_affector_t * _affector )
 {
     _effect->affector = _affector;
 }
@@ -1034,7 +1033,7 @@ const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect )
     return _effect->affector;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_life( dz_effect_t * _effect, float _life )
+void dz_effect_set_life( dz_effect_t * const _effect, float _life )
 {
     _effect->life = _life;
 }
@@ -1068,7 +1067,7 @@ dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** 
     instance->partices = DZ_NULLPTR;
     instance->partices_count = 0;
     instance->partices_capacity = 0;
-    instance->particle_limit = 0xffff;
+    instance->particle_limit = 10922;
 
     instance->loop = DZ_FALSE;
     instance->emit_pause = DZ_FALSE;
@@ -1100,27 +1099,36 @@ void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _
     DZ_FREE( _service, _instance );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_seed( dz_instance_t * _effect, uint32_t _seed )
+void dz_instance_set_seed( dz_instance_t * const _instance, uint32_t _seed )
 {
-    _effect->init_seed = _seed;
+    _instance->init_seed = _seed;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_instance_get_seed( const dz_instance_t * _effect )
+uint32_t dz_instance_get_seed( const dz_instance_t * _instance )
 {
-    return _effect->init_seed;
+    return _instance->init_seed;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_particle_limit( dz_instance_t * _effect, uint16_t _limit )
+dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, uint16_t _limit )
 {
-    _effect->particle_limit = _limit;
+#ifdef DZ_DEBUG
+    if( _limit > 10922 )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
+    _instance->particle_limit = _limit;
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-uint16_t dz_instance_get_particle_limit( const dz_instance_t * _effect )
+uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance )
 {
-    return _effect->particle_limit;
+    return _instance->particle_limit;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_ud( dz_instance_t * _instance, dz_userdata_t _ud )
+void dz_instance_set_ud( dz_instance_t * const _instance, dz_userdata_t _ud )
 {
     _instance->ud = _ud;
 }
@@ -1130,7 +1138,7 @@ dz_userdata_t dz_instance_get_ud( const dz_instance_t * _instance )
     return _instance->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_effect( dz_instance_t * _instance, const dz_effect_t * _effect )
+void dz_instance_set_effect( dz_instance_t * const _instance, const dz_effect_t * _effect )
 {
     _instance->effect = _effect;
 }
@@ -1140,25 +1148,34 @@ const dz_effect_t * dz_instance_get_effect( const dz_instance_t * _instance )
     return _instance->effect;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_loop( dz_instance_t * _effect, dz_bool_t _loop )
+void dz_instance_set_loop( dz_instance_t * const _instance, dz_bool_t _loop )
 {
-    _effect->loop = _loop;
+    _instance->loop = _loop;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_bool_t dz_instance_get_loop( const dz_instance_t * _effect )
+dz_bool_t dz_instance_get_loop( const dz_instance_t * _instance )
 {
-    return _effect->loop;
+    return _instance->loop;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_time( dz_instance_t * _effect, float _time )
+dz_result_t dz_instance_set_time( dz_instance_t * const _instance, float _time )
 {
-    _effect->time = _time;
-    _effect->emitter_time = _time;
+#ifdef DZ_DEBUG
+    if( _time < 0.f )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
+    _instance->time = _time;
+    _instance->emitter_time = _time;
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_instance_get_time( const dz_instance_t * _effect )
+float dz_instance_get_time( const dz_instance_t * _instance )
 {
-    return _effect->time;
+    return _instance->time;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_affector_value_rands( dz_particle_t * _p, const dz_effect_t * _effect, dz_affector_timeline_type_e _type )
@@ -1653,13 +1670,6 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
 {
-#ifdef DZ_DEBUG
-    if( _instance->partices_count >= 16383 )
-    {
-        return DZ_FAILURE;
-    }
-#endif
-
     if( _instance->partices_count >= _instance->partices_capacity )
     {
         if( _instance->partices_capacity == 0 )
@@ -1697,7 +1707,7 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_position( dz_instance_t * _instance, float _x, float _y )
+void dz_instance_set_position( dz_instance_t * const _instance, float _x, float _y )
 {
     _instance->x = _x;
     _instance->y = _y;
@@ -1709,7 +1719,7 @@ void dz_instance_get_position( const dz_instance_t * _instance, float * const _x
     *_y = _instance->y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_color( dz_instance_t * _instance, float _r, float _g, float _b, float _a )
+void dz_instance_set_color( dz_instance_t * const _instance, float _r, float _g, float _b, float _a )
 {
     _instance->r = _r;
     _instance->g = _g;
@@ -1725,7 +1735,7 @@ void dz_instance_get_color( const dz_instance_t * _instance, float * const _r, f
     *_a = _instance->a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_rotate( dz_instance_t * _instance, float _angle )
+void dz_instance_set_rotate( dz_instance_t * const _instance, float _angle )
 {
     _instance->angle = _angle;
 }
@@ -1735,7 +1745,7 @@ float dz_instance_get_rotate( const dz_instance_t * _instance )
     return _instance->angle;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_reset( dz_instance_t * _instance )
+void dz_instance_reset( dz_instance_t * const _instance )
 {
     _instance->seed = _instance->init_seed;
 
@@ -1745,12 +1755,12 @@ void dz_instance_reset( dz_instance_t * _instance )
     _instance->partices_count = 0;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_emit_pause( dz_instance_t * _instance )
+void dz_instance_emit_pause( dz_instance_t * const _instance )
 {
     _instance->emit_pause = DZ_TRUE;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_emit_resume( dz_instance_t * _instance )
+void dz_instance_emit_resume( dz_instance_t * const _instance )
 {
     _instance->emit_pause = DZ_FALSE;
 }
@@ -1773,7 +1783,7 @@ static dz_particle_t * __find_first_dead_particle( dz_particle_t * _p, const dz_
     return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _instance, float _time )
+dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * const _instance, float _time )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -1886,7 +1896,7 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * _
 
             const float ptime = _instance->time - spawn_time;
 
-            if( life > ptime && _instance->partices_count < _instance->particle_limit )
+            if( life > ptime && _instance->partices_count <= _instance->particle_limit )
             {
                 if( __emitter_spawn_particle( _service, _instance, life, spawn_time ) == DZ_FAILURE )
                 {
@@ -2052,13 +2062,13 @@ static void __particle_compute_index( uint16_t _iterator, dz_instance_mesh_t * _
     index_buffer[5] = vertex_offset + 2;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_compute_bounds( const dz_instance_t * _instance, uint16_t * _vertex_count, uint16_t * _index_count )
+void dz_instance_compute_bounds( const dz_instance_t * _instance, uint16_t * const _vertex_count, uint16_t * const _index_count )
 {
     *_vertex_count = _instance->partices_count * 4;
     *_index_count = _instance->partices_count * 6;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * _mesh, dz_instance_mesh_chunk_t * _chunks, uint32_t _capacity, uint32_t * _count )
+void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * const _mesh, dz_instance_mesh_chunk_t * const _chunks, uint32_t _capacity, uint32_t * const _count )
 {
     DZ_UNUSED( _capacity );
 

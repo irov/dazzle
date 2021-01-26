@@ -48,41 +48,41 @@ public:
     ~editor();
 
 protected:
-    int init();
+    dz_result_t init();
     void finalize();
 
-    int update();
-    int render();
+    dz_result_t update( double _time );
+    dz_result_t render();
 
 public:
-    int run( int argc, char ** argv );
+    dz_result_t run( int argc, char ** argv );
 
 public:
     const ImVec2 & getDzWindowPos() const;
     const ImVec2 & getDzWindowSize() const;
 
 protected:
-    int resetEffect();
+    dz_result_t resetEffect();
 
-    int saveEffect();
-    int loadEffect();
+    dz_result_t saveEffect();
+    dz_result_t loadEffect();
 
-    int exportEffect();
+    dz_result_t exportEffect();
 
-    int readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * _pointsData, size_t _index );
+    dz_result_t readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * _pointsData, size_t _index );
 
-    int resetEffectData();
+    dz_result_t resetEffectData();
 
-    int showMenuBar();
+    dz_result_t showMenuBar();
 
-    int showEffectData();
-    int showShapeData();
-    int showAffectorData();
-    int showEmitterData();
-    int showMaterialData();
+    dz_result_t showEffectData();
+    dz_result_t showShapeData();
+    dz_result_t showAffectorData();
+    dz_result_t showEmitterData();
+    dz_result_t showMaterialData();
 
-    int showContentPane();
-    int showContentPaneControls();
+    dz_result_t showContentPane();
+    dz_result_t showContentPaneControls();
 
 public:
     void showDazzleCanvas();

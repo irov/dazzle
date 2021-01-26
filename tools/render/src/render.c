@@ -9,6 +9,55 @@
 #include "glad/glad.h"
 
 //////////////////////////////////////////////////////////////////////////
+static const char * __gl_get_error_string( GLenum _err )
+{
+    switch( _err )
+    {
+    case GL_INVALID_ENUM:
+        return "GL_INVALID_ENUM";
+    case GL_INVALID_VALUE:
+        return "GL_INVALID_VALUE";
+    case GL_INVALID_OPERATION:
+        return "GL_INVALID_OPERATION";
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        return "GL_INVALID_FRAMEBUFFER_OPERATION";
+    case GL_OUT_OF_MEMORY:
+        return "GL_OUT_OF_MEMORY";
+#if defined(MENGINE_PLATFORM_WINDOWS)
+    case GL_STACK_UNDERFLOW:
+        return "GL_STACK_UNDERFLOW";
+    case GL_STACK_OVERFLOW:
+        return "GL_STACK_OVERFLOW";
+#endif
+    default:
+        {
+        }
+    }
+
+    return "GL_UNKNOWN";
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_render_error_check( const char * _file, uint32_t _line )
+{
+    GLenum err = glGetError();
+
+    if( err == GL_NO_ERROR )
+    {
+        return DZ_FAILURE;
+    }
+
+    const char * err_str = __gl_get_error_string( err );
+
+    printf( "%s:[%d] error %s:%d\n"
+        , _file
+        , _line
+        , err_str
+        , err
+    );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
 static void __make_ortho( float _l, float _r, float _t, float _b, float _n, float _f, float _m[16] )
 {
     _m[0] = 2.f / (_r - _l);
@@ -25,16 +74,16 @@ static void __make_ortho( float _l, float _r, float _t, float _b, float _n, floa
 static GLuint __make_program( const char * _vertexShaderSource, const char * _fragmentShaderSource )
 {
     GLint vertexShaderColor = glCreateShader( GL_VERTEX_SHADER );
-    glShaderSource( vertexShaderColor, 1, &_vertexShaderSource, NULL );
-    glCompileShader( vertexShaderColor );
+    GLCALL( glShaderSource, (vertexShaderColor, 1, &_vertexShaderSource, NULL) );
+    GLCALL( glCompileShader, (vertexShaderColor) );
 
     GLint vertexShader_success;
-    glGetShaderiv( vertexShaderColor, GL_COMPILE_STATUS, &vertexShader_success );
+    GLCALL( glGetShaderiv, (vertexShaderColor, GL_COMPILE_STATUS, &vertexShader_success) );
 
     if( vertexShader_success == 0 )
     {
         char infoLog[512];
-        glGetShaderInfoLog( vertexShaderColor, 512, NULL, infoLog );
+        GLCALL( glGetShaderInfoLog, (vertexShaderColor, 512, NULL, infoLog) );
 
         printf( "error: %s\n"
             , infoLog
@@ -44,15 +93,15 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
     }
 
     GLuint fragmentShaderColor = glCreateShader( GL_FRAGMENT_SHADER );
-    glShaderSource( fragmentShaderColor, 1, &_fragmentShaderSource, NULL );
-    glCompileShader( fragmentShaderColor );
+    GLCALL( glShaderSource, (fragmentShaderColor, 1, &_fragmentShaderSource, NULL) );
+    GLCALL( glCompileShader, (fragmentShaderColor) );
 
     GLint fragmentShader_success;
-    glGetShaderiv( fragmentShaderColor, GL_COMPILE_STATUS, &fragmentShader_success );
+    GLCALL( glGetShaderiv, (fragmentShaderColor, GL_COMPILE_STATUS, &fragmentShader_success) );
     if( fragmentShader_success == 0 )
     {
         char infoLog[512];
-        glGetShaderInfoLog( fragmentShaderColor, 512, NULL, infoLog );
+        GLCALL( glGetShaderInfoLog, (fragmentShaderColor, 512, NULL, infoLog) );
 
         printf( "error: %s\n"
             , infoLog
@@ -61,17 +110,19 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
         return EXIT_FAILURE;
     }
 
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader( shaderProgram, vertexShaderColor );
-    glAttachShader( shaderProgram, fragmentShaderColor );
-    glLinkProgram( shaderProgram );
+    GLuint shaderProgram;
+    GLCALLR( shaderProgram, glCreateProgram, () );
+    GLCALL( glAttachShader, (shaderProgram, vertexShaderColor) );
+    GLCALL( glAttachShader, (shaderProgram, fragmentShaderColor) );
+    GLCALL( glLinkProgram, (shaderProgram) );
 
     GLint shaderProgram_success;
-    glGetProgramiv( shaderProgram, GL_LINK_STATUS, &shaderProgram_success );
+    GLCALL( glGetProgramiv, (shaderProgram, GL_LINK_STATUS, &shaderProgram_success) );
+
     if( shaderProgram_success == 0 )
     {
         char infoLog[512];
-        glGetProgramInfoLog( shaderProgram, 512, NULL, infoLog );
+        GLCALL( glGetProgramInfoLog, (shaderProgram, 512, NULL, infoLog) );
 
         printf( "error: %s\n"
             , infoLog
@@ -80,17 +131,17 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
         return EXIT_FAILURE;
     }
 
-    glDeleteShader( vertexShaderColor );
-    glDeleteShader( fragmentShaderColor );
+    GLCALL( glDeleteShader, (vertexShaderColor) );
+    GLCALL( glDeleteShader, (fragmentShaderColor) );
 
     return shaderProgram;
 }
 //////////////////////////////////////////////////////////////////////////
-GLuint dz_render_make_texture( const char * _path, int * _out_width, int * _out_height )
+GLuint dz_render_make_texture( const char * _path, int32_t * _out_width, int32_t * _out_height )
 {
-    int width;
-    int height;
-    int comp;
+    int32_t width;
+    int32_t height;
+    int32_t comp;
 
     uint8_t * data = stbi_load( _path, &width, &height, &comp, STBI_default );
 
@@ -128,16 +179,16 @@ GLuint dz_render_make_texture( const char * _path, int * _out_width, int * _out_
     }
 
     GLuint id;
-    glGenTextures( 1, &id );
-    glBindTexture( GL_TEXTURE_2D, id );
-    glTexImage2D( GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data );
+    GLCALL( glGenTextures, (1, &id) );
+    GLCALL( glBindTexture, (GL_TEXTURE_2D, id) );
+    GLCALL( glTexImage2D, (GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data) );
 
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) );
 
-    glBindTexture( GL_TEXTURE_2D, 0 );
+    GLCALL( glBindTexture, (GL_TEXTURE_2D, 0) );
 
     stbi_image_free( data );
 
@@ -147,11 +198,11 @@ GLuint dz_render_make_texture( const char * _path, int * _out_width, int * _out_
     return id;
 }
 //////////////////////////////////////////////////////////////////////////
-GLuint dz_render_make_texture_from_memory( const void * _buffer, size_t _size, int * _out_width, int * _out_height )
+GLuint dz_render_make_texture_from_memory( const void * _buffer, size_t _size, int32_t * _out_width, int32_t * _out_height )
 {
-    int width;
-    int height;
-    int comp;
+    int32_t width;
+    int32_t height;
+    int32_t comp;
 
     uint8_t * data = stbi_load_from_memory( _buffer, _size, &width, &height, &comp, STBI_default );
 
@@ -189,16 +240,16 @@ GLuint dz_render_make_texture_from_memory( const void * _buffer, size_t _size, i
     }
 
     GLuint id;
-    glGenTextures( 1, &id );
-    glBindTexture( GL_TEXTURE_2D, id );
-    glTexImage2D( GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data );
+    GLCALL( glGenTextures, (1, &id) );
+    GLCALL( glBindTexture, (GL_TEXTURE_2D, id) );
+    GLCALL( glTexImage2D, (GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data) );
 
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) );
 
-    glBindTexture( GL_TEXTURE_2D, 0 );
+    GLCALL( glBindTexture, (GL_TEXTURE_2D, 0) );
 
     stbi_image_free( data );
 
@@ -210,7 +261,7 @@ GLuint dz_render_make_texture_from_memory( const void * _buffer, size_t _size, i
 //////////////////////////////////////////////////////////////////////////
 void dz_render_delete_texture( GLuint _id )
 {
-    glDeleteTextures( 1, &_id );
+    GLCALL( glDeleteTextures, (1, &_id) );
 }
 //////////////////////////////////////////////////////////////////////////
 static const char * vertexShaderColorSource = "#version 330 core\n"
@@ -263,75 +314,80 @@ static const char * fragmentShaderTextureSource = "#version 330 core\n"
 "   oColor = texColor * v2fColor;\n"
 "}\n\0";
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_initialize( dz_render_desc_t * _desc, int32_t _max_vertex_count, int32_t _max_index_count )
+dz_result_t dz_render_initialize( dz_render_desc_t * _desc, uint16_t _max_vertex_count, uint16_t _max_index_count )
 {
     GLuint shaderColorProgram = __make_program( vertexShaderColorSource, fragmentShaderColorSource );
     GLuint shaderTextureProgram = __make_program( vertexShaderTextureSource, fragmentShaderTextureSource );
 
-    glUseProgram( shaderColorProgram );
+    GLCALL( glUseProgram, (shaderColorProgram) );
 
-    GLint uOffsetColorLocation = glGetUniformLocation( shaderColorProgram, "uOffset" );
+    GLint uOffsetColorLocation;
+    GLCALLR( uOffsetColorLocation, glGetUniformLocation, (shaderColorProgram, "uOffset") );
 
     if( uOffsetColorLocation >= 0 )
     {
-        glUniform2f( uOffsetColorLocation, 0.f, 0.f );
+        GLCALL( glUniform2f, (uOffsetColorLocation, 0.f, 0.f) );
     }
 
-    GLint uScaleColorLocation = glGetUniformLocation( shaderColorProgram, "uScale" );
+    GLint uScaleColorLocation;
+    GLCALLR( uScaleColorLocation, glGetUniformLocation, (shaderColorProgram, "uScale") );
 
     if( uScaleColorLocation >= 0 )
     {
-        glUniform1f( uScaleColorLocation, 1.f );
+        GLCALL( glUniform1f, (uScaleColorLocation, 1.f) );
     }
 
-    glUseProgram( shaderTextureProgram );
+    GLCALL( glUseProgram, (shaderTextureProgram) );
 
-    GLint texLocRGB = glGetUniformLocation( shaderTextureProgram, "uTextureRGB" );
+    GLint texLocRGB;
+    GLCALLR( texLocRGB, glGetUniformLocation, (shaderTextureProgram, "uTextureRGB") );
 
     if( texLocRGB >= 0 )
     {
-        glUniform1i( texLocRGB, 0 );
+        GLCALL( glUniform1i, (texLocRGB, 0) );
     }
 
-    GLint uOffsetTextureLocation = glGetUniformLocation( shaderTextureProgram, "uOffset" );
+    GLint uOffsetTextureLocation;
+    GLCALLR( uOffsetTextureLocation, glGetUniformLocation, (shaderTextureProgram, "uOffset") );
 
     if( uOffsetTextureLocation >= 0 )
     {
-        glUniform2f( uOffsetTextureLocation, 0.f, 0.f );
+        GLCALL( glUniform2f, (uOffsetTextureLocation, 0.f, 0.f) );
     }
 
-    GLint uScaleTextureLocation = glGetUniformLocation( shaderTextureProgram, "uScale" );
+    GLint uScaleTextureLocation;
+    GLCALLR( uScaleTextureLocation, glGetUniformLocation, (shaderTextureProgram, "uScale") );
 
     if( uScaleTextureLocation >= 0 )
     {
-        glUniform1f( uScaleTextureLocation, 1.f );
+        GLCALL( glUniform1f, (uScaleTextureLocation, 1.f) );
     }
 
     GLuint VAO;
-    glGenVertexArrays( 1, &VAO );
-    glBindVertexArray( VAO );
+    GLCALL( glGenVertexArrays, (1, &VAO) );
+    GLCALL( glBindVertexArray, (VAO) );
 
     GLuint VBO;
-    glGenBuffers( 1, &VBO );
+    GLCALL( glGenBuffers, (1, &VBO) );
 
-    glBindBuffer( GL_ARRAY_BUFFER, VBO );
+    GLCALL( glBindBuffer, (GL_ARRAY_BUFFER, VBO) );
 
-    glEnableVertexAttribArray( 0 );
-    glEnableVertexAttribArray( 1 );
-    glEnableVertexAttribArray( 2 );
+    GLCALL( glEnableVertexAttribArray, (0) );
+    GLCALL( glEnableVertexAttribArray, (1) );
+    GLCALL( glEnableVertexAttribArray, (2) );
 
-    glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x ) );
-    glVertexAttribPointer( 1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c ) );
-    glVertexAttribPointer( 2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u ) );
+    GLCALL( glVertexAttribPointer, (0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x )) );
+    GLCALL( glVertexAttribPointer, (1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c )) );
+    GLCALL( glVertexAttribPointer, (2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u )) );
 
     GLuint IBO;
-    glGenBuffers( 1, &IBO );
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, IBO );
+    GLCALL( glGenBuffers, (1, &IBO) );
+    GLCALL( glBindBuffer, (GL_ELEMENT_ARRAY_BUFFER, IBO) );
 
-    glBindBuffer( GL_ARRAY_BUFFER, VBO );
+    GLCALL( glBindBuffer, (GL_ARRAY_BUFFER, VBO) );
 
-    glBufferData( GL_ARRAY_BUFFER, _max_vertex_count * sizeof( gl_vertex_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
-    glBufferData( GL_ELEMENT_ARRAY_BUFFER, _max_index_count * sizeof( gl_index_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW );
+    GLCALL( glBufferData, (GL_ARRAY_BUFFER, _max_vertex_count * sizeof( gl_vertex_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW) );
+    GLCALL( glBufferData, (GL_ELEMENT_ARRAY_BUFFER, _max_index_count * sizeof( gl_index_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW) );
 
     _desc->VAO = VAO;
     _desc->VBO = VBO;
@@ -345,12 +401,12 @@ dz_result_t dz_render_initialize( dz_render_desc_t * _desc, int32_t _max_vertex_
 //////////////////////////////////////////////////////////////////////////
 void dz_render_finalize( dz_render_desc_t * _desc )
 {
-    glDeleteVertexArrays( 1, &_desc->VAO );
-    glDeleteBuffers( 1, &_desc->VBO );
-    glDeleteBuffers( 1, &_desc->IBO );
+    GLCALL( glDeleteVertexArrays, (1, &_desc->VAO) );
+    GLCALL( glDeleteBuffers, (1, &_desc->VBO) );
+    GLCALL( glDeleteBuffers, (1, &_desc->IBO) );
 
-    glDeleteProgram( _desc->shaderColorProgram );
-    glDeleteProgram( _desc->shaderTextureProgram );
+    GLCALL( glDeleteProgram, (_desc->shaderColorProgram) );
+    GLCALL( glDeleteProgram, (_desc->shaderTextureProgram) );
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _right, float _top, float _bottom )
@@ -363,13 +419,14 @@ void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _rig
 
     GLuint shaderProgram = _desc->shaderCurrentProgram;
 
-    glUseProgram( shaderProgram );
+    GLCALL( glUseProgram, (shaderProgram) );
 
-    GLint wvpLocation = glGetUniformLocation( shaderProgram, "uWVP" );
+    GLint wvpLocation;
+    GLCALLR( wvpLocation, glGetUniformLocation, (shaderProgram, "uWVP") );
 
     if( wvpLocation >= 0 )
     {
-        glUniformMatrix4fv( wvpLocation, 1, GL_FALSE, projOrtho );
+        GLCALL( glUniformMatrix4fv, (wvpLocation, 1, GL_FALSE, projOrtho) );
     }
 }
 //////////////////////////////////////////////////////////////////////////
@@ -385,42 +442,45 @@ void dz_render_use_texture_program( dz_render_desc_t * _desc )
 //////////////////////////////////////////////////////////////////////////
 void dz_render_set_camera( const dz_render_desc_t * _desc, float _offsetX, float _offsetY, float _scale )
 {
-    glUseProgram( _desc->shaderCurrentProgram );
+    GLCALL( glUseProgram, (_desc->shaderCurrentProgram) );
 
-    GLint uOffsetColorLocation = glGetUniformLocation( _desc->shaderCurrentProgram, "uOffset" );
+    GLint uOffsetColorLocation;
+    GLCALLR( uOffsetColorLocation, glGetUniformLocation, (_desc->shaderCurrentProgram, "uOffset") );
 
     if( uOffsetColorLocation >= 0 )
     {
-        glUniform2f( uOffsetColorLocation, _offsetX, _offsetY );
+        GLCALL( glUniform2f, (uOffsetColorLocation, _offsetX, _offsetY) );
     }
 
-    GLint uScaleColorLocation = glGetUniformLocation( _desc->shaderCurrentProgram, "uScale" );
+    GLint uScaleColorLocation;
+    GLCALLR( uScaleColorLocation, glGetUniformLocation, (_desc->shaderCurrentProgram, "uScale") );
 
     if( uScaleColorLocation >= 0 )
     {
-        glUniform1f( uScaleColorLocation, _scale );
+        GLCALL( glUniform1f, (uScaleColorLocation, _scale) );
     }
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instance )
 {
-    glPushClientAttrib( GL_CLIENT_ALL_ATTRIB_BITS );
+    GLCALL( glUseProgram, (_desc->shaderCurrentProgram) );
 
-    glUseProgram( _desc->shaderCurrentProgram );
+    GLCALL( glBindBuffer, (GL_ARRAY_BUFFER, _desc->VBO) );
+    GLCALL( glBindBuffer, (GL_ELEMENT_ARRAY_BUFFER, _desc->IBO) );
 
-    glBindBuffer( GL_ARRAY_BUFFER, _desc->VBO );
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _desc->IBO );
+    GLCALL( glEnableVertexAttribArray, (0) );
+    GLCALL( glEnableVertexAttribArray, (1) );
+    GLCALL( glEnableVertexAttribArray, (2) );
 
-    glEnableVertexAttribArray( 0 );
-    glEnableVertexAttribArray( 1 );
-    glEnableVertexAttribArray( 2 );
+    GLCALL( glVertexAttribPointer, (0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x )) );
+    GLCALL( glVertexAttribPointer, (1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c )) );
+    GLCALL( glVertexAttribPointer, (2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u )) );
 
-    glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x ) );
-    glVertexAttribPointer( 1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c ) );
-    glVertexAttribPointer( 2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u ) );
+    void * vertices;
+    GLCALLR( vertices, glMapBuffer, (GL_ARRAY_BUFFER, GL_WRITE_ONLY) );
 
-    void * vertices = glMapBuffer( GL_ARRAY_BUFFER, GL_WRITE_ONLY );
-    void * indices = glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY );
+    void * indices;
+    GLCALLR( indices, glMapBuffer, (GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY) );
 
     dz_instance_mesh_t mesh;
     mesh.position_buffer = vertices;
@@ -448,8 +508,8 @@ dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instanc
 
     dz_instance_compute_mesh( _instance, &mesh, chunks, 16, &chunk_count );
 
-    glUnmapBuffer( GL_ARRAY_BUFFER );
-    glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+    GLCALL( glUnmapBuffer, (GL_ARRAY_BUFFER) );
+    GLCALL( glUnmapBuffer, (GL_ELEMENT_ARRAY_BUFFER) );
 
     for( uint32_t index = 0; index != chunk_count; ++index )
     {
@@ -457,47 +517,45 @@ dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instanc
 
         GLuint textureId = *(GLuint *)chunk->surface;
 
-        glActiveTexture( GL_TEXTURE0 );
-        glBindTexture( GL_TEXTURE_2D, textureId );
+        GLCALL( glActiveTexture, (GL_TEXTURE0) );
+        GLCALL( glBindTexture, (GL_TEXTURE_2D, textureId) );
 
-        glEnable( GL_BLEND );
+        GLCALL( glEnable, (GL_BLEND) );
 
         switch( chunk->blend_type )
         {
         case DZ_BLEND_NORMAL:
             {
-                glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+                GLCALL( glBlendFunc, (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
             }break;
         case DZ_BLEND_ADD:
             {
-                glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+                GLCALL( glBlendFunc, (GL_SRC_ALPHA, GL_ONE) );
             }break;
         case DZ_BLEND_MULTIPLY:
             {
-                glBlendFunc( GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA );
+                GLCALL( glBlendFunc, (GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA) );
             }break;
         case DZ_BLEND_SCREEN:
             {
-                glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+                GLCALL( glBlendFunc, (GL_ONE, GL_ONE_MINUS_SRC_ALPHA) );
             }break;
         case __DZ_BLEND_MAX__:
         default:
             return DZ_FAILURE;
         }
 
-        glDrawElements( GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_SHORT, DZ_NULLPTR );
+        GLCALL( glDrawElements, (GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_SHORT, DZ_NULLPTR) );
     }
 
-    glBindBuffer( GL_ARRAY_BUFFER, 0 );
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+    GLCALL( glBindBuffer, (GL_ARRAY_BUFFER, 0) );
+    GLCALL( glBindBuffer, (GL_ELEMENT_ARRAY_BUFFER, 0) );
 
-    glDisableVertexAttribArray( 0 );
-    glDisableVertexAttribArray( 1 );
-    glDisableVertexAttribArray( 2 );
+    GLCALL( glDisableVertexAttribArray, (0) );
+    GLCALL( glDisableVertexAttribArray, (1) );
+    GLCALL( glDisableVertexAttribArray, (2) );
 
-    glUseProgram( 0 );
-
-    glPopClientAttrib();
+    GLCALL( glUseProgram, (0) );
 
     return DZ_SUCCESSFUL;
 }

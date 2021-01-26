@@ -36,8 +36,8 @@ typedef enum er_window_type_e
 //static constexpr float ER_WINDOW_WIDTH = 1024.f;  // aspect ratio 3:4
 //static constexpr float ER_WINDOW_HEIGHT = 768.f;
 static constexpr float ER_WINDOW_WIDTH = 1280.f;    // aspect ratio HD 720p
-static constexpr float ER_WINDOW_HEIGHT = 720.f; 
-static constexpr float ER_TIMELINE_PANEL_WIDTH = 330.f;
+static constexpr float ER_WINDOW_HEIGHT = 720.f;
+static constexpr float ER_TIMELINE_PANEL_WIDTH = 430.f;
 static constexpr int32_t ER_CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
 static constexpr ImGuiID ER_CURVE_ID_NONE = 0;
 static constexpr int ER_CURVE_POINT_NONE = -1;
@@ -175,7 +175,7 @@ static void * dz_malloc( dz_size_t _size, dz_userdata_t _ud )
     return p;
 }
 //////////////////////////////////////////////////////////////////////////
-static void * dz_realloc( void * _ptr, dz_size_t _size, dz_userdata_t _ud )
+static void * dz_realloc( void * const _ptr, dz_size_t _size, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
@@ -508,7 +508,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
 {
     // first create new timeline
     dz_timeline_key_t * key0;
-    
+
     if( _points[0].mode == ER_CURVE_POINT_MODE_NORMAL )
     {
         if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -524,7 +524,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
         {
             return DZ_FAILURE;
         }
-        
+
         dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
     }
     else
@@ -596,14 +596,21 @@ float camera_offset_y = 0.f;
 float mouse_pos_x = 0.f;
 float mouse_pos_y = 0.f;
 //////////////////////////////////////////////////////////////////////////
-static void glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int _height )
+static void __glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int _height )
 {
     DZ_UNUSED( _window );
 
-    glViewport( 0, 0, _width, _height );
+    GLCALL( glViewport, (0, 0, _width, _height) );
+
+    void * p = glfwGetWindowUserPointer( _window );
+
+    editor * e = reinterpret_cast<editor *>(p);
+
+    e->m_windowWidth = _width;
+    e->m_windowHeight = _height;
 }
 //////////////////////////////////////////////////////////////////////////
-static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
+static void __glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 {
     DZ_UNUSED( _x );
 
@@ -641,7 +648,7 @@ static void glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
     camera_offset_y += mouse_pos_y_norm / camera_scale;
 }
 //////////////////////////////////////////////////////////////////////////
-static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
+static void __glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
 {
     if( glfwGetKey( _window, GLFW_KEY_SPACE ) == GLFW_PRESS &&
         glfwGetMouseButton( _window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS )
@@ -657,13 +664,13 @@ static void glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y )
     mouse_pos_y = (float)_y;
 }
 //////////////////////////////////////////////////////////////////////////
-static void glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, int _action, int _mods )
+static void __glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, int _action, int _mods )
 {
     DZ_UNUSED( _key );
     DZ_UNUSED( _scancode );
     DZ_UNUSED( _action );
     DZ_UNUSED( _mods );
-    
+
     if( glfwGetKey( _window, GLFW_KEY_ESCAPE ) == GLFW_PRESS )
     {
         camera_scale = 1.f;
@@ -698,7 +705,7 @@ editor::editor()
     , m_atlas( nullptr )
     , m_texture( nullptr )
     , m_material( nullptr )
-    
+
     , m_shape( nullptr )
     , m_emitter( nullptr )
     , m_affector( nullptr )
@@ -717,7 +724,7 @@ editor::~editor()
 {
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::init()
+dz_result_t editor::init()
 {
     // init window
     {
@@ -730,7 +737,7 @@ int editor::init()
         glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
         glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE );
         glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
-        glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
+        glfwWindowHint( GLFW_RESIZABLE, GLFW_TRUE );
 
         m_fwWindow = glfwCreateWindow( (uint32_t)m_windowWidth, (uint32_t)m_windowHeight, ER_TITLE, 0, 0 );
 
@@ -744,10 +751,10 @@ int editor::init()
         }
 
         glfwMakeContextCurrent( m_fwWindow );
-        glfwSetFramebufferSizeCallback( m_fwWindow, &glfw_framebufferSizeCallback );
-        glfwSetScrollCallback( m_fwWindow, &glfw_scrollCallback );
-        glfwSetCursorPosCallback( m_fwWindow, &glfw_cursorPosCallback );
-        glfwSetKeyCallback( m_fwWindow, &glfw_keyCallback );
+        glfwSetFramebufferSizeCallback( m_fwWindow, &__glfw_framebufferSizeCallback );
+        glfwSetScrollCallback( m_fwWindow, &__glfw_scrollCallback );
+        glfwSetCursorPosCallback( m_fwWindow, &__glfw_cursorPosCallback );
+        glfwSetKeyCallback( m_fwWindow, &__glfw_keyCallback );
 
         double cursorPosX;
         double cursorPosY;
@@ -766,8 +773,8 @@ int editor::init()
 
     // init opengl
     {
-        uint32_t max_vertex_count = 8196 * 2;
-        uint32_t max_index_count = 32768;
+        uint16_t max_vertex_count = 65535;
+        uint16_t max_index_count = 65535;
 
         if( dz_render_initialize( &m_openglDesc, max_vertex_count, max_index_count ) == DZ_FAILURE )
         {
@@ -832,7 +839,7 @@ int editor::init()
 
             dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
-            
+
             data.zoom = 1;
 
             data.selectedPoint = ER_CURVE_POINT_NONE;
@@ -962,7 +969,7 @@ int editor::init()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::update()
+dz_result_t editor::update( double _time )
 {
     glfwPollEvents();
 
@@ -981,8 +988,9 @@ int editor::update()
         window_flags |= ImGuiWindowFlags_NoResize;
         window_flags |= ImGuiWindowFlags_MenuBar;
 
-        ImGui::SetNextWindowPos( ImVec2( 0.f, 0.f), ImGuiCond_Always );
+        ImGui::SetNextWindowPos( ImVec2( 0.f, 0.f ), ImGuiCond_Always );
         ImGui::SetNextWindowSize( ImVec2( m_windowWidth, m_windowHeight ), ImGuiCond_Always );
+
         if( ImGui::Begin( "LAYOUT", NULL, window_flags ) )
         {
             // menu bar
@@ -1024,7 +1032,7 @@ int editor::update()
                         {
                             return DZ_FAILURE;
                         }
-                    } 
+                    }
                     break;
                 case ER_WINDOW_TYPE_SHAPE_DATA:
                     {
@@ -1032,7 +1040,7 @@ int editor::update()
                         {
                             return DZ_FAILURE;
                         }
-                    } 
+                    }
                     break;
                 case ER_WINDOW_TYPE_AFFECTOR_DATA:
                     {
@@ -1072,7 +1080,7 @@ int editor::update()
 
                 ImGui::BeginChild( "ITEM_VIEW", ImVec2( 0, 0 ), true );
 
-                if ( this->showContentPane() == DZ_FAILURE )
+                if( this->showContentPane() == DZ_FAILURE )
                 {
                     return DZ_FAILURE;
                 }
@@ -1093,7 +1101,7 @@ int editor::update()
     if( m_pause == false )
     {
         // update and render dazzle
-        dz_instance_update( m_service, m_instance, 0.005f );
+        dz_instance_update( m_service, m_instance, (float)_time );
     }
     else
     {
@@ -1106,12 +1114,12 @@ int editor::update()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::render()
+dz_result_t editor::render()
 {
     // render background
-    glViewport( 0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight );
-    glClearColor( m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w );
-    glClear( GL_COLOR_BUFFER_BIT );
+    GLCALL( glViewport, (0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight) );
+    GLCALL( glClearColor, (m_backgroundColor.x, m_backgroundColor.y, m_backgroundColor.z, m_backgroundColor.w) );
+    GLCALL( glClear, (GL_COLOR_BUFFER_BIT) );
 
     // render imgui
     ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
@@ -1121,7 +1129,7 @@ int editor::render()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::run( int argc, char ** argv )
+dz_result_t editor::run( int argc, char ** argv )
 {
     DZ_UNUSED( argc );
     DZ_UNUSED( argv );
@@ -1131,10 +1139,16 @@ int editor::run( int argc, char ** argv )
         return DZ_FAILURE;
     }
 
+    double lastTime = glfwGetTime();
+
     // update loop
     while( glfwWindowShouldClose( m_fwWindow ) == 0 )
     {
-        if( this->update() == DZ_FAILURE )
+        double time = glfwGetTime();
+        double deltha = time - lastTime;
+        lastTime = time;
+
+        if( this->update( deltha ) == DZ_FAILURE )
         {
             return DZ_FAILURE; // maybe break loop?
         }
@@ -1160,7 +1174,7 @@ const ImVec2 & editor::getDzWindowSize() const
     return m_dzWindowSize;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::resetEffect()
+dz_result_t editor::resetEffect()
 {
     dz_shape_set_type( m_shape, m_shapeType );
 
@@ -1171,7 +1185,7 @@ int editor::resetEffect()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::saveEffect()
+dz_result_t editor::saveEffect()
 {
     nfdchar_t * outPath = NULL;
     nfdresult_t result = NFD_SaveDialog( "dz", nullptr, &outPath );
@@ -1218,7 +1232,7 @@ int editor::saveEffect()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::loadEffect()
+dz_result_t editor::loadEffect()
 {
     nfdchar_t * outPath = NULL;
     nfdresult_t result = NFD_OpenDialog( NULL, NULL, &outPath );
@@ -1238,7 +1252,7 @@ int editor::loadEffect()
 
         std::vector<uint8_t> data_buffer;
         openZipFile( uf, "data.json", &data_buffer );
-                
+
         jpp::object data;
         this->loadJSON_( data_buffer.data(), data_buffer.size(), &data );
 
@@ -1268,7 +1282,7 @@ int editor::loadEffect()
 
         m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
 
-        if( dz_atlas_get_texture( m_atlas, 0, const_cast<const dz_texture_t * *>(&m_texture) ) == DZ_FAILURE )
+        if( dz_atlas_get_texture( m_atlas, 0, const_cast<const dz_texture_t **>(&m_texture) ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
@@ -1310,7 +1324,7 @@ int editor::loadEffect()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::exportEffect()
+dz_result_t editor::exportEffect()
 {
     nfdchar_t * outPath = NULL;
     nfdresult_t result = NFD_SaveDialog( NULL, NULL, &outPath );
@@ -1351,7 +1365,7 @@ int editor::exportEffect()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showMenuBar()
+dz_result_t editor::showMenuBar()
 {
     if( ImGui::BeginMenuBar() )
     {
@@ -1364,6 +1378,7 @@ int editor::showMenuBar()
                     return DZ_FAILURE;
                 }
             }
+
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_SAVE ) ) // todo
             {
                 if( this->saveEffect() == DZ_FAILURE )
@@ -1371,6 +1386,7 @@ int editor::showMenuBar()
                     return DZ_FAILURE;
                 }
             }
+
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_EXPORT ) ) // todo
             {
                 if( this->exportEffect() == DZ_FAILURE )
@@ -1378,16 +1394,20 @@ int editor::showMenuBar()
                     return DZ_FAILURE;
                 }
             }
+
             ImGui::EndMenu();
         }
+
         if( ImGui::BeginMenu( ER_MENU_EDIT ) )
         {
             if( ImGui::MenuItem( ER_MENU_EDIT_ITEM_UNDO, NULL, false, false ) ) // todo
             {
             }
+
             if( ImGui::MenuItem( ER_MENU_EDIT_ITEM_REDO, NULL, false, false ) ) // todo
             {
             }
+
             ImGui::Separator();
 
             ImGui::MenuItem( ER_MENU_EDIT_ITEM_SHOW_DEBUG_INFO, "~", &m_showDebugInfo );
@@ -1396,6 +1416,7 @@ int editor::showMenuBar()
 
             ImGui::EndMenu();
         }
+
         ImGui::EndMenuBar();
     }
 
@@ -1404,7 +1425,7 @@ int editor::showMenuBar()
 //////////////////////////////////////////////////////////////////////////
 static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, float _min, float _range )
 {
-    int end = 0;
+    int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
     {
         _pointsCurve[end].x = _pointsData[end].x;
@@ -1417,7 +1438,7 @@ static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_
 //////////////////////////////////////////////////////////////////////////
 static void __pointsDataToCurveInv( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, float _min, float _range )
 {
-    int end = 0;
+    int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
     {
         _pointsCurve[end].x = _pointsData[end].x;
@@ -1430,7 +1451,7 @@ static void __pointsDataToCurveInv( er_curve_point_t * _pointsData, er_curve_poi
 //////////////////////////////////////////////////////////////////////////
 static void __pointsCurveToData( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, float _min, float _range )
 {
-    int end = 0;
+    int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
     {
         _pointsData[end].x = _pointsCurve[end].x;
@@ -1443,7 +1464,7 @@ static void __pointsCurveToData( er_curve_point_t * _pointsCurve, er_curve_point
 //////////////////////////////////////////////////////////////////////////
 static void __pointsCurveToDataInv( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, float _min, float _range )
 {
-    int end = 0;
+    int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
     {
         _pointsData[end].x = _pointsCurve[end].x;
@@ -1586,7 +1607,7 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
         }
 
         float up_limit = *_zoom * (*_factor);
-        while( max_value > up_limit)
+        while( max_value > up_limit )
         {
             (*_zoom)++;
             up_limit = *_zoom * (*_factor);
@@ -2134,7 +2155,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     window->DrawList->AddLine( a, b2, lineColorIdle );
                 }
             }
-            else if (_points[i - 1].mode == ER_CURVE_POINT_MODE_RANDOM )
+            else if( _points[i - 1].mode == ER_CURVE_POINT_MODE_RANDOM )
             {
                 if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
                 {
@@ -2262,7 +2283,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
         sprintf( buf, "%.2f", _x_max );
         ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 1.f, 1.f ) );
-    
+
         // debug text
         //sprintf( buf, "my_id=%d\nactive_id=%d\nactive=%d\nselected=%d\nis_moved=%s\nis_ctrl=%s\nmax=%d"
         //    , id
@@ -2324,7 +2345,7 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float
                 {
                     float normalValue = _pointsData[_selectedPoint].y;
                     float randMinValue = normalValue - 0.25f * _factor;
-                    
+
                     if( randMinValue < _min )
                     {
                         randMinValue = _min;
@@ -2352,7 +2373,7 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float
     return modified;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * _pointsData, size_t _index )
+dz_result_t editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * _pointsData, size_t _index )
 {
     if( _index + 1 >= ER_CURVE_MAX_POINTS )
     {
@@ -2413,7 +2434,7 @@ int editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::resetEffectData()
+dz_result_t editor::resetEffectData()
 {
     //float life = dz_effect_get_life( m_effect );
 
@@ -2550,7 +2571,7 @@ int editor::resetEffectData()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showEffectData()
+dz_result_t editor::showEffectData()
 {
     ImGui::Spacing();
 
@@ -2571,7 +2592,7 @@ int editor::showEffectData()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showShapeData()
+dz_result_t editor::showShapeData()
 {
     static int selected_type = m_shapeType;
 
@@ -2595,7 +2616,7 @@ int editor::showShapeData()
     float width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
-    static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = { false };
+    static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = {false};
 
     ImGui::Separator();
 
@@ -2687,7 +2708,7 @@ int editor::showShapeData()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showAffectorData()
+dz_result_t editor::showAffectorData()
 {
     // timeline
     ImGui::Spacing();
@@ -2696,7 +2717,7 @@ int editor::showAffectorData()
     float width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
-    static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = { false };
+    static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = {false};
 
     ImGui::Separator();
 
@@ -2761,8 +2782,8 @@ int editor::showAffectorData()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showEmitterData()
-{   
+dz_result_t editor::showEmitterData()
+{
     // timeline
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_EMITTER_TITLE );
@@ -2770,12 +2791,12 @@ int editor::showEmitterData()
     float width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
-    static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = { false };
+    static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = {false};
 
     ImGui::Separator();
 
     for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
-    {        
+    {
         timeline_emitter_t & data = m_timelineEmitterData[index];
 
         ImGui::PushID( index );
@@ -2859,7 +2880,7 @@ int editor::showEmitterData()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showMaterialData()
+dz_result_t editor::showMaterialData()
 {
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_MATERIAL_TITLE );
@@ -2878,7 +2899,7 @@ int editor::showMaterialData()
     ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL );
     ImGui::SameLine();
     ImGui::Text( "%d x %d", m_textureWidth, m_textureHeight );
-    
+
     ImGui::SameLine();
 
     if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_BROWSE ) == true )
@@ -2926,7 +2947,7 @@ int editor::showMaterialData()
 static void __draw_callback( const ImDrawList * parent_list, const ImDrawCmd * cmd )
 {
     DZ_UNUSED( parent_list );
- 
+
     editor * e = reinterpret_cast<editor *>(cmd->UserCallbackData);
 
     e->showDazzleCanvas();
@@ -2947,13 +2968,13 @@ void editor::showDazzleCanvas()
     }
 
     GLint oldViewport[4];
-    glGetIntegerv( GL_VIEWPORT, oldViewport );
+    GLCALL( glGetIntegerv, (GL_VIEWPORT, oldViewport) );
 
-    glViewport( (GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y );
+    GLCALL( glViewport, ((GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y) );
 
     dz_render_instance( &m_openglDesc, m_instance );
 
-    glViewport( oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3] );
+    GLCALL( glViewport, (oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]) );
 }
 //////////////////////////////////////////////////////////////////////////
 bool editor::dumpJSON_( const jpp::object & _json, std::string * _out, bool _needCompactDump )
@@ -3032,7 +3053,7 @@ void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out )
     *_out = json;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showContentPane()
+dz_result_t editor::showContentPane()
 {
     // content
     float columnWidth = ImGui::GetColumnWidth();
@@ -3118,9 +3139,9 @@ int editor::showContentPane()
         uint32_t particle_count = dz_instance_get_particle_count( m_instance );
         uint32_t particle_limit = dz_instance_get_particle_limit( m_instance );
 
-        char buf[1000];
+        char buf[1024];
 
-        sprintf( buf,
+        snprintf( buf, 1024,
             "Application average %.3f ms/frame (%.1f FPS)\n\n"
             "      window size: (%.2f, %.2f)\n"
             "     camera_scale: %.2f\n"
@@ -3167,11 +3188,11 @@ int editor::showContentPane()
 
     ImGui::EndChild();
     ImGui::EndGroup();
-    
+
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-int editor::showContentPaneControls()
+dz_result_t editor::showContentPaneControls()
 {
     float life = dz_effect_get_life( m_effect );
     float time = dz_instance_get_time( m_instance );
@@ -3221,7 +3242,7 @@ int editor::showContentPaneControls()
 
         dz_instance_update( m_service, m_instance, time );
     }
-    
+
     // life
     if( ImGui::InputFloat( ER_WINDOW_CONTROLS_INPUT_LIFE_TEXT, &life, 0.f, 0.f, NULL, ImGuiInputTextFlags_None ) == true )
     {
@@ -3291,3 +3312,4 @@ void editor::finalize()
         glfwTerminate();
     }
 }
+//////////////////////////////////////////////////////////////////////////
