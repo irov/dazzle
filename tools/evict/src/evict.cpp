@@ -307,10 +307,10 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
     float v[4] = {j_v[0], j_v[1], j_v[2], j_v[3]};
 
     dz_texture_set_uv( texture, u, v );
-    
+
     float trim_offset_x = _data["trim_offset"][0];
     float trim_offset_y = _data["trim_offset"][1];
-    
+
     dz_texture_set_trim_offset( texture, trim_offset_x, trim_offset_y );
 
     float trime_width = _data["trim_size"][0];
@@ -505,9 +505,15 @@ static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeli
     if( _data.exist( "interpolate", &j_interpolate ) == true )
     {
         dz_timeline_interpolate_t * interpolate;
-        __evict_timeline_interpolate_load( _service, &interpolate, j_interpolate );
+        if( __evict_timeline_interpolate_load( _service, &interpolate, j_interpolate ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
 
-        dz_timeline_key_set_interpolate( key, interpolate );
+        if( dz_timeline_key_set_interpolate( key, interpolate ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
     }
 
     *_key = key;
@@ -603,7 +609,7 @@ static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t *
     }
 
     float life = _data["life"];
-    
+
     dz_emitter_set_life( emitter, life );
 
     jpp::object j_timeline = _data["timeline"];
@@ -705,7 +711,7 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
     }
 
     float life = _data.get( "life", 0.f );
-    
+
     dz_effect_t * effect;
     if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, DZ_NULLPTR ) == DZ_FAILURE )
     {

@@ -8,6 +8,7 @@ set(DAZZLE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/affector.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/alloc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/atlas.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/constant65535.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/dazzle.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/effect.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/emitter.h

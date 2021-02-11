@@ -136,8 +136,12 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
 
     dz_timeline_key_set_const_value( key1, _value1 );
 
-    dz_timeline_key_set_interpolate( key0, interpolate0 );
     dz_timeline_interpolate_set_key( interpolate0, key1 );
+    
+    if( dz_timeline_key_set_interpolate( key0, interpolate0 ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
 
     dz_timeline_interpolate_t * interpolate1;
     if( dz_timeline_interpolate_create( _service, &interpolate1, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
@@ -153,8 +157,12 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
 
     dz_timeline_key_set_const_value( key2, _value2 );
 
-    dz_timeline_key_set_interpolate( key1, interpolate1 );
     dz_timeline_interpolate_set_key( interpolate1, key2 );
+    
+    if( dz_timeline_key_set_interpolate( key1, interpolate1 ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
 
     dz_affector_set_timeline( _affector, _type, key0 );
 

@@ -14,6 +14,8 @@
 #include "effect.h"
 #include "instance.h"
 
+#include "constant65535.h"
+
 #include "alloc.h"
 #include "math.h"
 
@@ -426,6 +428,7 @@ dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_k
     dz_timeline_key_t * key = DZ_NEW( _service, dz_timeline_key_t );
 
     key->p = _p;
+    key->d_inv = 0.f;
     key->type = _type;
     key->interpolate = DZ_NULLPTR;
     key->ud = _ud;
@@ -487,9 +490,28 @@ void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpo
     _interpolate->key = _key;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate )
+dz_result_t dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate )
 {
+#ifdef DZ_DEBUG
+    if( _interpolate != DZ_NULLPTR &&
+        _interpolate->key == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+#endif
+
     _key->interpolate = _interpolate;
+
+    if( _interpolate != DZ_NULLPTR )
+    {
+        _key->d_inv = 1.f / (_interpolate->key->p - _key->p);
+    }
+    else
+    {
+        _key->d_inv = 0.f;
+    }
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_timeline_key_set_p( dz_timeline_key_t * const _key, float _p )
@@ -852,7 +874,7 @@ static float __get_emitter_timeline_default( dz_emitter_timeline_type_e _timelin
 //////////////////////////////////////////////////////////////////////////
 static uint16_t __get_rand( uint32_t * _seed )
 {
-    const uint32_t value = (*_seed * 1103515245U) + 12345U;
+    const uint32_t value = DZ_RAND_FUNCTION( *_seed );
 
     *_seed = value;
 
@@ -861,11 +883,9 @@ static uint16_t __get_rand( uint32_t * _seed )
 //////////////////////////////////////////////////////////////////////////
 static float __get_randf( uint32_t * _seed )
 {
-    const uint16_t value = __get_rand( _seed );
+    const uint16_t value = __get_rand( _seed );    
 
-    const float inv_65535 = 1.f / 65535.f;
-
-    const float valuef = (float)value * inv_65535;
+    const float valuef = uint16_2_inv_float[value];
 
     return valuef;
 }
@@ -874,9 +894,7 @@ static float __get_randf2( uint32_t * _seed, float _min, float _max )
 {
     const uint16_t value = __get_rand( _seed );
 
-    const float inv_65535 = 1.f / 65535.f;
-
-    const float valuef = (float)value * inv_65535;
+    const float valuef = uint16_2_inv_float[value];
 
     return _min + (_max - _min) * valuef;
 }
@@ -905,14 +923,14 @@ static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key 
     return 0.f;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, float _life, float _time )
+static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, float _p )
 {
-    for( ; _key->interpolate != DZ_NULLPTR && _key->interpolate->key->p * _life < _time; _key = _key->interpolate->key );
+    for( ; _key->interpolate != DZ_NULLPTR && _key->interpolate->key->p < _p; _key = _key->interpolate->key );
 
     const float current_value = __get_timeline_key_value( _t, _key );
 
     if( _key->interpolate == DZ_NULLPTR ||
-        _key->p * _life > _time )
+        _key->p > _p )
     {
         return current_value;
     }
@@ -921,7 +939,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
 
     const float next_value = __get_timeline_key_value( _t, next );
 
-    const float t = (_time - _key->p * _life) / (next->p * _life - _key->p * _life);
+    const float t = (_p - _key->p) * _key->d_inv;
 
     const float value = current_value + (next_value - current_value) * t;
 
@@ -1178,7 +1196,7 @@ float dz_instance_get_time( const dz_instance_t * _instance )
     return _instance->time;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_rands( dz_particle_t * _p, const dz_effect_t * _effect, dz_affector_timeline_type_e _type )
+static float __get_affector_value_rands( dz_particle_t * _particle, const dz_effect_t * _effect, dz_affector_timeline_type_e _type, float _p )
 {
     const dz_timeline_key_t * timeline_key = _effect->affector->timelines[_type];
 
@@ -1189,9 +1207,7 @@ static float __get_affector_value_rands( dz_particle_t * _p, const dz_effect_t *
         return default_value;
     }
 
-    const float time = _p->time;
-
-    const float value = __get_timeline_value( _p->rands[_type], timeline_key, _p->life, time );
+    const float value = __get_timeline_value( _particle->rands[_type], timeline_key, _p );
 
     return value;
 }
@@ -1200,25 +1216,27 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
 {
     _p->time += _time;
 
-    const float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_SPEED );
-    const float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE );
+    const float p = _p->time / _p->life;
 
-    const float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_SPEED );
-    const float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE );
+    const float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_SPEED, p );
+    const float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, p );
 
-    const float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED );
-    const float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE );
+    const float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, p );
+    const float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, p );
 
-    const float size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SIZE );
-    const float aspect = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ASPECT );
+    const float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED, p );
+    const float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, p );
+
+    const float size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SIZE, p );
+    const float aspect = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ASPECT, p );
 
     _p->size = size;
     _p->aspect = aspect;
 
-    const float r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R );
-    const float g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_G );
-    const float b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_B );
-    const float a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_A );
+    const float r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R, p );
+    const float g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_G, p );
+    const float b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_B, p );
+    const float a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_A, p );
 
     _p->color_r = r * _p->born_color_r;
     _p->color_g = g * _p->born_color_g;
@@ -1234,12 +1252,12 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
     const float dx = DZ_COSF( _service, _p->angle );
     const float dy = DZ_SINF( _service, _p->angle );
 
-    const float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SIZE );
+    const float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, p );
 
     if( strafe_size != 0.f )
     {
-        const float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SPEED );
-        const float strafe_frenquence = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE );
+        const float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, p );
+        const float strafe_frenquence = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, p );
 
         const float strafe_shift = _p->rands[DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT];
 
@@ -1265,16 +1283,16 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
     _p->sy = sy;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _life, float _time )
+static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _p )
 {
     const float t = __get_randf( _seed );
 
-    const float value = __get_timeline_value( t, _timeline, _life, _time );
+    const float value = __get_timeline_value( t, _timeline, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_shape_value_seed( dz_instance_t * _instance, dz_shape_timeline_type_e _type, float _life, float _time )
+static float __get_shape_value_seed( dz_instance_t * _instance, dz_shape_timeline_type_e _type, float _p )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -1287,12 +1305,12 @@ static float __get_shape_value_seed( dz_instance_t * _instance, dz_shape_timelin
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_emitter_value_seed( dz_instance_t * _instance, dz_emitter_timeline_type_e _type, float _life, float _time )
+static float __get_emitter_value_seed( dz_instance_t * _instance, dz_emitter_timeline_type_e _type, float _p )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -1305,12 +1323,12 @@ static float __get_emitter_value_seed( dz_instance_t * _instance, dz_emitter_tim
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_seed( dz_instance_t * _instance, dz_affector_timeline_type_e _type, float _life, float _time )
+static float __get_affector_value_seed( dz_instance_t * _instance, dz_affector_timeline_type_e _type, float _p )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -1323,7 +1341,7 @@ static float __get_affector_value_seed( dz_instance_t * _instance, dz_affector_t
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _life, _time );
+    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
 
     return value;
 }
@@ -1463,6 +1481,8 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
 
     _p->angle = _instance->angle;
 
+    const float t = _spawn_time / _life;
+
     const dz_effect_t * effect = _instance->effect;
 
     dz_shape_type_e shape_type = effect->shape->type;
@@ -1483,8 +1503,8 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             _p->x += 0.f;
             _p->y += 0.f;
 
-            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MIN, _life, _spawn_time );
-            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MAX, _life, _spawn_time );
+            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MIN, t );
+            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MAX, t );
 
             const float angle = __get_randf2( &_instance->seed, angle_min, angle_max );
 
@@ -1492,8 +1512,8 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         }break;
     case DZ_SHAPE_CIRCLE:
         {
-            const float radius_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MIN, _life, _spawn_time );
-            const float radius_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MAX, _life, _spawn_time );
+            const float radius_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MIN, t );
+            const float radius_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MAX, t );
 
             const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
             const float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_instance->seed ) ) * (radius_max - radius_min);
@@ -1504,8 +1524,8 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             _p->x += rx;
             _p->y += ry;
 
-            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MIN, _life, _spawn_time );
-            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MAX, _life, _spawn_time );
+            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MIN, t );
+            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MAX, t );
 
             const float angle_dispersion = __get_randf2( &_instance->seed, angle_min, angle_max );
 
@@ -1513,13 +1533,13 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         }break;
     case DZ_SHAPE_LINE:
         {
-            const float angle = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_ANGLE, _life, _spawn_time );
+            const float angle = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_ANGLE, t );
 
             const float dx = DZ_COSF( _service, angle );
             const float dy = DZ_SINF( _service, angle );
 
-            const float size = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_SIZE, _life, _spawn_time );
-            const float offset = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_OFFSET, _life, _spawn_time );
+            const float size = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_SIZE, t );
+            const float offset = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_OFFSET, t );
 
             const float l = (__get_randf( &_instance->seed ) - 0.5f) * size;
 
@@ -1530,10 +1550,10 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         }break;
     case DZ_SHAPE_RECT:
         {
-            const float width_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MIN, _life, _spawn_time );
-            const float width_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MAX, _life, _spawn_time );
-            const float height_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MIN, _life, _spawn_time );
-            const float height_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MAX, _life, _spawn_time );
+            const float width_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MIN, t );
+            const float width_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MAX, t );
+            const float height_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MIN, t );
+            const float height_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MAX, t );
 
             DZ_TODO DZ_UNUSED( width_min );
             DZ_TODO DZ_UNUSED( height_min );
@@ -1649,8 +1669,8 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         break;
     }
 
-    const float spin_min = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MIN, _life, _spawn_time );
-    const float spin_max = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MAX, _life, _spawn_time );
+    const float spin_min = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MIN, t );
+    const float spin_max = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MAX, t );
 
     _p->spin = (__get_randf( &_instance->seed ) * 2.f - 1.f) * __get_randf2( &_instance->seed, spin_min, spin_max );
 
@@ -1874,7 +1894,9 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * c
 
     for( ;;)
     {
-        const float delay = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_DELAY, effect_life, _instance->emitter_time );
+        const float instance_p = _instance->emitter_time / effect_life;
+
+        const float delay = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_DELAY, instance_p );
 
         if( _instance->loop == DZ_FALSE && _instance->emitter_time + delay > effect_life )
         {
@@ -1888,11 +1910,13 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * c
 
         const float spawn_time = _instance->emitter_time + delay;
 
-        float count = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_COUNT, effect_life, spawn_time );
+        const float spawn_p = spawn_time / effect_life;
+
+        float count = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_COUNT, spawn_p );
 
         while( count > 0.f )
         {
-            const float life = __get_affector_value_seed( _instance, DZ_AFFECTOR_TIMELINE_LIFE, effect_life, spawn_time );
+            const float life = __get_affector_value_seed( _instance, DZ_AFFECTOR_TIMELINE_LIFE, spawn_p );
 
             const float ptime = _instance->time - spawn_time;
 

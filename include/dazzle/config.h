@@ -32,6 +32,18 @@ typedef void * dz_userdata_t;
 #define DZ_FLT_MIN (-3.402823466e+38F)
 #define DZ_FLT_MAX (3.402823466e+38F)
 
+#ifndef DZ_RAND_BASE_SEED
+#define DZ_RAND_BASE_SEED 1103515245U
+#endif
+
+#ifndef DZ_RAND_BASE_PROBE
+#define DZ_RAND_BASE_PROBE 12345U
+#endif
+
+#ifndef DZ_RAND_FUNCTION
+#define DZ_RAND_FUNCTION(X) (((X) * DZ_RAND_BASE_SEED) + DZ_RAND_BASE_PROBE)
+#endif
+
 #ifndef NDEBUG
 #define DZ_DEBUG
 #endif
