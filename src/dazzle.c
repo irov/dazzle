@@ -112,8 +112,8 @@ dz_result_t dz_texture_create( const dz_service_t * _service, dz_texture_t ** _t
     texture->v[1] = 0.f;
     texture->u[2] = 1.f;
     texture->v[2] = 1.f;
-    texture->u[3] = 1.f;
-    texture->v[3] = 0.f;
+    texture->u[3] = 0.f;
+    texture->v[3] = 1.f;
 
     texture->trim_offset_x = 0.f;
     texture->trim_offset_y = 0.f;
@@ -1685,6 +1685,12 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     _p->born_color_b = _instance->b;
     _p->born_color_a = _instance->a;
 
+    const dz_material_t * material = effect->material;
+
+    const dz_atlas_t * atlas = material->atlas;
+
+    _p->texture = atlas->textures[0];
+
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -2053,23 +2059,23 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
 
     float * uv0 = (float *)(base_uv_buffer + _mesh->uv_stride * 0);
 
-    uv0[0] = 0.f;
-    uv0[1] = 0.f;
+    uv0[0] = _p->texture->u[0];
+    uv0[1] = _p->texture->v[0];
 
     float * uv1 = (float *)(base_uv_buffer + _mesh->uv_stride * 1);
 
-    uv1[0] = 1.f;
-    uv1[1] = 0.f;
+    uv1[0] = _p->texture->u[1];
+    uv1[1] = _p->texture->v[1];
 
     float * uv2 = (float *)(base_uv_buffer + _mesh->uv_stride * 2);
 
-    uv2[0] = 1.f;
-    uv2[1] = 1.f;
+    uv2[0] = _p->texture->u[2];
+    uv2[1] = _p->texture->v[2];
 
     float * uv3 = (float *)(base_uv_buffer + _mesh->uv_stride * 3);
 
-    uv3[0] = 0.f;
-    uv3[1] = 1.f;
+    uv3[0] = _p->texture->u[3];
+    uv3[1] = _p->texture->v[3];
 }
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_index( uint16_t _iterator, dz_instance_mesh_t * _mesh )
