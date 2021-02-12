@@ -1281,6 +1281,19 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
 
     _p->sx = sx;
     _p->sy = sy;
+
+    // update texture
+    const float frame_duration = 0.066f;
+
+    const uint32_t frame = (uint32_t)(_p->time / frame_duration);
+
+    const dz_material_t * material = _emitter->material;
+
+    const dz_atlas_t * atlas = material->atlas;
+
+    uint32_t key = (uint32_t)(frame % atlas->texture_count);
+
+    _p->texture = atlas->textures[key];
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _p )

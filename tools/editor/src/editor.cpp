@@ -2930,6 +2930,279 @@ dz_result_t editor::showMaterialData()
 
             dz_atlas_set_surface( m_atlas, &m_textureId );
 
+            // 0 frame
+            {
+                float u[] = { 0.298908f, 0.436941f, 0.436941f, 0.298908f };
+                float v[] = { 0.581419f, 0.581419f, 0.723277f, 0.723277f };
+                dz_texture_set_uv( m_texture, u, v );
+            }
+            
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.181728f, 0.353525f, 0.353525f, 0.181728f };
+                    float v[] = { 0.000999f, 0.000999f, 0.151848f, 0.151848f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.512413f, 0.632572f, 0.632572f, 0.512413f };
+                    float v[] = { 0.290709f, 0.290709f, 0.396603f, 0.396603f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.882820f, 0.993049f, 0.993049f, 0.882820f };
+                    float v[] = { 0.774226f, 0.774226f, 0.885115f, 0.885115f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.861966f, 0.998014f, 0.998014f, 0.861966f };
+                    float v[] = { 0.651349f, 0.651349f, 0.772228f, 0.772228f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.296922f, 0.442900f, 0.442900f, 0.296922f };
+                    float v[] = { 0.725275f, 0.725275f, 0.860140f, 0.860140f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.444886f, 0.595829f, 0.595829f, 0.444886f };
+                    float v[] = { 0.724276f, 0.724276f, 0.873127f, 0.873127f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.728898f, 0.859980f, 0.859980f, 0.728898f };
+                    float v[] = { 0.691309f, 0.691309f, 0.825175f, 0.825175f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.000993f, 0.179742f, 0.179742f, 0.000993f };
+                    float v[] = { 0.000999f, 0.000999f, 0.172827f, 0.172827f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.699106f, 0.829196f, 0.829196f, 0.699106f };
+                    float v[] = { 0.283716f, 0.283716f, 0.406593f, 0.406593f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.181728f, 0.349553f, 0.349553f, 0.181728f };
+                    float v[] = { 0.153846f, 0.153846f, 0.285714f, 0.285714f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.159881f, 0.296922f, 0.296922f, 0.159881f };
+                    float v[] = { 0.414585f, 0.414585f, 0.500500f, 0.500500f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.593843f, 0.740814f, 0.740814f, 0.593843f };
+                    float v[] = { 0.880120f, 0.880120f, 0.995005f, 0.995005f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.520357f, 0.675273f, 0.675273f, 0.520357f };
+                    float v[] = { 0.150849f, 0.150849f, 0.288711f, 0.288711f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
+            {
+                dz_texture_t * tempTexture;
+
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.000993f, 0.178749f, 0.178749f, 0.000993f };
+                    float v[] = { 0.174825f, 0.174825f, 0.341658f, 0.341658f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
+
             FILE * f = fopen( texturePath, "rb" );
             fseek( f, 0L, SEEK_END );
             size_t sz = ftell( f );
@@ -3304,10 +3577,17 @@ void editor::finalize()
 {
     // finalize emitter
     {
+        dz_instance_destroy( m_service, m_instance );
         dz_effect_destroy( m_service, m_effect );
-        dz_emitter_destroy( m_service, m_emitter );
         dz_affector_destroy( m_service, m_affector );
+        dz_emitter_destroy( m_service, m_emitter );
         dz_shape_destroy( m_service, m_shape );
+
+        dz_material_destroy( m_service, m_material );
+        dz_texture_destroy( m_service, m_texture );
+
+        dz_atlas_destroy( m_service, m_atlas );
+
         dz_service_destroy( m_service );
     }
 
