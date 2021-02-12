@@ -68,6 +68,7 @@ uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
 
 dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t * _texture );
 dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture );
+dz_result_t dz_atlas_pop_texture( const dz_atlas_t * _atlas, dz_texture_t ** _texture );
 
 typedef enum dz_blend_type_e
 {

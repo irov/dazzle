@@ -265,6 +265,22 @@ dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+dz_result_t dz_atlas_pop_texture( dz_atlas_t * const _atlas, dz_texture_t ** _texture )
+{
+    if( _atlas->texture_count == 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    *_texture = _atlas->textures[_atlas->texture_count - 1];
+
+    _atlas->textures[_atlas->texture_count - 1] = DZ_NULLPTR;
+
+    _atlas->texture_count--;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture )
 {
     const dz_texture_t * texture = _atlas->textures[_index];

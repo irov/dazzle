@@ -2930,14 +2930,30 @@ dz_result_t editor::showMaterialData()
 
             dz_atlas_set_surface( m_atlas, &m_textureId );
 
+            dz_texture_t * texture = DZ_NULLPTR;
+            while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
+            {
+                dz_texture_destroy( m_service, texture );
+            }
+
             // 0 frame
             {
-                float u[] = { 0.298908f, 0.436941f, 0.436941f, 0.298908f };
-                float v[] = { 0.581419f, 0.581419f, 0.723277f, 0.723277f };
-                dz_texture_set_uv( m_texture, u, v );
-            }
-            
+                dz_texture_t * tempTexture;
 
+                if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                {
+                    float u[] = { 0.298908f, 0.436941f, 0.436941f, 0.298908f };
+                    float v[] = { 0.581419f, 0.581419f, 0.723277f, 0.723277f };
+
+                    dz_texture_set_uv( tempTexture, u, v );
+                }
+
+                dz_atlas_add_texture( m_atlas, tempTexture ); // memleak, need to register texture
+            }
 
             {
                 dz_texture_t * tempTexture;
@@ -3584,7 +3600,12 @@ void editor::finalize()
         dz_shape_destroy( m_service, m_shape );
 
         dz_material_destroy( m_service, m_material );
-        dz_texture_destroy( m_service, m_texture );
+
+        dz_texture_t * texture;
+        while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
+        {
+            dz_texture_destroy( m_service, texture );
+        }
 
         dz_atlas_destroy( m_service, m_atlas );
 
