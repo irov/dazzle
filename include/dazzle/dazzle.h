@@ -99,6 +99,9 @@ void dz_material_get_color( const dz_material_t * _material, float * const _r, f
 void dz_material_set_atlas( dz_material_t * const _material, const dz_atlas_t * _atlas );
 const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material );
 
+void dz_material_set_frame_duration( dz_material_t * const _material, float _duration );
+float dz_meterial_get_frame_duration( const dz_material_t * _material );
+
 typedef enum dz_material_mode_e
 {
     DZ_MATERIAL_MODE_TEXURE,

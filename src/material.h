@@ -14,6 +14,8 @@ typedef struct dz_material_t
 
     dz_material_mode_e mode;
 
+    float frame_duration;
+
     const dz_atlas_t * atlas;
 
     dz_userdata_t ud;

@@ -308,6 +308,8 @@ dz_result_t dz_material_create( const dz_service_t * _service, dz_material_t ** 
 
     material->ud = _ud;
 
+    material->frame_duration = 0.f;
+
     *_material = material;
 
     return DZ_SUCCESSFUL;
@@ -362,6 +364,16 @@ void dz_material_set_atlas( dz_material_t * const _material, const dz_atlas_t * 
 const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material )
 {
     return _material->atlas;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_material_set_frame_duration( dz_material_t * const _material, float _duration )
+{
+    _material->frame_duration = _duration;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_meterial_get_frame_duration( const dz_material_t * _material )
+{
+    return _material->frame_duration;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_material_set_mode( dz_material_t * const _material, dz_material_mode_e _mode )
@@ -1299,17 +1311,27 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
     _p->sy = sy;
 
     // update texture
-    const float frame_duration = 0.066f;
-
-    const uint32_t frame = (uint32_t)(_p->time / frame_duration);
-
     const dz_material_t * material = _emitter->material;
 
     const dz_atlas_t * atlas = material->atlas;
 
-    uint32_t key = (uint32_t)(frame % atlas->texture_count);
+    if( material->mode == DZ_MATERIAL_MODE_TEXURE )
+    {
+        if ( atlas->texture_count > 0 )
+        {
+            _p->texture = atlas->textures[0];
+        }
+    }
+    else if( material->mode == DZ_MATERIAL_MODE_SEQUENCE )
+    {
+        const float frame_duration = material->frame_duration;
 
-    _p->texture = atlas->textures[key];
+        const uint32_t frame = (uint32_t)(_p->time / frame_duration);
+
+        uint32_t key = (uint32_t)(frame % atlas->texture_count);
+
+        _p->texture = atlas->textures[key];
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _p )
@@ -2013,41 +2035,71 @@ uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance )
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
-    const float hs = _p->size * 0.5f;
+    //const float hs = _p->size * 0.5f;
 
-    const float hsx = _p->sx * hs;
-    const float hsy = _p->sy * hs;
+    //const float hsx = _p->sx * hs;
+    //const float hsy = _p->sy * hs;
 
-    const float ha = _p->aspect;
+    //const float ha = _p->aspect;
 
-    const float ux = hsx * ha;
-    const float uy = hsy * ha;
+    //const float ux = hsx * ha;
+    //const float uy = hsy * ha;
 
-    const float vx = -hsy;
-    const float vy = hsx;
+    //const float vx = -hsy;
+    //const float vy = hsx;
+
+    // wip
+    const float trim_offset_x_r = _p->texture->trim_offset_x;
+    const float trim_offset_y_r = _p->texture->trim_offset_y;
+    const float trim_width_r = _p->texture->trim_width;
+    const float trim_height_r = _p->texture->trim_height;
+
+    const float trim_offset_x_a = trim_offset_x_r * _p->size;
+    const float trim_offset_y_a = trim_offset_y_r * _p->size;
+
+    const float trim_width_a = trim_width_r * _p->size;
+    const float trim_height_a = trim_height_r * _p->size;
 
     const dz_size_t base_position_buffer_offset = _mesh->position_offset + _mesh->position_stride * (_iterator * 4);
     uint8_t * base_position_buffer = (uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
 
     float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
 
-    p0[0] = _p->x - ux + vx;
-    p0[1] = _p->y - uy + vy;
+    //p0[0] = _p->x - ux + vx;
+    //p0[1] = _p->y - uy + vy;
+
+    //float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
+
+    //p1[0] = _p->x + ux + vx;
+    //p1[1] = _p->y + uy + vy;
+
+    //float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
+
+    //p2[0] = _p->x + ux - vx;
+    //p2[1] = _p->y + uy - vy;
+
+    //float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
+
+    //p3[0] = _p->x - ux - vx;
+    //p3[1] = _p->y - uy - vy;
+
+    p0[0] = _p->x /*- ux + vx*/ + (trim_offset_x_a);
+    p0[1] = _p->y /*- uy + vy*/ + (trim_offset_y_a);
 
     float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
 
-    p1[0] = _p->x + ux + vx;
-    p1[1] = _p->y + uy + vy;
+    p1[0] = _p->x /*+ ux + vx*/ + (trim_offset_x_a + trim_width_a);
+    p1[1] = _p->y /*+ uy + vy*/ + (trim_offset_y_a);
 
     float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
 
-    p2[0] = _p->x + ux - vx;
-    p2[1] = _p->y + uy - vy;
+    p2[0] = _p->x /*+ ux - vx*/ + (trim_offset_x_a + trim_width_a);
+    p2[1] = _p->y /*+ uy - vy*/ + (trim_offset_y_a + trim_height_a);
 
     float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
 
-    p3[0] = _p->x - ux - vx;
-    p3[1] = _p->y - uy - vy;
+    p3[0] = _p->x /*- ux - vx*/ + (trim_offset_x_a);
+    p3[1] = _p->y /*- uy - vy*/ + (trim_offset_y_a + trim_height_a);
 }
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
