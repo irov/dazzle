@@ -2035,20 +2035,11 @@ uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance )
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
-    //const float hs = _p->size * 0.5f;
+#define WIP_UPDATE_POSITIONS 2
 
-    //const float hsx = _p->sx * hs;
-    //const float hsy = _p->sy * hs;
+#if WIP_UPDATE_POSITIONS == 1
+    const float hs = _p->size * 0.5f;
 
-    //const float ha = _p->aspect;
-
-    //const float ux = hsx * ha;
-    //const float uy = hsy * ha;
-
-    //const float vx = -hsy;
-    //const float vy = hsx;
-
-    // wip
     const float trim_offset_x_r = _p->texture->trim_offset_x;
     const float trim_offset_y_r = _p->texture->trim_offset_y;
     const float trim_width_r = _p->texture->trim_width;
@@ -2065,41 +2056,119 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
 
     float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
 
-    //p0[0] = _p->x - ux + vx;
-    //p0[1] = _p->y - uy + vy;
-
-    //float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
-
-    //p1[0] = _p->x + ux + vx;
-    //p1[1] = _p->y + uy + vy;
-
-    //float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
-
-    //p2[0] = _p->x + ux - vx;
-    //p2[1] = _p->y + uy - vy;
-
-    //float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
-
-    //p3[0] = _p->x - ux - vx;
-    //p3[1] = _p->y - uy - vy;
-
-    p0[0] = _p->x /*- ux + vx*/ + (trim_offset_x_a);
-    p0[1] = _p->y /*- uy + vy*/ + (trim_offset_y_a);
+    p0[0] = _p->x /*- ux + vx*/ + (trim_offset_x_a) - hs;
+    p0[1] = _p->y /*- uy + vy*/ + (trim_offset_y_a) - hs;
 
     float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
 
-    p1[0] = _p->x /*+ ux + vx*/ + (trim_offset_x_a + trim_width_a);
-    p1[1] = _p->y /*+ uy + vy*/ + (trim_offset_y_a);
+    p1[0] = _p->x /*+ ux + vx*/ + (trim_offset_x_a + trim_width_a) - hs;
+    p1[1] = _p->y /*+ uy + vy*/ + (trim_offset_y_a) - hs;
 
     float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
 
-    p2[0] = _p->x /*+ ux - vx*/ + (trim_offset_x_a + trim_width_a);
-    p2[1] = _p->y /*+ uy - vy*/ + (trim_offset_y_a + trim_height_a);
+    p2[0] = _p->x /*+ ux - vx*/ + (trim_offset_x_a + trim_width_a) - hs;
+    p2[1] = _p->y /*+ uy - vy*/ + (trim_offset_y_a + trim_height_a) - hs;
 
     float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
 
-    p3[0] = _p->x /*- ux - vx*/ + (trim_offset_x_a);
-    p3[1] = _p->y /*- uy - vy*/ + (trim_offset_y_a + trim_height_a);
+    p3[0] = _p->x /*- ux - vx*/ + (trim_offset_x_a) - hs;
+    p3[1] = _p->y /*- uy - vy*/ + (trim_offset_y_a + trim_height_a) - hs;
+#elif WIP_UPDATE_POSITIONS == 2
+    const float hs = _p->size * 0.5f;
+
+    const float ha = _p->aspect;
+
+    const float trim_offset_x_r = _p->texture->trim_offset_x;
+    const float trim_offset_y_r = _p->texture->trim_offset_y;
+    const float trim_width_r = _p->texture->trim_width;
+    const float trim_height_r = _p->texture->trim_height;
+
+    const float trim_offset_x_a = trim_offset_x_r * _p->size;
+    const float trim_offset_y_a = trim_offset_y_r * _p->size;
+
+    const float trim_width_a = trim_width_r * _p->size;
+    const float trim_height_a = trim_height_r * _p->size;
+
+    const dz_size_t base_position_buffer_offset = _mesh->position_offset + _mesh->position_stride * (_iterator * 4);
+    uint8_t * base_position_buffer = (uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
+
+    float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
+
+    {
+        float x = (trim_offset_x_a) - hs;
+        float y = (trim_offset_y_a) - hs;
+
+        p0[0] = _p->x + x * _p->sx - y * _p->sy;
+        p0[1] = _p->y + x * _p->sy + y * _p->sx;
+    }
+
+    float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
+
+    {
+        float x = (trim_offset_x_a + trim_width_a) - hs;
+        float y = (trim_offset_y_a) - hs;
+
+        p1[0] = _p->x + x * _p->sx - y * _p->sy;
+        p1[1] = _p->y + x * _p->sy + y * _p->sx;
+    }
+
+    float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
+
+    {
+        float x = (trim_offset_x_a + trim_width_a) - hs;
+        float y = (trim_offset_y_a + trim_height_a) - hs;
+
+        p2[0] = _p->x + x * _p->sx - y * _p->sy;
+        p2[1] = _p->y + x * _p->sy + y * _p->sx;
+    }
+
+    float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
+
+    {
+        float x = (trim_offset_x_a) - hs;
+        float y = (trim_offset_y_a + trim_height_a) - hs;
+
+        p3[0] = _p->x + x * _p->sx - y * _p->sy;
+        p3[1] = _p->y + x * _p->sy + y * _p->sx;
+    }
+#elif WIP_UPDATE_POSITIONS == 3
+    const float hs = _p->size * 0.5f;
+
+    const float hsx = _p->sx * hs;
+    const float hsy = _p->sy * hs;
+
+    const float ha = _p->aspect;
+
+    const float ux = hsx * ha;
+    const float uy = hsy * ha;
+
+    const float vx = -hsy;
+    const float vy = hsx;
+
+    const dz_size_t base_position_buffer_offset = _mesh->position_offset + _mesh->position_stride * (_iterator * 4);
+    uint8_t * base_position_buffer = (uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
+
+    float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
+
+    p0[0] = _p->x - ux + vx;
+    p0[1] = _p->y - uy + vy;
+
+    float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
+
+    p1[0] = _p->x + ux + vx;
+    p1[1] = _p->y + uy + vy;
+
+    float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
+
+    p2[0] = _p->x + ux - vx;
+    p2[1] = _p->y + uy - vy;
+
+    float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
+
+    p3[0] = _p->x - ux - vx;
+    p3[1] = _p->y - uy - vy;
+
+#endif // WIP_UPDATE_POSITIONS == 2
 }
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )

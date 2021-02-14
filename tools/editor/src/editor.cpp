@@ -3015,7 +3015,9 @@ dz_result_t editor::showMaterialData()
             }
 
             dz_material_set_frame_duration( m_material, 0.066f );
+            //dz_material_set_frame_duration( m_material, 1.f );
             dz_material_set_mode( m_material, DZ_MATERIAL_MODE_SEQUENCE );
+            //dz_material_set_mode( m_material, DZ_MATERIAL_MODE_TEXURE );
             /////////////////////////////////////////////
 
             FILE * f = fopen( texturePath, "rb" );
