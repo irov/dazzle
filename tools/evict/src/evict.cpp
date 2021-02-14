@@ -14,26 +14,6 @@ static jpp::object __evict_texture_write( const dz_texture_t * _texture )
     obj.set( "u", jpp::make_tuple( u[0], u[1], u[2], u[3] ) );
     obj.set( "v", jpp::make_tuple( v[0], v[1], v[2], v[3] ) );
 
-    float trim_offset_x;
-    float trim_offset_y;
-    dz_texture_get_trim_offset( _texture, &trim_offset_x, &trim_offset_y );
-
-    obj.set( "trim_offset", jpp::make_tuple( trim_offset_x, trim_offset_y ) );
-
-    float trime_width;
-    float trime_height;
-    dz_texture_get_trim_size( _texture, &trime_width, &trime_height );
-
-    obj.set( "trim_size", jpp::make_tuple( trime_width, trime_height ) );
-
-    float random_weight = dz_texture_get_random_weight( _texture );
-
-    obj.set( "random_weight", random_weight );
-
-    float sequence_delay = dz_texture_get_sequence_delay( _texture );
-
-    obj.set( "sequence_delay", sequence_delay );
-
     return obj;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -307,24 +287,6 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
     float v[4] = {j_v[0], j_v[1], j_v[2], j_v[3]};
 
     dz_texture_set_uv( texture, u, v );
-
-    float trim_offset_x = _data["trim_offset"][0];
-    float trim_offset_y = _data["trim_offset"][1];
-
-    dz_texture_set_trim_offset( texture, trim_offset_x, trim_offset_y );
-
-    float trime_width = _data["trim_size"][0];
-    float trime_height = _data["trim_size"][1];
-
-    dz_texture_set_trim_size( texture, trime_width, trime_height );
-
-    float random_weight = _data["random_weight"];
-
-    dz_texture_set_random_weight( texture, random_weight );
-
-    float sequence_delay = _data["sequence_delay"];
-
-    dz_texture_set_sequence_delay( texture, sequence_delay );
 
     *_texture = texture;
 

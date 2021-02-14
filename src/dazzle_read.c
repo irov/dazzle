@@ -67,15 +67,6 @@ static dz_result_t __read_texture( const dz_service_t * _service, dz_texture_t *
     DZ_READN( _read, _ud, texture->u, 4 );
     DZ_READN( _read, _ud, texture->v, 4 );
 
-    DZ_READ( _read, _ud, texture->trim_offset_x );
-    DZ_READ( _read, _ud, texture->trim_offset_y );
-
-    DZ_READ( _read, _ud, texture->trim_width );
-    DZ_READ( _read, _ud, texture->trim_height );
-
-    DZ_READ( _read, _ud, texture->random_weight );
-    DZ_READ( _read, _ud, texture->sequence_delay );
-
     *_texture = texture;
 
     return DZ_SUCCESSFUL;
