@@ -2946,7 +2946,6 @@ dz_result_t editor::showMaterialData()
             dz_texture_set_height( tempTexture, m_textureHeight );
 
             dz_texture_set_trim_size( tempTexture, m_textureWidth, m_textureHeight );
-            dz_texture_set_sequence_delay( tempTexture, 0.066f );
 
             dz_atlas_add_texture( m_atlas, tempTexture );
 
