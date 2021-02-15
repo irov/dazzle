@@ -52,7 +52,7 @@ static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELIN
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, DZ_PI2}, //DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 0.f, 10.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_PI2N, DZ_PI2, 0.f, 0.f}, //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
-    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 50.f, 100.f}, //DZ_AFFECTOR_TIMELINE_SIZE
+    {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 2.f}, //DZ_AFFECTOR_TIMELINE_SCALE
     {DZ_TIMELINE_LIMIT_MINMAX, DZ_FLT_MIN, DZ_FLT_MAX, 1.f, 5.f}, //DZ_AFFECTOR_TIMELINE_ASPECT
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_R
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f}, //DZ_AFFECTOR_TIMELINE_COLOR_G
@@ -69,6 +69,11 @@ void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_t
     *_max = limit->max_value;
     *_default = limit->default_value;
     *_factor = limit->factor_value;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_affector_get_particle_size( void )
+{
+    return DZ_PARTICLE_SIZE;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_affector_timeline_default( dz_affector_timeline_type_e _timeline )
@@ -115,11 +120,14 @@ dz_result_t dz_texture_create( const dz_service_t * _service, dz_texture_t ** _t
     texture->u[3] = 0.f;
     texture->v[3] = 1.f;
 
+    texture->width = 0.f;
+    texture->height = 0.f;
+
     texture->trim_offset_x = 0.f;
     texture->trim_offset_y = 0.f;
 
-    texture->trim_width = 1.f;
-    texture->trim_height = 1.f;
+    texture->trim_width = 0.f;
+    texture->trim_height = 0.f;
 
     texture->random_weight = 1.f;
     texture->sequence_delay = 1.f;
@@ -168,6 +176,26 @@ void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float *
     _v[2] = _texture->v[2];
     _u[3] = _texture->u[3];
     _v[3] = _texture->v[3];
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_width( dz_texture_t * const _texture, float _width )
+{
+    _texture->width = _width;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_texture_get_width( const dz_texture_t * _texture )
+{
+    return _texture->width;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_height( dz_texture_t * const _texture, float _height )
+{
+    _texture->height = _height;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_texture_get_height( const dz_texture_t * _texture )
+{
+    return _texture->height;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_texture_set_trim_offset( dz_texture_t * const _texture, float _x, float _y )
@@ -220,6 +248,8 @@ dz_result_t dz_atlas_create( const dz_service_t * _service, dz_atlas_t ** _atlas
 
     atlas->texture_count = 0;
 
+    atlas->textures_time = 0.f;
+
     atlas->surface = _surface;
     atlas->ud = _ud;
 
@@ -262,6 +292,28 @@ dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t 
 {
     _atlas->textures[_atlas->texture_count++] = _texture;
 
+    _atlas->textures_time += _texture->sequence_delay;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_atlas_pop_texture( dz_atlas_t * const _atlas, const dz_texture_t ** _texture )
+{
+    if( _atlas->texture_count == 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    const dz_texture_t * texture = _atlas->textures[_atlas->texture_count - 1];
+
+    *_texture = texture;
+
+    _atlas->textures[_atlas->texture_count - 1] = DZ_NULLPTR;
+
+    _atlas->texture_count--;
+
+    _atlas->textures_time -= texture->sequence_delay;
+
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -272,6 +324,11 @@ dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, co
     *_texture = texture;
 
     return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_material_mode_e dz_material_get_default_mode( void )
+{
+    return DZ_MATERIAL_MODE_SOLID;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_blend_type_e dz_material_get_default_blend( void )
@@ -289,6 +346,8 @@ dz_result_t dz_material_create( const dz_service_t * _service, dz_material_t ** 
     material->g = 1.f;
     material->b = 1.f;
     material->a = 1.f;
+
+    material->mode = dz_material_get_default_mode();
 
     material->ud = _ud;
 
@@ -883,7 +942,7 @@ static uint16_t __get_rand( uint32_t * _seed )
 //////////////////////////////////////////////////////////////////////////
 static float __get_randf( uint32_t * _seed )
 {
-    const uint16_t value = __get_rand( _seed );    
+    const uint16_t value = __get_rand( _seed );
 
     const float valuef = uint16_2_inv_float[value];
 
@@ -1212,7 +1271,7 @@ static float __get_affector_value_rands( dz_particle_t * _particle, const dz_eff
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_update( const dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, float _time )
+static dz_result_t __particle_update( const dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, float _time )
 {
     _p->time += _time;
 
@@ -1227,10 +1286,10 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
     const float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED, p );
     const float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, p );
 
-    const float size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SIZE, p );
+    const float scale = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SCALE, p );
     const float aspect = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ASPECT, p );
 
-    _p->size = size;
+    _p->scale = scale;
     _p->aspect = aspect;
 
     const float r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R, p );
@@ -1281,6 +1340,67 @@ static void __particle_update( const dz_service_t * _service, const dz_effect_t 
 
     _p->sx = sx;
     _p->sy = sy;
+
+    // update texture
+    const dz_material_t * material = _emitter->material;
+
+    const dz_atlas_t * atlas = material->atlas;
+
+    switch( material->mode )
+    {
+    case DZ_MATERIAL_MODE_SOLID:
+        {
+            _p->texture = DZ_NULLPTR;
+        }break;
+    case DZ_MATERIAL_MODE_TEXTURE:
+        {
+#ifdef DZ_DEBUG
+            if( atlas->texture_count == 0 )
+            {
+                return DZ_FAILURE;
+            }
+#endif
+
+            _p->texture = atlas->textures[0];
+        }break;
+    case DZ_MATERIAL_MODE_SEQUENCE:
+        {
+#ifdef DZ_DEBUG
+            if( atlas->texture_count == 0 )
+            {
+                return DZ_FAILURE;
+            }
+
+            if( atlas->textures_time <= 0.f )
+            {
+                return DZ_FAILURE;
+            }
+#endif
+
+            float texture_time = _p->time;
+            for( ; texture_time > atlas->textures_time; texture_time -= atlas->textures_time );
+
+            for( uint32_t index = 0; index != atlas->texture_count; ++index )
+            {
+                const dz_texture_t * texture = atlas->textures[index];
+
+                texture_time -= texture->sequence_delay;
+
+                if( texture_time > 0.f )
+                {
+                    continue;
+                }
+
+                _p->texture = texture;
+
+                break;
+            }
+        }break;
+    default:
+        break;
+    }
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _p )
@@ -1666,6 +1786,7 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         }break;
     case __DZ_SHAPE_MAX__:
     default:
+        return DZ_FAILURE;
         break;
     }
 
@@ -1684,12 +1805,6 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     _p->born_color_g = _instance->g;
     _p->born_color_b = _instance->b;
     _p->born_color_a = _instance->a;
-
-    const dz_material_t * material = effect->material;
-
-    const dz_atlas_t * atlas = material->atlas;
-
-    _p->texture = atlas->textures[0];
 
     return DZ_SUCCESSFUL;
 }
@@ -1728,7 +1843,10 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
 
     const dz_effect_t * effect = _instance->effect;
 
-    __particle_update( _service, effect, p, time );
+    if( __particle_update( _service, effect, p, time ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
 
     return DZ_SUCCESSFUL;
 }
@@ -1827,7 +1945,10 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * c
 
         if( p->time + _time < p->life )
         {
-            __particle_update( _service, effect, p, _time );
+            if( __particle_update( _service, effect, p, _time ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
         }
         else
         {
@@ -1984,54 +2105,90 @@ uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance )
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
-    const float hs = _p->size * 0.5f;
-
-    const float hsx = _p->sx * hs;
-    const float hsy = _p->sy * hs;
-
-    const float ha = _p->aspect;
-
-    const float ux = hsx * ha;
-    const float uy = hsy * ha;
-
-    const float vx = -hsy;
-    const float vy = hsx;
-
     const dz_size_t base_position_buffer_offset = _mesh->position_offset + _mesh->position_stride * (_iterator * 4);
     uint8_t * base_position_buffer = (uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
 
     float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
-
-    p0[0] = _p->x - ux + vx;
-    p0[1] = _p->y - uy + vy;
-
     float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
-
-    p1[0] = _p->x + ux + vx;
-    p1[1] = _p->y + uy + vy;
-
     float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
-
-    p2[0] = _p->x + ux - vx;
-    p2[1] = _p->y + uy - vy;
-
     float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
 
-    p3[0] = _p->x - ux - vx;
-    p3[1] = _p->y - uy - vy;
+    if( _p->texture != DZ_NULLPTR )
+    {
+        const float thw = _p->texture->width * 0.5f * _p->scale;
+        const float thh = _p->texture->height * 0.5f * _p->scale;
+
+        const float ha = _p->aspect;
+
+        const float tox = _p->texture->trim_offset_x * _p->scale;
+        const float toy = _p->texture->trim_offset_y * _p->scale;
+        const float tw = _p->texture->trim_width * _p->scale;
+        const float th = _p->texture->trim_height * _p->scale;
+
+        const float x0 = (tox + 0.f) - thw;
+        const float y0 = (toy + 0.f) - thh;
+
+        p0[0] = _p->x + x0 * _p->sx * ha - y0 * _p->sy;
+        p0[1] = _p->y + x0 * _p->sy * ha + y0 * _p->sx;
+
+        const float x1 = (tox + tw) - thw;
+        const float y1 = (toy + 0.f) - thh;
+
+        p1[0] = _p->x + x1 * _p->sx * ha - y1 * _p->sy;
+        p1[1] = _p->y + x1 * _p->sy * ha + y1 * _p->sx;
+
+        const float x2 = (tox + tw) - thw;
+        const float y2 = (toy + th) - thh;
+
+        p2[0] = _p->x + x2 * _p->sx * ha - y2 * _p->sy;
+        p2[1] = _p->y + x2 * _p->sy * ha + y2 * _p->sx;
+
+        const float x3 = (tox + 0.f) - thw;
+        const float y3 = (toy + th) - thh;
+
+        p3[0] = _p->x + x3 * _p->sx * ha - y3 * _p->sy;
+        p3[1] = _p->y + x3 * _p->sy * ha + y3 * _p->sx;
+    }
+    else
+    {
+        const float hs = _p->scale * DZ_PARTICLE_SIZE * 0.5f;
+
+        const float hsx = _p->sx * hs;
+        const float hsy = _p->sy * hs;
+
+        const float ha = _p->aspect;
+
+        const float ux = hsx * ha;
+        const float uy = hsy * ha;
+
+        const float vx = -hsy;
+        const float vy = hsx;
+
+        p0[0] = _p->x - ux + vx;
+        p0[1] = _p->y - uy + vy;
+
+        p1[0] = _p->x + ux + vx;
+        p1[1] = _p->y + uy + vy;
+                
+        p2[0] = _p->x + ux - vx;
+        p2[1] = _p->y + uy - vy;
+
+        p3[0] = _p->x - ux - vx;
+        p3[1] = _p->y - uy - vy;
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
+    const dz_size_t base_color_buffer_offset = _mesh->color_offset + _mesh->color_stride * (_iterator * 4);
+    uint8_t * base_color_buffer = (uint8_t *)_mesh->color_buffer + base_color_buffer_offset;
+
     const uint8_t r8 = (uint8_t)(_mesh->r * _p->color_r * 255.5f);
     const uint8_t g8 = (uint8_t)(_mesh->g * _p->color_g * 255.5f);
     const uint8_t b8 = (uint8_t)(_mesh->b * _p->color_b * 255.5f);
     const uint8_t a8 = (uint8_t)(_mesh->a * _p->color_a * 255.5f);
 
     const uint32_t color = (a8 << 24) | (r8 << 16) | (g8 << 8) | (b8 << 0);
-
-    const dz_size_t base_color_buffer_offset = _mesh->color_offset + _mesh->color_stride * (_iterator * 4);
-    uint8_t * base_color_buffer = (uint8_t *)_mesh->color_buffer + base_color_buffer_offset;
 
     uint32_t * c0 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 0);
 
@@ -2052,7 +2209,10 @@ static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _itera
 //////////////////////////////////////////////////////////////////////////
 static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
-    DZ_UNUSED( _p );
+    if( _p->texture == DZ_NULLPTR )
+    {
+        return;
+    }
 
     const dz_size_t base_uv_buffer_offset = _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4);
     uint8_t * base_uv_buffer = (uint8_t *)_mesh->uv_buffer + base_uv_buffer_offset;

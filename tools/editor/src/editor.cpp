@@ -151,7 +151,7 @@ const char * ER_AFFECTOR_DATA_NAMES[] = {
     "Strafe frequence",  //DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
     "Strafe size",       //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
     "Strafe shift",      //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
-    "Size",              //DZ_AFFECTOR_TIMELINE_SIZE
+    "Scale",             //DZ_AFFECTOR_TIMELINE_SCALE
     "Aspect",            //DZ_AFFECTOR_TIMELINE_ASPECT
     "Color Red",         //DZ_AFFECTOR_TIMELINE_COLOR_R
     "Color Green",       //DZ_AFFECTOR_TIMELINE_COLOR_G
@@ -882,20 +882,20 @@ dz_result_t editor::init()
             data.type = static_cast<dz_emitter_timeline_type_e>(index);
             data.name = ER_EMITTER_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
             data.zoom = 1;
 
             data.selectedPoint = ER_CURVE_POINT_NONE;
 
-            if( __set_emitter_timeline_const( m_service, m_emitter, data.type, default ) == DZ_FAILURE )
+            if( __set_emitter_timeline_const( m_service, m_emitter, data.type, default_value ) == DZ_FAILURE )
             {
                 return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
-            data.pointsData[0].y = default;
+            data.pointsData[0].y = default_value;
 
             data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
         }
@@ -913,20 +913,20 @@ dz_result_t editor::init()
             data.type = static_cast<dz_affector_timeline_type_e>(index);
             data.name = ER_AFFECTOR_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
             data.zoom = 1;
 
             data.selectedPoint = ER_CURVE_POINT_NONE;
 
-            if( __set_affector_timeline_const( m_service, m_affector, data.type, default ) == DZ_FAILURE )
+            if( __set_affector_timeline_const( m_service, m_affector, data.type, default_value ) == DZ_FAILURE )
             {
                 return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
-            data.pointsData[0].y = default;
+            data.pointsData[0].y = default_value;
 
             data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
         }
@@ -2675,8 +2675,8 @@ dz_result_t editor::showShapeData()
             if( headerFlags[index] == true )
             {
                 dz_timeline_limit_status_e status;
-                float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-                dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+                float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+                dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
                 float life = dz_effect_get_life( m_effect );
 
                 // curve
@@ -2750,8 +2750,8 @@ dz_result_t editor::showAffectorData()
         if( headerFlags[index] == true )
         {
             dz_timeline_limit_status_e status;
-            float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
             float life = dz_effect_get_life( m_effect );
 
             // curve
@@ -2818,8 +2818,8 @@ dz_result_t editor::showEmitterData()
         if( headerFlags[index] == true )
         {
             dz_timeline_limit_status_e status;
-            float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
             float life = dz_effect_get_life( m_effect );
 
             // curve
@@ -2929,6 +2929,27 @@ dz_result_t editor::showMaterialData()
             m_textureId = dz_render_make_texture( texturePath, &m_textureWidth, &m_textureHeight );
 
             dz_atlas_set_surface( m_atlas, &m_textureId );
+
+            const dz_texture_t * texture = DZ_NULLPTR;
+            while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
+            {
+                dz_texture_destroy( m_service, texture );
+            }
+
+            dz_texture_t * tempTexture;
+            if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            dz_texture_set_width( tempTexture, m_textureWidth );
+            dz_texture_set_height( tempTexture, m_textureHeight );
+
+            dz_texture_set_trim_size( tempTexture, m_textureWidth, m_textureHeight );
+
+            dz_atlas_add_texture( m_atlas, tempTexture );
+
+            dz_material_set_mode( m_material, DZ_MATERIAL_MODE_TEXTURE );
 
             FILE * f = fopen( texturePath, "rb" );
             fseek( f, 0L, SEEK_END );
@@ -3304,10 +3325,22 @@ void editor::finalize()
 {
     // finalize emitter
     {
+        dz_instance_destroy( m_service, m_instance );
         dz_effect_destroy( m_service, m_effect );
-        dz_emitter_destroy( m_service, m_emitter );
         dz_affector_destroy( m_service, m_affector );
+        dz_emitter_destroy( m_service, m_emitter );
         dz_shape_destroy( m_service, m_shape );
+
+        dz_material_destroy( m_service, m_material );
+
+        const dz_texture_t * texture;
+        while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
+        {
+            dz_texture_destroy( m_service, texture );
+        }
+
+        dz_atlas_destroy( m_service, m_atlas );
+
         dz_service_destroy( m_service );
     }
 

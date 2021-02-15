@@ -32,6 +32,10 @@ typedef void * dz_userdata_t;
 #define DZ_FLT_MIN (-3.402823466e+38F)
 #define DZ_FLT_MAX (3.402823466e+38F)
 
+#ifndef DZ_PARTICLE_SIZE
+#define DZ_PARTICLE_SIZE (16.f)
+#endif
+
 #ifndef DZ_RAND_BASE_SEED
 #define DZ_RAND_BASE_SEED 1103515245U
 #endif
