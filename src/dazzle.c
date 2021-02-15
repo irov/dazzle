@@ -115,6 +115,15 @@ dz_result_t dz_texture_create( const dz_service_t * _service, dz_texture_t ** _t
     texture->u[3] = 0.f;
     texture->v[3] = 1.f;
 
+    texture->trim_offset_x = 0.f;
+    texture->trim_offset_y = 0.f;
+
+    texture->trim_width = 1.f;
+    texture->trim_height = 1.f;
+
+    texture->random_weight = 1.f;
+    texture->sequence_delay = 1.f;
+
     texture->ud = _ud;
 
     *_texture = texture;
@@ -159,6 +168,50 @@ void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float *
     _v[2] = _texture->v[2];
     _u[3] = _texture->u[3];
     _v[3] = _texture->v[3];
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_trim_offset( dz_texture_t * const _texture, float _x, float _y )
+{
+    _texture->trim_offset_x = _x;
+    _texture->trim_offset_y = _y;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * const _x, float * const _y )
+{
+    *_x = _texture->trim_offset_x;
+    *_y = _texture->trim_offset_y;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_trim_size( dz_texture_t * _texture, float _width, float _height )
+{
+    _texture->trim_width = _width;
+    _texture->trim_height = _height;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_get_trim_size( const dz_texture_t * _texture, float * const _width, float * const _height )
+{
+    *_width = _texture->trim_width;
+    *_height = _texture->trim_height;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_random_weight( dz_texture_t * const _texture, float _weight )
+{
+    _texture->random_weight = _weight;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_texture_get_random_weight( const dz_texture_t * _texture )
+{
+    return _texture->random_weight;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_texture_set_sequence_delay( dz_texture_t * const _texture, float _delay )
+{
+    _texture->sequence_delay = _delay;
+}
+//////////////////////////////////////////////////////////////////////////
+float dz_texture_get_sequence_delay( const dz_texture_t * _texture )
+{
+    return _texture->sequence_delay;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_atlas_create( const dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud )

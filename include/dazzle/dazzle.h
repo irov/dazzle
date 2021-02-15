@@ -41,6 +41,18 @@ dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture );
 void dz_texture_set_uv( dz_texture_t * const _texture, const float * _u, const float * _v );
 void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float * const _v );
 
+void dz_texture_set_trim_offset( dz_texture_t * const _texture, float _x, float _y );
+void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * const _x, float * const _y );
+
+void dz_texture_set_trim_size( dz_texture_t * _texture, float _width, float _height );
+void dz_texture_get_trim_size( const dz_texture_t * _texture, float * const _width, float * const _height );
+
+void dz_texture_set_random_weight( dz_texture_t * const _texture, float _weight );
+float dz_texture_get_random_weight( const dz_texture_t * _texture );
+
+void dz_texture_set_sequence_delay( dz_texture_t * const _texture, float _delay );
+float dz_texture_get_sequence_delay( const dz_texture_t * _texture );
+
 typedef struct dz_atlas_t dz_atlas_t;
 
 dz_result_t dz_atlas_create( const dz_service_t * _service, dz_atlas_t ** _atlas, dz_userdata_t _surface, dz_userdata_t _ud );

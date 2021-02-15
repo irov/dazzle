@@ -43,6 +43,15 @@ static dz_result_t __write_texture( const dz_texture_t * _texture, dz_stream_wri
     DZ_WRITEN( _write, _ud, _texture->u, 4 );
     DZ_WRITEN( _write, _ud, _texture->v, 4 );
 
+    DZ_WRITE( _write, _ud, _texture->trim_offset_x );
+    DZ_WRITE( _write, _ud, _texture->trim_offset_y );
+
+    DZ_WRITE( _write, _ud, _texture->trim_width );
+    DZ_WRITE( _write, _ud, _texture->trim_height );
+
+    DZ_WRITE( _write, _ud, _texture->random_weight );
+    DZ_WRITE( _write, _ud, _texture->sequence_delay );
+
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
