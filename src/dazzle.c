@@ -1352,7 +1352,7 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
         {
             _p->texture = DZ_NULLPTR;
         }break;
-    case DZ_MATERIAL_MODE_TEXURE:
+    case DZ_MATERIAL_MODE_TEXTURE:
         {
 #ifdef DZ_DEBUG
             if( atlas->texture_count == 0 )

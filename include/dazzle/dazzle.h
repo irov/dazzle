@@ -91,7 +91,7 @@ dz_blend_type_e dz_material_get_default_blend( void );
 typedef enum dz_material_mode_e
 {
     DZ_MATERIAL_MODE_SOLID,
-    DZ_MATERIAL_MODE_TEXURE,
+    DZ_MATERIAL_MODE_TEXTURE,
     DZ_MATERIAL_MODE_SEQUENCE
 } dz_material_mode_e;
 
