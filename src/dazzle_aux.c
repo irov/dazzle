@@ -117,9 +117,9 @@ const char * dz_affector_timeline_type_stringize( dz_affector_timeline_type_e _t
         {
             return "strafe_shift";
         }break;
-    case DZ_AFFECTOR_TIMELINE_SIZE:
+    case DZ_AFFECTOR_TIMELINE_SCALE:
         {
-            return "size";
+            return "scale";
         }break;
     case DZ_AFFECTOR_TIMELINE_ASPECT:
         {

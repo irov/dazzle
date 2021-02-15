@@ -41,6 +41,12 @@ dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture );
 void dz_texture_set_uv( dz_texture_t * const _texture, const float * _u, const float * _v );
 void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float * const _v );
 
+void dz_texture_set_width( dz_texture_t * const _texture, float _width );
+float dz_texture_get_width( const dz_texture_t * _texture );
+
+void dz_texture_set_height( dz_texture_t * const _texture, float _height );
+float dz_texture_get_height( const dz_texture_t * _texture );
+
 void dz_texture_set_trim_offset( dz_texture_t * const _texture, float _x, float _y );
 void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * const _x, float * const _y );
 
@@ -68,7 +74,7 @@ uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
 
 dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t * _texture );
 dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture );
-dz_result_t dz_atlas_pop_texture( const dz_atlas_t * _atlas, dz_texture_t ** _texture );
+dz_result_t dz_atlas_pop_texture( dz_atlas_t * const _atlas, const dz_texture_t ** _texture );
 
 typedef enum dz_blend_type_e
 {
@@ -81,6 +87,15 @@ typedef enum dz_blend_type_e
 } dz_blend_type_e;
 
 dz_blend_type_e dz_material_get_default_blend( void );
+
+typedef enum dz_material_mode_e
+{
+    DZ_MATERIAL_MODE_SOLID,
+    DZ_MATERIAL_MODE_TEXURE,
+    DZ_MATERIAL_MODE_SEQUENCE
+} dz_material_mode_e;
+
+dz_material_mode_e dz_material_get_default_mode( void );
 
 typedef struct dz_material_t dz_material_t;
 
@@ -99,14 +114,7 @@ void dz_material_get_color( const dz_material_t * _material, float * const _r, f
 void dz_material_set_atlas( dz_material_t * const _material, const dz_atlas_t * _atlas );
 const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material );
 
-void dz_material_set_frame_duration( dz_material_t * const _material, float _duration );
-float dz_meterial_get_frame_duration( const dz_material_t * _material );
 
-typedef enum dz_material_mode_e
-{
-    DZ_MATERIAL_MODE_TEXURE,
-    DZ_MATERIAL_MODE_SEQUENCE
-} dz_material_mode_e;
 
 void dz_material_set_mode( dz_material_t * const _material, dz_material_mode_e _mode );
 dz_material_mode_e dz_material_get_mode( const dz_material_t * _material );
@@ -186,7 +194,7 @@ typedef enum dz_affector_timeline_type_e
     DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE,
     DZ_AFFECTOR_TIMELINE_STRAFE_SIZE,
     DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT,
-    DZ_AFFECTOR_TIMELINE_SIZE,
+    DZ_AFFECTOR_TIMELINE_SCALE,
     DZ_AFFECTOR_TIMELINE_ASPECT,
     DZ_AFFECTOR_TIMELINE_COLOR_R,
     DZ_AFFECTOR_TIMELINE_COLOR_G,
@@ -208,6 +216,8 @@ typedef enum dz_timeline_limit_status_e
 } dz_timeline_limit_status_e;
 
 void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor );
+
+float dz_affector_get_particle_size( void );
 
 typedef enum dz_shape_type_e
 {

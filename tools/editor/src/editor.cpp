@@ -151,7 +151,7 @@ const char * ER_AFFECTOR_DATA_NAMES[] = {
     "Strafe frequence",  //DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
     "Strafe size",       //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
     "Strafe shift",      //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
-    "Size",              //DZ_AFFECTOR_TIMELINE_SIZE
+    "Scale",             //DZ_AFFECTOR_TIMELINE_SCALE
     "Aspect",            //DZ_AFFECTOR_TIMELINE_ASPECT
     "Color Red",         //DZ_AFFECTOR_TIMELINE_COLOR_R
     "Color Green",       //DZ_AFFECTOR_TIMELINE_COLOR_G
@@ -882,20 +882,20 @@ dz_result_t editor::init()
             data.type = static_cast<dz_emitter_timeline_type_e>(index);
             data.name = ER_EMITTER_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
             data.zoom = 1;
 
             data.selectedPoint = ER_CURVE_POINT_NONE;
 
-            if( __set_emitter_timeline_const( m_service, m_emitter, data.type, default ) == DZ_FAILURE )
+            if( __set_emitter_timeline_const( m_service, m_emitter, data.type, default_value ) == DZ_FAILURE )
             {
                 return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
-            data.pointsData[0].y = default;
+            data.pointsData[0].y = default_value;
 
             data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
         }
@@ -913,20 +913,20 @@ dz_result_t editor::init()
             data.type = static_cast<dz_affector_timeline_type_e>(index);
             data.name = ER_AFFECTOR_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
             data.zoom = 1;
 
             data.selectedPoint = ER_CURVE_POINT_NONE;
 
-            if( __set_affector_timeline_const( m_service, m_affector, data.type, default ) == DZ_FAILURE )
+            if( __set_affector_timeline_const( m_service, m_affector, data.type, default_value ) == DZ_FAILURE )
             {
                 return DZ_FAILURE;
             }
 
             data.pointsData[0].x = 0.f;
-            data.pointsData[0].y = default;
+            data.pointsData[0].y = default_value;
 
             data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
         }
@@ -2675,8 +2675,8 @@ dz_result_t editor::showShapeData()
             if( headerFlags[index] == true )
             {
                 dz_timeline_limit_status_e status;
-                float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-                dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+                float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+                dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
                 float life = dz_effect_get_life( m_effect );
 
                 // curve
@@ -2750,8 +2750,8 @@ dz_result_t editor::showAffectorData()
         if( headerFlags[index] == true )
         {
             dz_timeline_limit_status_e status;
-            float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
             float life = dz_effect_get_life( m_effect );
 
             // curve
@@ -2818,8 +2818,8 @@ dz_result_t editor::showEmitterData()
         if( headerFlags[index] == true )
         {
             dz_timeline_limit_status_e status;
-            float min = 0.f, max = 0.f, default = 0.f, factor = 0.f;
-            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default, &factor );
+            float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
             float life = dz_effect_get_life( m_effect );
 
             // curve
@@ -2930,7 +2930,7 @@ dz_result_t editor::showMaterialData()
 
             dz_atlas_set_surface( m_atlas, &m_textureId );
 
-            dz_texture_t * texture = DZ_NULLPTR;
+            const dz_texture_t * texture = DZ_NULLPTR;
             while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
             {
                 dz_texture_destroy( m_service, texture );
@@ -2941,6 +2941,8 @@ dz_result_t editor::showMaterialData()
             {
                 float u[4];
                 float v[4];
+                float w;
+                float h;
                 float trim_x;
                 float trim_y;
                 float trim_w;
@@ -2949,21 +2951,21 @@ dz_result_t editor::showMaterialData()
 
             FrameDesc frames[] = {
                 // animtaion 'coins_single_' frames 15/15
-                { { 0.298908f, 0.436941f, 0.436941f, 0.298908f }, { 0.581419f, 0.581419f, 0.723277f, 0.723277f }, 0.150000f, 0.055556f, 0.772222f, 0.788889f },
-                { { 0.181728f, 0.353525f, 0.353525f, 0.181728f }, { 0.000999f, 0.000999f, 0.151848f, 0.151848f }, 0.011111f, 0.144444f, 0.961111f, 0.838889f },
-                { { 0.512413f, 0.632572f, 0.632572f, 0.512413f }, { 0.290709f, 0.290709f, 0.396603f, 0.396603f }, 0.166667f, 0.205556f, 0.672222f, 0.588889f },
-                { { 0.882820f, 0.993049f, 0.993049f, 0.882820f }, { 0.774226f, 0.774226f, 0.885115f, 0.885115f }, 0.194444f, 0.238889f, 0.616667f, 0.616667f },
-                { { 0.861966f, 0.998014f, 0.998014f, 0.861966f }, { 0.651349f, 0.651349f, 0.772228f, 0.772228f }, 0.122222f, 0.166667f, 0.761111f, 0.672222f },
-                { { 0.296922f, 0.442900f, 0.442900f, 0.296922f }, { 0.725275f, 0.725275f, 0.860140f, 0.860140f }, 0.138889f, 0.105556f, 0.816667f, 0.750000f },
-                { { 0.444886f, 0.595829f, 0.595829f, 0.444886f }, { 0.724276f, 0.724276f, 0.873127f, 0.873127f }, 0.133333f, 0.066667f, 0.844444f, 0.827778f },
-                { { 0.728898f, 0.859980f, 0.859980f, 0.728898f }, { 0.691309f, 0.691309f, 0.825175f, 0.825175f }, 0.155556f, 0.138889f, 0.733333f, 0.744444f },
-                { { 0.000993f, 0.179742f, 0.179742f, 0.000993f }, { 0.000999f, 0.000999f, 0.172827f, 0.172827f }, 0.000000f, 0.044444f, 1.000000f, 0.955556f },
-                { { 0.699106f, 0.829196f, 0.829196f, 0.699106f }, { 0.283716f, 0.283716f, 0.406593f, 0.406593f }, 0.155556f, 0.161111f, 0.727778f, 0.683333f },
-                { { 0.181728f, 0.349553f, 0.349553f, 0.181728f }, { 0.153846f, 0.153846f, 0.285714f, 0.285714f }, 0.055556f, 0.144444f, 0.938889f, 0.733333f },
-                { { 0.159881f, 0.296922f, 0.296922f, 0.159881f }, { 0.414585f, 0.414585f, 0.500500f, 0.500500f }, 0.088889f, 0.277778f, 0.766667f, 0.477778f },
-                { { 0.593843f, 0.740814f, 0.740814f, 0.593843f }, { 0.880120f, 0.880120f, 0.995005f, 0.995005f }, 0.133333f, 0.166667f, 0.822222f, 0.638889f },
-                { { 0.520357f, 0.675273f, 0.675273f, 0.520357f }, { 0.150849f, 0.150849f, 0.288711f, 0.288711f }, 0.122222f, 0.105556f, 0.866667f, 0.766667f },
-                { { 0.000993f, 0.178749f, 0.178749f, 0.000993f }, { 0.174825f, 0.174825f, 0.341658f, 0.341658f }, 0.005556f, 0.072222f, 0.994444f, 0.927778f },
+                {{0.298908f, 0.436941f, 0.436941f, 0.298908f}, {0.581419f, 0.581419f, 0.723277f, 0.723277f}, 180.000000f, 180.000000f, 27.000000f, 10.000000f, 139.000000f, 142.000000f},
+                {{0.181728f, 0.353525f, 0.353525f, 0.181728f}, {0.000999f, 0.000999f, 0.151848f, 0.151848f}, 180.000000f, 180.000000f, 2.000000f, 26.000000f, 173.000000f, 151.000000f},
+                {{0.512413f, 0.632572f, 0.632572f, 0.512413f}, {0.290709f, 0.290709f, 0.396603f, 0.396603f}, 180.000000f, 180.000000f, 30.000000f, 37.000000f, 121.000000f, 106.000000f},
+                {{0.882820f, 0.993049f, 0.993049f, 0.882820f}, {0.774226f, 0.774226f, 0.885115f, 0.885115f}, 180.000000f, 180.000000f, 35.000000f, 43.000000f, 111.000000f, 111.000000f},
+                {{0.861966f, 0.998014f, 0.998014f, 0.861966f}, {0.651349f, 0.651349f, 0.772228f, 0.772228f}, 180.000000f, 180.000000f, 22.000000f, 30.000000f, 137.000000f, 121.000000f},
+                {{0.296922f, 0.442900f, 0.442900f, 0.296922f}, {0.725275f, 0.725275f, 0.860140f, 0.860140f}, 180.000000f, 180.000000f, 25.000000f, 19.000000f, 147.000000f, 135.000000f},
+                {{0.444886f, 0.595829f, 0.595829f, 0.444886f}, {0.724276f, 0.724276f, 0.873127f, 0.873127f}, 180.000000f, 180.000000f, 24.000000f, 12.000000f, 152.000000f, 149.000000f},
+                {{0.728898f, 0.859980f, 0.859980f, 0.728898f}, {0.691309f, 0.691309f, 0.825175f, 0.825175f}, 180.000000f, 180.000000f, 28.000000f, 25.000000f, 132.000000f, 134.000000f},
+                {{0.000993f, 0.179742f, 0.179742f, 0.000993f}, {0.000999f, 0.000999f, 0.172827f, 0.172827f}, 180.000000f, 180.000000f, 0.000000f, 8.000000f, 180.000000f, 172.000000f},
+                {{0.699106f, 0.829196f, 0.829196f, 0.699106f}, {0.283716f, 0.283716f, 0.406593f, 0.406593f}, 180.000000f, 180.000000f, 28.000000f, 29.000000f, 131.000000f, 123.000000f},
+                {{0.181728f, 0.349553f, 0.349553f, 0.181728f}, {0.153846f, 0.153846f, 0.285714f, 0.285714f}, 180.000000f, 180.000000f, 10.000000f, 26.000000f, 169.000000f, 132.000000f},
+                {{0.159881f, 0.296922f, 0.296922f, 0.159881f}, {0.414585f, 0.414585f, 0.500500f, 0.500500f}, 180.000000f, 180.000000f, 16.000000f, 50.000000f, 138.000000f, 86.000000f},
+                {{0.593843f, 0.740814f, 0.740814f, 0.593843f}, {0.880120f, 0.880120f, 0.995005f, 0.995005f}, 180.000000f, 180.000000f, 24.000000f, 30.000000f, 148.000000f, 115.000000f},
+                {{0.520357f, 0.675273f, 0.675273f, 0.520357f}, {0.150849f, 0.150849f, 0.288711f, 0.288711f}, 180.000000f, 180.000000f, 22.000000f, 19.000000f, 156.000000f, 138.000000f},
+                {{0.000993f, 0.178749f, 0.178749f, 0.000993f}, {0.174825f, 0.174825f, 0.341658f, 0.341658f}, 180.000000f, 180.000000f, 1.000000f, 13.000000f, 179.000000f, 167.000000f},
 
                 //// animtaion 'diamond_single_' frames 30/30
                 //{ { 0.355511f, 0.516385f, 0.516385f, 0.355511f }, { 0.151848f, 0.151848f, 0.274725f, 0.274725f }, 0.050000f, 0.255556f, 0.900000f, 0.683333f },
@@ -3008,13 +3010,15 @@ dz_result_t editor::showMaterialData()
                 }
 
                 dz_texture_set_uv( tempTexture, frame.u, frame.v );
+                dz_texture_set_width( tempTexture, frame.w );
+                dz_texture_set_height( tempTexture, frame.h );
                 dz_texture_set_trim_offset( tempTexture, frame.trim_x, frame.trim_y );
                 dz_texture_set_trim_size( tempTexture, frame.trim_w, frame.trim_h );
+                dz_texture_set_sequence_delay( tempTexture, 0.066f );
 
                 dz_atlas_add_texture( m_atlas, tempTexture );
             }
 
-            dz_material_set_frame_duration( m_material, 0.066f );
             //dz_material_set_frame_duration( m_material, 1.f );
             dz_material_set_mode( m_material, DZ_MATERIAL_MODE_SEQUENCE );
             //dz_material_set_mode( m_material, DZ_MATERIAL_MODE_TEXURE );
@@ -3402,7 +3406,7 @@ void editor::finalize()
 
         dz_material_destroy( m_service, m_material );
 
-        dz_texture_t * texture;
+        const dz_texture_t * texture;
         while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
         {
             dz_texture_destroy( m_service, texture );

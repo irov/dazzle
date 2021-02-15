@@ -8,6 +8,9 @@ typedef struct dz_texture_t
     float u[4];
     float v[4];
 
+    float width;
+    float height;
+
     float trim_offset_x;
     float trim_offset_y;
 
