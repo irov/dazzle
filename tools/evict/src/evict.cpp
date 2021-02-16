@@ -14,6 +14,10 @@ static jpp::object __evict_texture_write( const dz_texture_t * _texture )
     obj.set( "u", jpp::make_tuple( u[0], u[1], u[2], u[3] ) );
     obj.set( "v", jpp::make_tuple( v[0], v[1], v[2], v[3] ) );
 
+    float width = dz_texture_get_width( _texture );
+    float height = dz_texture_get_height( _texture );
+    obj.set( "size", jpp::make_tuple( width, height ) );
+
     float trim_offset_x;
     float trim_offset_y;
     dz_texture_get_trim_offset( _texture, &trim_offset_x, &trim_offset_y );
@@ -313,6 +317,14 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
     float v[4] = {j_v[0], j_v[1], j_v[2], j_v[3]};
 
     dz_texture_set_uv( texture, u, v );
+
+    float width = _data["size"][0];
+    
+    dz_texture_set_width( texture, width );
+
+    float height = _data["size"][1];
+    
+    dz_texture_set_height( texture, height );
 
     float trim_offset_x = _data["trim_offset"][0];
     float trim_offset_y = _data["trim_offset"][1];

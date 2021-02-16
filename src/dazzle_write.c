@@ -43,6 +43,9 @@ static dz_result_t __write_texture( const dz_texture_t * _texture, dz_stream_wri
     DZ_WRITEN( _write, _ud, _texture->u, 4 );
     DZ_WRITEN( _write, _ud, _texture->v, 4 );
 
+    DZ_WRITE( _write, _ud, _texture->width );
+    DZ_WRITE( _write, _ud, _texture->height );
+
     DZ_WRITE( _write, _ud, _texture->trim_offset_x );
     DZ_WRITE( _write, _ud, _texture->trim_offset_y );
 
@@ -58,6 +61,8 @@ static dz_result_t __write_texture( const dz_texture_t * _texture, dz_stream_wri
 static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     DZ_WRITE( _write, _ud, _atlas->texture_count );
+
+    DZ_WRITE( _write, _ud, _atlas->textures_time );
 
     for( uint32_t index = 0; index != _atlas->texture_count; ++index )
     {

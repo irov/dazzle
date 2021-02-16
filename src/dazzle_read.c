@@ -67,6 +67,9 @@ static dz_result_t __read_texture( const dz_service_t * _service, dz_texture_t *
     DZ_READN( _read, _ud, texture->u, 4 );
     DZ_READN( _read, _ud, texture->v, 4 );
 
+    DZ_READ( _read, _ud, texture->width );
+    DZ_READ( _read, _ud, texture->height );
+
     DZ_READ( _read, _ud, texture->trim_offset_x );
     DZ_READ( _read, _ud, texture->trim_offset_y );
 
@@ -90,6 +93,8 @@ static dz_result_t __read_atlas( const dz_service_t * _service, dz_atlas_t ** _a
     }
 
     DZ_READ( _read, _ud, atlas->texture_count );
+
+    DZ_READ( _read, _ud, atlas->textures_time );
 
     for( uint32_t index = 0; index != atlas->texture_count; ++index )
     {
