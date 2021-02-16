@@ -275,6 +275,10 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 
     obj.set( "life", life );
 
+    uint32_t seed = dz_effect_get_seed( _effect );
+
+    obj.set( "seed", seed );
+
     const dz_material_t * material = dz_effect_get_material( _effect );
 
     jpp::object obj_material = __evict_material_write( material );
@@ -752,8 +756,10 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
 
     float life = _data.get( "life", 0.f );
 
+    uint32_t seed = _data.get( "seed", 0 );
+
     dz_effect_t * effect;
-    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, seed, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }

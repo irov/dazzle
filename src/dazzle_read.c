@@ -351,8 +351,11 @@ dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effec
     float life;
     DZ_READ( _read, _ud, life );
 
+    uint32_t seed;
+    DZ_READ( _read, _ud, seed );
+
     dz_effect_t * effect;
-    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, seed, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }

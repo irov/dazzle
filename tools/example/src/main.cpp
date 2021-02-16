@@ -423,13 +423,13 @@ int main( int argc, char ** argv )
     }
 
     dz_effect_t * effect;
-    if( dz_effect_create( service, &effect, material, shape, emitter, affector, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( service, &effect, material, shape, emitter, affector, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }
 
     dz_instance_t * instnace;
-    if( dz_instance_create( service, &instnace, effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_instance_create( service, &instnace, effect, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }

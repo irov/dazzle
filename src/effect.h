@@ -15,6 +15,8 @@ typedef struct dz_effect_t
     const dz_emitter_t * emitter;
     const dz_affector_t * affector;
 
+    uint32_t seed;
+
     float life;
 
     dz_userdata_t ud;

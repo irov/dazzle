@@ -1005,7 +1005,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_userdata_t _ud )
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, uint32_t _seed, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _service == DZ_NULLPTR )
@@ -1037,6 +1037,8 @@ dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _eff
     {
         return DZ_FAILURE;
     }
+
+    // todo: check seed
 #endif
 
     dz_effect_t * effect = DZ_NEW( _service, dz_effect_t );
@@ -1047,6 +1049,7 @@ dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _eff
     effect->affector = _affector;
 
     effect->life = _life;
+    effect->seed = _seed;
 
     effect->ud = _ud;
 
@@ -1120,7 +1123,17 @@ float dz_effect_get_life( const dz_effect_t * _effect )
     return _effect->life;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud )
+void dz_effect_set_seed( dz_effect_t * const _effect, uint32_t _seed )
+{
+    _effect->seed = _seed;
+}
+//////////////////////////////////////////////////////////////////////////
+uint32_t dz_effect_get_seed( const dz_effect_t * _effect )
+{
+    return _effect->seed;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _service == DZ_NULLPTR )
@@ -1138,8 +1151,8 @@ dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** 
 
     instance->effect = _effect;
 
-    instance->init_seed = _seed;
-    instance->seed = _seed;
+    instance->init_seed = _effect->seed;
+    instance->seed = _effect->seed;
 
     instance->partices = DZ_NULLPTR;
     instance->partices_count = 0;

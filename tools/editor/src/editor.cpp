@@ -932,12 +932,12 @@ dz_result_t editor::init()
         }
 
         // emitter
-        if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 5.f, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
 
-        if( dz_instance_create( m_service, &m_instance, m_effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
@@ -1285,10 +1285,14 @@ dz_result_t editor::loadEffect()
             return DZ_FAILURE;
         }
 
-        if( dz_instance_create( m_service, &m_instance, m_effect, 0, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
+
+        uint32_t seed = dz_effect_get_seed( m_effect );
+
+        dz_instance_set_seed( m_instance, seed );
 
         m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
 
@@ -2596,6 +2600,8 @@ dz_result_t editor::showEffectData()
 
     if( ImGui::InputInt( ER_WINDOW_EFFECT_SEED_TEXT, &seed, 0, 0, ImGuiInputTextFlags_None ) == true )
     {
+        dz_effect_set_seed( m_effect, seed );
+
         dz_instance_set_seed( m_instance, seed );
 
         this->resetEffect();

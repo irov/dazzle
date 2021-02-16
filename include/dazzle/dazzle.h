@@ -309,7 +309,7 @@ void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_tim
 
 typedef struct dz_effect_t dz_effect_t;
 
-dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_userdata_t _ud );
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, uint32_t _seed, dz_userdata_t _ud );
 void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effect );
 
 void dz_effect_set_ud( dz_effect_t * const _effect, dz_userdata_t _ud );
@@ -330,9 +330,12 @@ const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect );
 void dz_effect_set_life( dz_effect_t * const _effect, float _life );
 float dz_effect_get_life( const dz_effect_t * _effect );
 
+void dz_effect_set_seed( dz_effect_t * const _effect, uint32_t _seed );
+uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
+
 typedef struct dz_instance_t dz_instance_t;
 
-dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, uint32_t _seed, dz_userdata_t _ud );
+dz_result_t dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, dz_userdata_t _ud );
 void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _instance );
 
 void dz_instance_set_ud( dz_instance_t * const _instance, dz_userdata_t _ud );

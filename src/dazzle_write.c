@@ -258,6 +258,7 @@ dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_stream_write_t _wri
     }
 
     DZ_WRITE( _write, _ud, _effect->life );
+    DZ_WRITE( _write, _ud, _effect->seed );
 
     return DZ_SUCCESSFUL;
 }
