@@ -5,6 +5,7 @@
 #include "dazzle/dazzle.h"
 
 const char * dz_blend_type_stringize( dz_blend_type_e _type );
+const char * dz_material_mode_stringize( dz_material_mode_e _mode );
 const char * dz_timeline_key_type_stringize( dz_timeline_key_type_e _type );
 const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_type_e _type );
 const char * dz_affector_timeline_type_stringize( dz_affector_timeline_type_e _type );

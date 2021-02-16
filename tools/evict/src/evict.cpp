@@ -78,6 +78,12 @@ static jpp::object __evict_material_write( const dz_material_t * _material )
 
     obj.set( "color", jpp::make_tuple( r, g, b, a ) );
 
+    dz_material_mode_e mode = dz_material_get_mode( _material );
+
+    const char * mode_str = dz_material_mode_stringize( mode );
+
+    obj.set( "mode", mode_str );
+
     const dz_atlas_t * atlas = dz_material_get_atlas( _material );
 
     jpp::object obj_atlas = __evict_atlas_write( atlas );
@@ -394,6 +400,28 @@ static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t
     jpp::object j_color = _data["color"];
 
     dz_material_set_color( material, j_color[0], j_color[1], j_color[2], j_color[3] );
+
+    const char * j_mode = _data["mode"];
+
+    dz_material_mode_e mode;
+    if( strcmp( j_mode, "solid" ) == 0 )
+    {
+        mode = DZ_MATERIAL_MODE_SOLID;
+    }
+    else if( strcmp( j_mode, "texture" ) == 0 )
+    {
+        mode = DZ_MATERIAL_MODE_TEXTURE;
+    }
+    else if( strcmp( j_mode, "sequence" ) == 0 )
+    {
+        mode = DZ_MATERIAL_MODE_SEQUENCE;
+    }
+    else
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_material_set_mode( material, mode );
 
     jpp::object j_atlas = _data["atlas"];
 

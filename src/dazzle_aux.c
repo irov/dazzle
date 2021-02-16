@@ -29,6 +29,30 @@ const char * dz_blend_type_stringize( dz_blend_type_e _type )
     return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
+const char * dz_material_mode_stringize( dz_material_mode_e _mode )
+{
+    switch( _mode )
+    {
+    case DZ_MATERIAL_MODE_SOLID:
+        {
+            return "solid";
+        }break;
+    case DZ_MATERIAL_MODE_TEXTURE:
+        {
+            return "texture";
+        }break;
+    case DZ_MATERIAL_MODE_SEQUENCE:
+        {
+            return "sequence";
+        }break;
+    case __DZ_MATERIAL_MODE_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_NULLPTR;
+}
+//////////////////////////////////////////////////////////////////////////
 const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_type_e _type )
 {
     switch( _type )

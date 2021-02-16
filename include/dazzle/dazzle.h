@@ -92,7 +92,9 @@ typedef enum dz_material_mode_e
 {
     DZ_MATERIAL_MODE_SOLID,
     DZ_MATERIAL_MODE_TEXTURE,
-    DZ_MATERIAL_MODE_SEQUENCE
+    DZ_MATERIAL_MODE_SEQUENCE,
+
+    __DZ_MATERIAL_MODE_MAX__
 } dz_material_mode_e;
 
 dz_material_mode_e dz_material_get_default_mode( void );
