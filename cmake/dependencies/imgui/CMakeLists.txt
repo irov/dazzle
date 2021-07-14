@@ -11,5 +11,7 @@ add_library(${PROJECT_NAME} STATIC
     ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
 )
 
+add_definitions(-DIMGUI_DISABLE_DEMO_WINDOWS)
+
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 install(FILES ${IMGUI_SOURCE_DIR}/imgui.h ${IMGUI_SOURCE_DIR}/imgui_internal.h ${IMGUI_SOURCE_DIR}/imstb_textedit.h ${IMGUI_SOURCE_DIR}/imconfig.h DESTINATION include)
