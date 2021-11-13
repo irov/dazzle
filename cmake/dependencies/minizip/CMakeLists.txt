@@ -46,8 +46,8 @@ endif()
 # zlib
 #============================================================================
 
-include_directories(${ZLIB_INCLUDE_DIR})
-MESSAGE("ZLIB_INCLUDE_DIR: ${ZLIB_INCLUDE_DIR}")
+include_directories(${ZLIB_INCLUDE_DIRS})
+MESSAGE("ZLIB_INCLUDE_DIRS: ${ZLIB_INCLUDE_DIRS}")
 
 set(MINIZIP_SOURCES
     ${DAZZLE_THIRDPARTY_DIR}/zlib/contrib/minizip/zip.h
