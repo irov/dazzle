@@ -3082,7 +3082,7 @@ void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out )
         return _buflen;
     };
 
-    jpp::object json = jpp::load( my_jpp_load_callback, my_jpp_error, &jd );
+    jpp::object json = jpp::load( my_jpp_load_callback, jpp::JPP_LOAD_MODE_NONE, my_jpp_error, &jd );
 
     if( json == jpp::detail::invalid )
     {
@@ -3275,7 +3275,7 @@ dz_result_t editor::showContentPaneControls()
         , life
     );
 
-    if( ImGui::SliderFloat( "", &time, 0.0f, life, label ) == true )
+    if( ImGui::SliderFloat( ER_WINDOW_CONTROLS_TIMELINE_PREFIX_TEXT, &time, 0.0f, life, label ) == true )
     {
         this->resetEffect();
 

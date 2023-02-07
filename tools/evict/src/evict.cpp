@@ -314,29 +314,33 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
         return DZ_FAILURE;
     }
 
-    jpp::object j_u = _data["u"];
-    jpp::object j_v = _data["v"];
+    jpp::array j_u = _data["u"];
+    jpp::array j_v = _data["v"];
 
     float u[4] = {j_u[0], j_u[1], j_u[2], j_u[3]};
     float v[4] = {j_v[0], j_v[1], j_v[2], j_v[3]};
 
     dz_texture_set_uv( texture, u, v );
 
-    float width = _data["size"][0];
+    jpp::array j_size = _data["size"];
+
+    float width = j_size[0];
+    float height = j_size[1];
     
     dz_texture_set_width( texture, width );
-
-    float height = _data["size"][1];
-    
     dz_texture_set_height( texture, height );
 
-    float trim_offset_x = _data["trim_offset"][0];
-    float trim_offset_y = _data["trim_offset"][1];
+    jpp::array j_trim_offset = _data["trim_offset"];
+
+    float trim_offset_x = j_trim_offset[0];
+    float trim_offset_y = j_trim_offset[1];
 
     dz_texture_set_trim_offset( texture, trim_offset_x, trim_offset_y );
 
-    float trime_width = _data["trim_size"][0];
-    float trime_height = _data["trim_size"][1];
+    jpp::array j_trim_size = _data["trim_size"];
+
+    float trime_width = j_trim_size[0];
+    float trime_height = j_trim_size[1];
 
     dz_texture_set_trim_size( texture, trime_width, trime_height );
 
@@ -413,7 +417,7 @@ static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t
 
     dz_material_set_blend( material, blend_type );
 
-    jpp::object j_color = _data["color"];
+    jpp::array j_color = _data["color"];
 
     dz_material_set_color( material, j_color[0], j_color[1], j_color[2], j_color[3] );
 
@@ -482,8 +486,10 @@ static dz_result_t __evict_timeline_interpolate_load( dz_service_t * _service, d
         return DZ_FAILURE;
     }
 
-    float p0 = _data["bezier2"]["p0"];
-    float p1 = _data["bezier2"]["p1"];
+    jpp::object j_bezier2 = _data["bezier2"];
+
+    float p0 = j_bezier2["p0"];
+    float p1 = j_bezier2["p1"];
 
     dz_timeline_interpolate_set_bezier2( interpolate, p0, p1 );
 
