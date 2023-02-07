@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    const uint8_t v = (uint8_t)_b;
+    const dz_uint8_t v = (dz_uint8_t)_b;
 
     DZ_WRITE( _write, _ud, v );
 
@@ -27,11 +27,11 @@ static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_user
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    const uint32_t magic = dz_get_magic();
+    const dz_uint32_t magic = dz_get_magic();
 
     DZ_WRITE( _write, _ud, magic );
 
-    const uint32_t version = dz_get_version();
+    const dz_uint32_t version = dz_get_version();
 
     DZ_WRITE( _write, _ud, version );
 
@@ -64,7 +64,7 @@ static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_stream_write_t _
 
     DZ_WRITE( _write, _ud, _atlas->textures_time );
 
-    for( uint32_t index = 0; index != _atlas->texture_count; ++index )
+    for( dz_uint32_t index = 0; index != _atlas->texture_count; ++index )
     {
         const dz_texture_t * texture = _atlas->textures[index];
 
@@ -163,7 +163,7 @@ static dz_result_t __write_shape( const dz_shape_t * _shape, dz_stream_write_t _
 {
     DZ_WRITE( _write, _ud, _shape->type );
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _shape->timelines[index];
 
@@ -189,7 +189,7 @@ static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_stream_wri
 {
     DZ_WRITE( _write, _ud, _emitter->life );
 
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _emitter->timelines[index];
 
@@ -213,7 +213,7 @@ static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_stream_wri
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __write_affector( const dz_affector_t * _affector, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _affector->timelines[index];
 

@@ -3,10 +3,10 @@
 
 #include "dazzle/dazzle.h"
 
-#include "glad/glad.h"
+#include "glad/gl.h"
 
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_error_check( const char * _file, uint32_t _line );
+dz_result_t dz_render_error_check( const char * _file, dz_uint32_t _line );
 //////////////////////////////////////////////////////////////////////////
 #define GLCALL( Method, Args )\
     do{\
@@ -46,13 +46,13 @@ typedef struct dz_render_desc_t
     GLuint shaderTextureProgram;
 }dz_render_desc_t;
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_initialize( dz_render_desc_t * _desc, uint16_t _max_vertex_count, uint16_t _max_index_count );
+dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_vertex_count, dz_uint16_t _max_index_count );
 void dz_render_finalize( dz_render_desc_t * _desc );
 //////////////////////////////////////////////////////////////////////////
 void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _right, float _top, float _bottom );
 //////////////////////////////////////////////////////////////////////////
-GLuint dz_render_make_texture( const char * _path, int32_t * _out_width, int32_t * _out_height );
-GLuint dz_render_make_texture_from_memory( const void * _buffer, size_t _size, int32_t * _out_width, int32_t * _out_height );
+GLuint dz_render_make_texture( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height );
+GLuint dz_render_make_texture_from_memory( const void * _buffer, dz_size_t _size, dz_int32_t * const _out_width, dz_int32_t * const _out_height );
 void dz_render_delete_texture( GLuint _id );
 //////////////////////////////////////////////////////////////////////////
 void dz_render_use_color_program( dz_render_desc_t * _desc );

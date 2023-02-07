@@ -9,7 +9,7 @@ include_directories(${DAZZLE_INCLUDE_DIR})
 include_directories(${DAZZLE_RENDER_INCLUDE_DIR})
 include_directories(${DAZZLE_RENDER_SOURCE_DIR})
 include_directories(${DAZZLE_DEPENDENCIES_DIR})
-include_directories(${DAZZLE_THIRDPARTY_DIR}/glad/include)
+include_directories(${DAZZLE_THIRDPARTY_DIR}/glad_gl_core_33/include)
 
 set(DAZZLE_RENDER_SOURCES
     ${DAZZLE_RENDER_INCLUDE_DIR}/render/render.h
@@ -20,7 +20,7 @@ set(DAZZLE_RENDER_SOURCES
 add_library(${PROJECT_NAME} STATIC ${DAZZLE_RENDER_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} dazzle)
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glad${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glad_gl_core_33${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 set_target_properties (${PROJECT_NAME} PROPERTIES
     FOLDER render

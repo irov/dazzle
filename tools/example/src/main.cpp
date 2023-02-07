@@ -1,7 +1,7 @@
 #include "dazzle/dazzle.hpp"
 #include "render/render.hpp"
 
-#include "glad/glad.h"
+#include "glad/gl.h"
 #include "GLFW/glfw3.h"
 
 #include <stdlib.h>
@@ -272,15 +272,15 @@ int main( int argc, char ** argv )
     mouse_pos_x = (float)cursorPosX;
     mouse_pos_y = (float)cursorPosY;
 
-    if( gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress ) == 0 )
+    if( gladLoadGL( (GLADloadfunc)&glfwGetProcAddress ) == 0 )
     {
         return EXIT_FAILURE;
     }
 
     glfwSwapInterval( 1 );
 
-    uint16_t max_vertex_count = 65535;
-    uint16_t max_index_count = 65535;
+    dz_uint16_t max_vertex_count = 65535;
+    dz_uint16_t max_index_count = 65535;
 
     dz_render_desc_t opengl_desc;
     if( dz_render_initialize( &opengl_desc, max_vertex_count, max_index_count ) == DZ_FAILURE )
@@ -352,7 +352,7 @@ int main( int argc, char ** argv )
     //float triangles[] = {-100.f, -100.f, 100.f, 0.f, 100.f, 100.f, 300.f, 200.f, 400.f, 200.f, 400.f, 500.f};
     //dz_shape_set_polygon( shape, triangles, 2 );
 
-    uint8_t mask[] = {
+    dz_uint8_t mask[] = {
         0, 0, 0, 0, 0,
         0, 1, 1, 1, 0,
         1, 0, 0, 0, 1,
@@ -412,7 +412,7 @@ int main( int argc, char ** argv )
         {DZ_AFFECTOR_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f},
     };
 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         timeline_t data = timeline_datas[index];
 

@@ -20,12 +20,12 @@
 #include "math.h"
 
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_get_magic( void )
+dz_uint32_t dz_get_magic( void )
 {
     return 'D' + ('A' << 8) + ('Z' << 16) + ('Z' << 24);
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_get_version( void )
+dz_uint32_t dz_get_version( void )
 {
     return 1;
 }
@@ -283,7 +283,7 @@ dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas )
     return _atlas->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
+dz_uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
 {
     return _atlas->texture_count;
 }
@@ -317,7 +317,7 @@ dz_result_t dz_atlas_pop_texture( dz_atlas_t * const _atlas, const dz_texture_t 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture )
+dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, dz_uint32_t _index, const dz_texture_t ** _texture )
 {
     const dz_texture_t * texture = _atlas->textures[_index];
 
@@ -609,7 +609,7 @@ dz_result_t dz_affector_create( const dz_service_t * _service, dz_affector_t ** 
 {
     dz_affector_t * affector = DZ_NEW( _service, dz_affector_t );
 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         affector->timelines[index] = DZ_NULLPTR;
     }
@@ -623,7 +623,7 @@ dz_result_t dz_affector_create( const dz_service_t * _service, dz_affector_t ** 
 //////////////////////////////////////////////////////////////////////////
 void dz_affector_destroy( const dz_service_t * _service, const dz_affector_t * _affector )
 {
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _affector->timelines[index];
 
@@ -661,7 +661,7 @@ dz_result_t dz_shape_create( const dz_service_t * _service, dz_shape_t ** _shape
 
     shape->type = _type;
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
         shape->timelines[index] = DZ_NULLPTR;
     }
@@ -686,7 +686,7 @@ dz_result_t dz_shape_create( const dz_service_t * _service, dz_shape_t ** _shape
 //////////////////////////////////////////////////////////////////////////
 void dz_shape_destroy( const dz_service_t * _service, const dz_shape_t * _shape )
 {
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _shape->timelines[index];
 
@@ -769,7 +769,7 @@ static float __get_shape_timeline_default( dz_shape_timeline_type_e _timeline )
     return default_value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _triangles, uint32_t _count )
+dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _triangles, dz_uint32_t _count )
 {
 #ifdef DZ_DEBUG
     if( _count > 1024 )
@@ -784,13 +784,13 @@ dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _tria
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles, uint32_t * _count )
+void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles, dz_uint32_t * _count )
 {
     *_triangles = _shape->triangles;
     *_count = _shape->triangle_count;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height )
+dz_result_t dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, dz_uint32_t _bites, dz_uint32_t _pitch, dz_uint32_t _width, dz_uint32_t _height )
 {
 #ifdef DZ_DEBUG
     if( _bites != 1 && _bites != 2 && _bites != 4 )
@@ -808,7 +808,7 @@ dz_result_t dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, uint32_t * _bites, uint32_t * _pitch, uint32_t * _width, uint32_t * _height )
+void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, dz_uint32_t * const _bites, dz_uint32_t * const _pitch, dz_uint32_t * const _width, dz_uint32_t * const _height )
 {
     *_buffer = _shape->mask_buffer;
     *_bites = _shape->mask_bites;
@@ -827,12 +827,12 @@ float dz_shape_get_mask_scale( const dz_shape_t * _shape )
     return _shape->mask_scale;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_mask_threshold( dz_shape_t * const _shape, uint32_t _threshold )
+void dz_shape_set_mask_threshold( dz_shape_t * const _shape, dz_uint32_t _threshold )
 {
     _shape->mask_threshold = _threshold;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape )
+dz_uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape )
 {
     return _shape->mask_threshold;
 }
@@ -843,7 +843,7 @@ dz_result_t dz_emitter_create( const dz_service_t * _service, dz_emitter_t ** _e
 
     emitter->life = 0.f;
 
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
         emitter->timelines[index] = DZ_NULLPTR;
     }
@@ -857,7 +857,7 @@ dz_result_t dz_emitter_create( const dz_service_t * _service, dz_emitter_t ** _e
 //////////////////////////////////////////////////////////////////////////
 void dz_emitter_destroy( const dz_service_t * _service, const dz_emitter_t * _emitter )
 {
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
         const dz_timeline_key_t * timeline = _emitter->timelines[index];
 
@@ -931,27 +931,27 @@ static float __get_emitter_timeline_default( dz_emitter_timeline_type_e _timelin
     return default_value;
 }
 //////////////////////////////////////////////////////////////////////////
-static uint16_t __get_rand( uint32_t * _seed )
+static dz_uint16_t __get_rand( dz_uint32_t * _seed )
 {
-    const uint32_t value = DZ_RAND_FUNCTION( *_seed );
+    const dz_uint32_t value = DZ_RAND_FUNCTION( *_seed );
 
     *_seed = value;
 
     return value & 0xffff;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_randf( uint32_t * _seed )
+static float __get_randf( dz_uint32_t * _seed )
 {
-    const uint16_t value = __get_rand( _seed );
+    const dz_uint16_t value = __get_rand( _seed );
 
     const float valuef = uint16_2_inv_float[value];
 
     return valuef;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_randf2( uint32_t * _seed, float _min, float _max )
+static float __get_randf2( dz_uint32_t * _seed, float _min, float _max )
 {
-    const uint16_t value = __get_rand( _seed );
+    const dz_uint16_t value = __get_rand( _seed );
 
     const float valuef = uint16_2_inv_float[value];
 
@@ -1005,7 +1005,7 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, uint32_t _seed, dz_userdata_t _ud )
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_uint32_t _seed, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _service == DZ_NULLPTR )
@@ -1123,12 +1123,12 @@ float dz_effect_get_life( const dz_effect_t * _effect )
     return _effect->life;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_seed( dz_effect_t * const _effect, uint32_t _seed )
+void dz_effect_set_seed( dz_effect_t * const _effect, dz_uint32_t _seed )
 {
     _effect->seed = _seed;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_effect_get_seed( const dz_effect_t * _effect )
+dz_uint32_t dz_effect_get_seed( const dz_effect_t * _effect )
 {
     return _effect->seed;
 }
@@ -1189,17 +1189,17 @@ void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _
     DZ_FREE( _service, _instance );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_seed( dz_instance_t * const _instance, uint32_t _seed )
+void dz_instance_set_seed( dz_instance_t * const _instance, dz_uint32_t _seed )
 {
     _instance->init_seed = _seed;
 }
 //////////////////////////////////////////////////////////////////////////
-uint32_t dz_instance_get_seed( const dz_instance_t * _instance )
+dz_uint32_t dz_instance_get_seed( const dz_instance_t * _instance )
 {
     return _instance->init_seed;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, uint16_t _limit )
+dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, dz_uint16_t _limit )
 {
 #ifdef DZ_DEBUG
     if( _limit > 10922 )
@@ -1213,7 +1213,7 @@ dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, uin
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance )
+dz_uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance )
 {
     return _instance->particle_limit;
 }
@@ -1393,7 +1393,7 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
             float texture_time = _p->time;
             for( ; texture_time > atlas->textures_time; texture_time -= atlas->textures_time );
 
-            for( uint32_t index = 0; index != atlas->texture_count; ++index )
+            for( dz_uint32_t index = 0; index != atlas->texture_count; ++index )
             {
                 const dz_texture_t * texture = atlas->textures[index];
 
@@ -1416,7 +1416,7 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value_seed( uint32_t * _seed, const dz_timeline_key_t * _timeline, float _p )
+static float __get_timeline_value_seed( dz_uint32_t * _seed, const dz_timeline_key_t * _timeline, float _p )
 {
     const float t = __get_randf( _seed );
 
@@ -1491,37 +1491,37 @@ static float __calc_triangle_area( float ax, float ay, float bx, float by, float
     return area;
 }
 //////////////////////////////////////////////////////////////////////////
-static uint32_t __calc_mask_threshold_value_count( const void * _buffer, uint32_t _pitch, uint32_t _bites, uint32_t _width, uint32_t _height, uint32_t _threshold )
+static dz_uint32_t __calc_mask_threshold_value_count( const void * _buffer, dz_uint32_t _pitch, dz_uint32_t _bites, dz_uint32_t _width, dz_uint32_t _height, dz_uint32_t _threshold )
 {
-    uint32_t threshold_value_count = 0;
+    dz_uint32_t threshold_value_count = 0;
 
     const void * buffer_iterator = _buffer;
 
-    for( uint32_t h = 0; h != _height; ++h )
+    for( dz_uint32_t h = 0; h != _height; ++h )
     {
-        for( uint32_t w = 0; w != _width; ++w )
+        for( dz_uint32_t w = 0; w != _width; ++w )
         {
-            uint32_t value = 0;
+            dz_uint32_t value = 0;
 
             switch( _bites )
             {
             case 1:
                 {
-                    const uint8_t * point = (const uint8_t *)buffer_iterator + w;
+                    const dz_uint8_t * point = (const dz_uint8_t *)buffer_iterator + w;
 
-                    value = (uint32_t)*point;
+                    value = (dz_uint32_t)*point;
                 }break;
             case 2:
                 {
-                    const uint16_t * point = (const uint16_t *)buffer_iterator + w;
+                    const dz_uint16_t * point = (const dz_uint16_t *)buffer_iterator + w;
 
-                    value = (uint32_t)*point;
+                    value = (dz_uint32_t)*point;
                 }break;
             case 4:
                 {
-                    const uint32_t * point = (const uint32_t *)buffer_iterator + w;
+                    const dz_uint32_t * point = (const dz_uint32_t *)buffer_iterator + w;
 
-                    value = (uint32_t)*point;
+                    value = (dz_uint32_t)*point;
                 }break;
             default:
                 break;
@@ -1535,41 +1535,41 @@ static uint32_t __calc_mask_threshold_value_count( const void * _buffer, uint32_
             ++threshold_value_count;
         }
 
-        buffer_iterator = (const uint8_t *)buffer_iterator + _pitch;
+        buffer_iterator = (const dz_uint8_t *)buffer_iterator + _pitch;
     }
 
     return threshold_value_count;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _pitch, uint32_t _bites, uint32_t _width, uint32_t _height, uint32_t _threshold, uint32_t _index, uint32_t * _x, uint32_t * _y )
+static dz_result_t __get_mask_threshold_value( const void * _buffer, dz_uint32_t _pitch, dz_uint32_t _bites, dz_uint32_t _width, dz_uint32_t _height, dz_uint32_t _threshold, dz_uint32_t _index, dz_uint32_t * _x, dz_uint32_t * _y )
 {
     const void * buffer_iterator = _buffer;
 
-    for( uint32_t h = 0; h != _height; ++h )
+    for( dz_uint32_t h = 0; h != _height; ++h )
     {
-        for( uint32_t w = 0; w != _width; ++w )
+        for( dz_uint32_t w = 0; w != _width; ++w )
         {
-            uint32_t mask_value = 0;
+            dz_uint32_t mask_value = 0;
 
             switch( _bites )
             {
             case 1:
                 {
-                    const uint8_t * mask_point = (const uint8_t *)buffer_iterator + w;
+                    const dz_uint8_t * mask_point = (const dz_uint8_t *)buffer_iterator + w;
 
-                    mask_value = (uint32_t)*mask_point;
+                    mask_value = (dz_uint32_t)*mask_point;
                 }break;
             case 2:
                 {
-                    const uint16_t * mask_point = (const uint16_t *)buffer_iterator + w;
+                    const dz_uint16_t * mask_point = (const dz_uint16_t *)buffer_iterator + w;
 
-                    mask_value = (uint32_t)*mask_point;
+                    mask_value = (dz_uint32_t)*mask_point;
                 }break;
             case 4:
                 {
-                    const uint32_t * mask_point = (const uint32_t *)buffer_iterator + w;
+                    const dz_uint32_t * mask_point = (const dz_uint32_t *)buffer_iterator + w;
 
-                    mask_value = (uint32_t)*mask_point;
+                    mask_value = (dz_uint32_t)*mask_point;
                 }break;
             default:
                 break;
@@ -1589,7 +1589,7 @@ static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _p
             }
         }
 
-        buffer_iterator = (const uint8_t *)buffer_iterator + _pitch;
+        buffer_iterator = (const dz_uint8_t *)buffer_iterator + _pitch;
     }
 
     return DZ_FAILURE;
@@ -1597,7 +1597,7 @@ static dz_result_t __get_mask_threshold_value( const void * _buffer, uint32_t _p
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_particle_t * _p, float _life, float _spawn_time )
 {
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         _p->rands[index] = __get_randf( &_instance->seed );
     }
@@ -1707,9 +1707,9 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             float areas[1024];
 
             const float * triangles = effect->shape->triangles;
-            const uint32_t triangle_count = effect->shape->triangle_count;
+            const dz_uint32_t triangle_count = effect->shape->triangle_count;
 
-            for( uint32_t index = 0; index != triangle_count; ++index )
+            for( dz_uint32_t index = 0; index != triangle_count; ++index )
             {
                 const float ax = triangles[index * 6 + 0];
                 const float ay = triangles[index * 6 + 1];
@@ -1729,9 +1729,9 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
 
             const float triangle_find_area = triangle_rand * total_area;
 
-            uint32_t triangle_found_index = 0;
+            dz_uint32_t triangle_found_index = 0;
 
-            for( uint32_t index = 0; index != triangle_count; ++index )
+            for( dz_uint32_t index = 0; index != triangle_count; ++index )
             {
                 const float area = areas[index];
 
@@ -1770,21 +1770,21 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     case DZ_SHAPE_MASK:
         {
             const void * mask_buffer = effect->shape->mask_buffer;
-            const uint32_t mask_bites = effect->shape->mask_bites;
-            const uint32_t mask_pitch = effect->shape->mask_pitch;
-            const uint32_t mask_width = effect->shape->mask_width;
-            const uint32_t mask_height = effect->shape->mask_height;
-            const uint32_t mask_threshold = effect->shape->mask_threshold;
+            const dz_uint32_t mask_bites = effect->shape->mask_bites;
+            const dz_uint32_t mask_pitch = effect->shape->mask_pitch;
+            const dz_uint32_t mask_width = effect->shape->mask_width;
+            const dz_uint32_t mask_height = effect->shape->mask_height;
+            const dz_uint32_t mask_threshold = effect->shape->mask_threshold;
             const float mask_scale = effect->shape->mask_scale;
 
-            const uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
+            const dz_uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
 
             const float r = __get_randf( &_instance->seed );
 
-            const uint32_t threshold_value_index = (uint32_t)(r * (threshold_value_count - 1) + 0.5f);
+            const dz_uint32_t threshold_value_index = (dz_uint32_t)(r * (threshold_value_count - 1) + 0.5f);
 
-            uint32_t w_found;
-            uint32_t h_found;
+            dz_uint32_t w_found;
+            dz_uint32_t h_found;
             if( __get_mask_threshold_value( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold, threshold_value_index, &w_found, &h_found ) == DZ_FAILURE )
             {
                 return DZ_FAILURE;
@@ -2111,15 +2111,15 @@ dz_instance_state_e dz_instance_get_state( const dz_instance_t * _instance )
     return state;
 }
 //////////////////////////////////////////////////////////////////////////
-uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance )
+dz_uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance )
 {
     return _instance->partices_count;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
+static void __particle_compute_positions( const dz_particle_t * _p, dz_uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     const dz_size_t base_position_buffer_offset = _mesh->position_offset + _mesh->position_stride * (_iterator * 4);
-    uint8_t * base_position_buffer = (uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
+    dz_uint8_t * base_position_buffer = (dz_uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
 
     float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
     float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
@@ -2191,36 +2191,36 @@ static void __particle_compute_positions( const dz_particle_t * _p, uint16_t _it
     }
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_colors( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
+static void __particle_compute_colors( const dz_particle_t * _p, dz_uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     const dz_size_t base_color_buffer_offset = _mesh->color_offset + _mesh->color_stride * (_iterator * 4);
-    uint8_t * base_color_buffer = (uint8_t *)_mesh->color_buffer + base_color_buffer_offset;
+    dz_uint8_t * base_color_buffer = (dz_uint8_t *)_mesh->color_buffer + base_color_buffer_offset;
 
-    const uint8_t r8 = (uint8_t)(_mesh->r * _p->color_r * 255.5f);
-    const uint8_t g8 = (uint8_t)(_mesh->g * _p->color_g * 255.5f);
-    const uint8_t b8 = (uint8_t)(_mesh->b * _p->color_b * 255.5f);
-    const uint8_t a8 = (uint8_t)(_mesh->a * _p->color_a * 255.5f);
+    const dz_uint8_t r8 = (dz_uint8_t)(_mesh->r * _p->color_r * 255.5f);
+    const dz_uint8_t g8 = (dz_uint8_t)(_mesh->g * _p->color_g * 255.5f);
+    const dz_uint8_t b8 = (dz_uint8_t)(_mesh->b * _p->color_b * 255.5f);
+    const dz_uint8_t a8 = (dz_uint8_t)(_mesh->a * _p->color_a * 255.5f);
 
-    const uint32_t color = (a8 << 24) | (r8 << 16) | (g8 << 8) | (b8 << 0);
+    const dz_uint32_t color = (a8 << 24) | (r8 << 16) | (g8 << 8) | (b8 << 0);
 
-    uint32_t * c0 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 0);
+    dz_uint32_t * c0 = (dz_uint32_t *)(base_color_buffer + _mesh->color_stride * 0);
 
     c0[0] = color;
 
-    uint32_t * c1 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 1);
+    dz_uint32_t * c1 = (dz_uint32_t *)(base_color_buffer + _mesh->color_stride * 1);
 
     c1[0] = color;
 
-    uint32_t * c2 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 2);
+    dz_uint32_t * c2 = (dz_uint32_t *)(base_color_buffer + _mesh->color_stride * 2);
 
     c2[0] = color;
 
-    uint32_t * c3 = (uint32_t *)(base_color_buffer + _mesh->color_stride * 3);
+    dz_uint32_t * c3 = (dz_uint32_t *)(base_color_buffer + _mesh->color_stride * 3);
 
     c3[0] = color;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator, dz_instance_mesh_t * _mesh )
+static void __particle_compute_uvs( const dz_particle_t * _p, dz_uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
     if( _p->texture == DZ_NULLPTR )
     {
@@ -2228,7 +2228,7 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
     }
 
     const dz_size_t base_uv_buffer_offset = _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4);
-    uint8_t * base_uv_buffer = (uint8_t *)_mesh->uv_buffer + base_uv_buffer_offset;
+    dz_uint8_t * base_uv_buffer = (dz_uint8_t *)_mesh->uv_buffer + base_uv_buffer_offset;
 
     float * uv0 = (float *)(base_uv_buffer + _mesh->uv_stride * 0);
 
@@ -2251,11 +2251,11 @@ static void __particle_compute_uvs( const dz_particle_t * _p, uint16_t _iterator
     uv3[1] = _p->texture->v[3];
 }
 //////////////////////////////////////////////////////////////////////////
-static void __particle_compute_index( uint16_t _iterator, dz_instance_mesh_t * _mesh )
+static void __particle_compute_index( dz_uint16_t _iterator, dz_instance_mesh_t * _mesh )
 {
-    uint16_t * index_buffer = (uint16_t *)(_mesh->index_buffer) + _iterator * 6;
+    dz_uint16_t * index_buffer = (dz_uint16_t *)(_mesh->index_buffer) + _iterator * 6;
 
-    const uint16_t vertex_offset = _iterator * 4;
+    const dz_uint16_t vertex_offset = _iterator * 4;
 
     index_buffer[0] = vertex_offset + 0;
     index_buffer[1] = vertex_offset + 1;
@@ -2265,17 +2265,17 @@ static void __particle_compute_index( uint16_t _iterator, dz_instance_mesh_t * _
     index_buffer[5] = vertex_offset + 2;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_compute_bounds( const dz_instance_t * _instance, uint16_t * const _vertex_count, uint16_t * const _index_count )
+void dz_instance_compute_bounds( const dz_instance_t * _instance, dz_uint16_t * const _vertex_count, dz_uint16_t * const _index_count )
 {
     *_vertex_count = _instance->partices_count * 4;
     *_index_count = _instance->partices_count * 6;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * const _mesh, dz_instance_mesh_chunk_t * const _chunks, uint32_t _capacity, uint32_t * const _count )
+void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * const _mesh, dz_instance_mesh_chunk_t * const _chunks, dz_uint32_t _capacity, dz_uint32_t * const _count )
 {
     DZ_UNUSED( _capacity );
 
-    uint16_t particle_iterator = 0;
+    dz_uint16_t particle_iterator = 0;
 
     const dz_particle_t * p_begin = _instance->partices + _instance->partices_count;
     const dz_particle_t * p_end = _instance->partices;

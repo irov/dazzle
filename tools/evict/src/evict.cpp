@@ -47,9 +47,9 @@ static jpp::object __evict_atlas_write( const dz_atlas_t * _atlas )
 
     jpp::array array_textures = jpp::make_array();
 
-    uint32_t texture_count = dz_atlas_get_texture_count( _atlas );
+    dz_uint32_t texture_count = dz_atlas_get_texture_count( _atlas );
 
-    for( uint32_t index = 0; index != texture_count; ++index )
+    for( dz_uint32_t index = 0; index != texture_count; ++index )
     {
         const dz_texture_t * texture;
         dz_atlas_get_texture( _atlas, index, &texture );
@@ -182,7 +182,7 @@ static jpp::object __evict_shape_write( const dz_shape_t * _shape )
 
     jpp::object obj_timeline = jpp::make_object();
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
         dz_shape_timeline_type_e timeline_type = (dz_shape_timeline_type_e)index;
 
@@ -215,7 +215,7 @@ static jpp::object __evict_emitter_write( const dz_emitter_t * _emitter )
 
     jpp::object obj_timeline = jpp::make_object();
 
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
         dz_emitter_timeline_type_e timeline_type = (dz_emitter_timeline_type_e)index;
 
@@ -244,7 +244,7 @@ static jpp::object __evict_affector_write( const dz_affector_t * _affector )
 
     jpp::object obj_timeline = jpp::make_object();
 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         dz_affector_timeline_type_e timeline_type = (dz_affector_timeline_type_e)index;
 
@@ -275,7 +275,7 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 
     obj.set( "life", life );
 
-    uint32_t seed = dz_effect_get_seed( _effect );
+    dz_uint32_t seed = dz_effect_get_seed( _effect );
 
     obj.set( "seed", seed );
 
@@ -624,7 +624,7 @@ static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _s
 
     jpp::object j_timeline = _data["timeline"];
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
         dz_shape_timeline_type_e timeline_type = (dz_shape_timeline_type_e)index;
 
@@ -664,7 +664,7 @@ static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t *
 
     jpp::object j_timeline = _data["timeline"];
 
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
         dz_emitter_timeline_type_e timeline_type = (dz_emitter_timeline_type_e)index;
 
@@ -700,7 +700,7 @@ dz_result_t __evict_affector_load( dz_service_t * _service, dz_affector_t ** _af
 
     jpp::object j_timeline = _data["timeline"];
 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         dz_affector_timeline_type_e timeline_type = (dz_affector_timeline_type_e)index;
 
@@ -762,7 +762,7 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
 
     float life = _data.get( "life", 0.f );
 
-    uint32_t seed = _data.get( "seed", 0 );
+    dz_uint32_t seed = _data.get( "seed", 0 );
 
     dz_effect_t * effect;
     if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, seed, DZ_NULLPTR ) == DZ_FAILURE )

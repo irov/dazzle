@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __read_bool( dz_bool_t * _b, dz_stream_read_t _read, dz_userdata_t _ud )
 {
-    uint8_t v;
+    dz_uint8_t v;
     DZ_READ( _read, _ud, v );
 
     *_b = (dz_bool_t)v;
@@ -27,10 +27,10 @@ static dz_result_t __read_bool( dz_bool_t * _b, dz_stream_read_t _read, dz_userd
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect_read_status_e * const _status )
 {
-    uint32_t read_magic;
+    dz_uint32_t read_magic;
     DZ_READ( _read, _ud, read_magic );
 
-    uint32_t magic = dz_get_magic();
+    dz_uint32_t magic = dz_get_magic();
 
     if( read_magic != magic )
     {
@@ -39,10 +39,10 @@ dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect
         return DZ_FAILURE;
     }
 
-    uint32_t read_version;
+    dz_uint32_t read_version;
     DZ_READ( _read, _ud, read_version );
 
-    const uint32_t version = dz_get_version();
+    const dz_uint32_t version = dz_get_version();
 
     if( read_version != version )
     {
@@ -96,7 +96,7 @@ static dz_result_t __read_atlas( const dz_service_t * _service, dz_atlas_t ** _a
 
     DZ_READ( _read, _ud, atlas->textures_time );
 
-    for( uint32_t index = 0; index != atlas->texture_count; ++index )
+    for( dz_uint32_t index = 0; index != atlas->texture_count; ++index )
     {
         dz_texture_t * texture;
         if( __read_texture( _service, &texture, _read, _ud ) == DZ_FAILURE )
@@ -232,9 +232,9 @@ static dz_result_t __read_shape( const dz_service_t * _service, dz_shape_t ** _s
         return DZ_FAILURE;
     }
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
-        uint8_t exist;
+        dz_uint8_t exist;
         DZ_READ( _read, _ud, exist );
 
         if( exist == DZ_FALSE )
@@ -266,9 +266,9 @@ static dz_result_t __read_emitter( const dz_service_t * _service, dz_emitter_t *
 
     DZ_READ( _read, _ud, emitter->life );
 
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
-        uint8_t exist;
+        dz_uint8_t exist;
         DZ_READ( _read, _ud, exist );
 
         if( exist == DZ_FALSE )
@@ -298,9 +298,9 @@ static dz_result_t __read_affector( const dz_service_t * _service, dz_affector_t
         return DZ_FAILURE;
     }
 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
-        uint8_t exist;
+        dz_uint8_t exist;
         DZ_READ( _read, _ud, exist );
 
         if( exist == DZ_FALSE )
@@ -351,7 +351,7 @@ dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effec
     float life;
     DZ_READ( _read, _ud, life );
 
-    uint32_t seed;
+    dz_uint32_t seed;
     DZ_READ( _read, _ud, seed );
 
     dz_effect_t * effect;

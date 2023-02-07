@@ -4,7 +4,7 @@
 #include "render/render.hpp"
 #include "evict/evict.hpp"
 
-#include "glad/glad.h"
+#include "glad/gl.h"
 #include "GLFW/glfw3.h"
 
 #include "imgui.h"
@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////
 // prefix ER_ means editor
 //////////////////////////////////////////////////////////////////////////
-static constexpr uint32_t ER_CURVE_MAX_POINTS = 100;
+static constexpr dz_uint32_t ER_CURVE_MAX_POINTS = 100;
 static constexpr float ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO = 0.4f;
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_curve_point_mode_e
@@ -92,8 +92,8 @@ protected:
     void loadJSON_( const void * _buffer, size_t _size, jpp::object * _out ) const;
 
 public:
-    float m_windowWidth;
-    float m_windowHeight;
+    dz_uint32_t m_windowWidth;
+    dz_uint32_t m_windowHeight;
 
     ImVec2 m_dzWindowPos;
     ImVec2 m_dzWindowSize;
@@ -122,7 +122,7 @@ public:
     int m_textureWidth;
     int m_textureHeight;
 
-    std::vector<uint8_t> m_atlasBuffer;
+    std::vector<dz_uint8_t> m_atlasBuffer;
 
     GLuint m_textureId;
 
@@ -134,7 +134,7 @@ public:
         dz_shape_timeline_type_e type;
         const char * name;
 
-        int32_t zoom;
+        dz_int32_t zoom;
 
         int selectedPoint;
 
@@ -149,7 +149,7 @@ public:
         dz_affector_timeline_type_e type;
         const char * name;
 
-        int32_t zoom;
+        dz_int32_t zoom;
 
         int selectedPoint;
 
@@ -164,7 +164,7 @@ public:
         dz_emitter_timeline_type_e type;
         const char * name;
 
-        int32_t zoom;
+        dz_int32_t zoom;
 
         int selectedPoint;
 

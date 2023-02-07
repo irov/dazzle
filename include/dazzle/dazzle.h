@@ -3,8 +3,8 @@
 
 #include "dazzle/config.h"
 
-uint32_t dz_get_magic( void );
-uint32_t dz_get_version( void );
+dz_uint32_t dz_get_magic( void );
+dz_uint32_t dz_get_version( void );
 
 typedef struct dz_service_t dz_service_t;
 
@@ -70,10 +70,10 @@ dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas );
 void dz_atlas_set_surface( dz_atlas_t * const _atlas, dz_userdata_t _surface );
 dz_userdata_t dz_atlas_get_surface( const dz_atlas_t * _atlas );
 
-uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
+dz_uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
 
 dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t * _texture );
-dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, uint32_t _index, const dz_texture_t ** _texture );
+dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, dz_uint32_t _index, const dz_texture_t ** _texture );
 dz_result_t dz_atlas_pop_texture( dz_atlas_t * const _atlas, const dz_texture_t ** _texture );
 
 typedef enum dz_blend_type_e
@@ -269,17 +269,17 @@ const dz_timeline_key_t * dz_shape_get_timeline( const dz_shape_t * _shape, dz_s
 
 void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor );
 
-dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _triangles, uint32_t _count );
-void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles, uint32_t * _count );
+dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _triangles, dz_uint32_t _count );
+void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles, dz_uint32_t * _count );
 
-dz_result_t dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, uint32_t _bites, uint32_t _pitch, uint32_t _width, uint32_t _height );
-void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, uint32_t * _bites, uint32_t * _pitch, uint32_t * _width, uint32_t * _height );
+dz_result_t dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, dz_uint32_t _bites, dz_uint32_t _pitch, dz_uint32_t _width, dz_uint32_t _height );
+void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, dz_uint32_t * const _bites, dz_uint32_t * const _pitch, dz_uint32_t * const _width, dz_uint32_t * const _height );
 
 void dz_shape_set_mask_scale( dz_shape_t * const _shape, float _scale );
 float dz_shape_get_mask_scale( const dz_shape_t * _shape );
 
-void dz_shape_set_mask_threshold( dz_shape_t * const _shape, uint32_t _threshold );
-uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape );
+void dz_shape_set_mask_threshold( dz_shape_t * const _shape, dz_uint32_t _threshold );
+dz_uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape );
 
 typedef struct dz_emitter_t dz_emitter_t;
 
@@ -309,7 +309,7 @@ void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_tim
 
 typedef struct dz_effect_t dz_effect_t;
 
-dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, uint32_t _seed, dz_userdata_t _ud );
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_uint32_t _seed, dz_userdata_t _ud );
 void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effect );
 
 void dz_effect_set_ud( dz_effect_t * const _effect, dz_userdata_t _ud );
@@ -330,8 +330,8 @@ const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect );
 void dz_effect_set_life( dz_effect_t * const _effect, float _life );
 float dz_effect_get_life( const dz_effect_t * _effect );
 
-void dz_effect_set_seed( dz_effect_t * const _effect, uint32_t _seed );
-uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
+void dz_effect_set_seed( dz_effect_t * const _effect, dz_uint32_t _seed );
+dz_uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
 
 typedef struct dz_instance_t dz_instance_t;
 
@@ -350,11 +350,11 @@ dz_bool_t dz_instance_get_loop( const dz_instance_t * _instance );
 dz_result_t dz_instance_set_time( dz_instance_t * const _instance, float _time );
 float dz_instance_get_time( const dz_instance_t * _instance );
 
-void dz_instance_set_seed( dz_instance_t * const _instance, uint32_t _seed );
-uint32_t dz_instance_get_seed( const dz_instance_t * _instance );
+void dz_instance_set_seed( dz_instance_t * const _instance, dz_uint32_t _seed );
+dz_uint32_t dz_instance_get_seed( const dz_instance_t * _instance );
 
-dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, uint16_t _limit );
-uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
+dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, dz_uint16_t _limit );
+dz_uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
 
 void dz_instance_set_position( dz_instance_t * const _instance, float _x, float _y );
 void dz_instance_get_position( const dz_instance_t * _instance, float * const _x, float * const _y );
@@ -382,7 +382,7 @@ typedef enum dz_instance_state_e
 
 dz_instance_state_e dz_instance_get_state( const dz_instance_t * _instance );
 
-uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance );
+dz_uint16_t dz_instance_get_particle_count( const dz_instance_t * _instance );
 
 typedef enum dz_instance_mesh_flags_e
 {
@@ -392,11 +392,11 @@ typedef enum dz_instance_mesh_flags_e
 
 typedef struct dz_instance_mesh_chunk_t
 {
-    uint16_t vertex_offset;
-    uint16_t vertex_count;
+    dz_uint16_t vertex_offset;
+    dz_uint16_t vertex_count;
 
-    uint16_t index_offset;
-    uint16_t index_count;
+    dz_uint16_t index_offset;
+    dz_uint16_t index_count;
 
     dz_blend_type_e blend_type;
 
@@ -428,7 +428,7 @@ typedef struct dz_instance_mesh_t
     float m[16];
 } dz_instance_mesh_t;
 
-void dz_instance_compute_bounds( const dz_instance_t * _instance, uint16_t * const _vertex_count, uint16_t * const _index_count );
-void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * const _mesh, dz_instance_mesh_chunk_t * const _chunks, uint32_t _capacity, uint32_t * const _count );
+void dz_instance_compute_bounds( const dz_instance_t * _instance, dz_uint16_t * const _vertex_count, dz_uint16_t * const _index_count );
+void dz_instance_compute_mesh( const dz_instance_t * _instance, dz_instance_mesh_t * const _mesh, dz_instance_mesh_chunk_t * const _chunks, dz_uint32_t _capacity, dz_uint32_t * const _count );
 
 #endif

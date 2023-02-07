@@ -33,10 +33,10 @@ typedef enum er_window_type_e
     __ER_WINDOW_TYPE_MAX__
 } er_window_type_e;
 //////////////////////////////////////////////////////////////////////////
-//static constexpr float ER_WINDOW_WIDTH = 1024.f;  // aspect ratio 3:4
-//static constexpr float ER_WINDOW_HEIGHT = 768.f;
-static constexpr float ER_WINDOW_WIDTH = 1280.f;    // aspect ratio HD 720p
-static constexpr float ER_WINDOW_HEIGHT = 720.f;
+//static constexpr float ER_WINDOW_WIDTH = 1024;  // aspect ratio 3:4
+//static constexpr float ER_WINDOW_HEIGHT = 768;
+static constexpr float ER_WINDOW_WIDTH = 1280;    // aspect ratio HD 720p
+static constexpr float ER_WINDOW_HEIGHT = 720;
 static constexpr float ER_TIMELINE_PANEL_WIDTH = 430.f;
 static constexpr int32_t ER_CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
 static constexpr ImGuiID ER_CURVE_ID_NONE = 0;
@@ -161,7 +161,7 @@ const char * ER_AFFECTOR_DATA_NAMES[] = {
 //////////////////////////////////////////////////////////////////////////
 struct my_json_load_data_t
 {
-    const uint8_t * buffer;
+    const dz_uint8_t * buffer;
     size_t carriage;
     size_t capacity;
 };
@@ -253,7 +253,7 @@ static dz_result_t addZipFile( zipFile _zf, const char * _file, const void * _bu
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<uint8_t> * _buffer )
+static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<dz_uint8_t> * _buffer )
 {
     unz_global_info64 gi;
     if( unzGetGlobalInfo64( _uf, &gi ) != UNZ_OK )
@@ -283,7 +283,7 @@ static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<uin
 
     unzReadCurrentFile( _uf, content_buffer, content_size );
 
-    _buffer->assign( reinterpret_cast<const uint8_t *>(content_buffer), reinterpret_cast<const uint8_t *>(content_buffer) + content_size );
+    _buffer->assign( reinterpret_cast<const dz_uint8_t *>(content_buffer), reinterpret_cast<const dz_uint8_t *>(content_buffer) + content_size );
 
     free( content_buffer );
 
@@ -751,7 +751,7 @@ dz_result_t editor::init()
         glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
         glfwWindowHint( GLFW_RESIZABLE, GLFW_TRUE );
 
-        m_fwWindow = glfwCreateWindow( (uint32_t)m_windowWidth, (uint32_t)m_windowHeight, ER_TITLE, 0, 0 );
+        m_fwWindow = glfwCreateWindow( m_windowWidth, m_windowHeight, ER_TITLE, 0, 0 );
 
         glfwSetWindowUserPointer( m_fwWindow, this );
 
@@ -775,7 +775,7 @@ dz_result_t editor::init()
         mouse_pos_x = (float)cursorPosX;
         mouse_pos_y = (float)cursorPosY;
 
-        if( gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress ) == 0 )
+        if( gladLoadGL( (GLADloadfunc)&glfwGetProcAddress ) == 0 )
         {
             return DZ_FAILURE;
         }
@@ -785,8 +785,8 @@ dz_result_t editor::init()
 
     // init opengl
     {
-        uint16_t max_vertex_count = 65535;
-        uint16_t max_index_count = 65535;
+        dz_uint16_t max_vertex_count = 65535;
+        dz_uint16_t max_index_count = 65535;
 
         if( dz_render_initialize( &m_openglDesc, max_vertex_count, max_index_count ) == DZ_FAILURE )
         {
@@ -842,7 +842,7 @@ dz_result_t editor::init()
             return DZ_FAILURE;
         }
 
-        for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+        for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
         {
             timeline_shape_t & data = m_timelineShapeData[index];
 
@@ -875,7 +875,7 @@ dz_result_t editor::init()
 
         dz_emitter_set_life( m_emitter, 1000.f );
 
-        for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+        for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
         {
             timeline_emitter_t & data = m_timelineEmitterData[index];
 
@@ -906,7 +906,7 @@ dz_result_t editor::init()
             return DZ_FAILURE;
         }
 
-        for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+        for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
         {
             timeline_affector_t & data = m_timelineAffectorData[index];
 
@@ -1001,7 +1001,7 @@ dz_result_t editor::update( double _time )
         window_flags |= ImGuiWindowFlags_MenuBar;
 
         ImGui::SetNextWindowPos( ImVec2( 0.f, 0.f ), ImGuiCond_Always );
-        ImGui::SetNextWindowSize( ImVec2( m_windowWidth, m_windowHeight ), ImGuiCond_Always );
+        ImGui::SetNextWindowSize( ImVec2( (float)m_windowWidth, (float)m_windowHeight ), ImGuiCond_Always );
 
         if( ImGui::Begin( "LAYOUT", NULL, window_flags ) )
         {
@@ -1262,7 +1262,7 @@ dz_result_t editor::loadEffect()
             return DZ_FAILURE;
         }
 
-        std::vector<uint8_t> data_buffer;
+        std::vector<dz_uint8_t> data_buffer;
         openZipFile( uf, "data.json", &data_buffer );
 
         jpp::object data;
@@ -1290,7 +1290,7 @@ dz_result_t editor::loadEffect()
             return DZ_FAILURE;
         }
 
-        uint32_t seed = dz_effect_get_seed( m_effect );
+        dz_uint32_t seed = dz_effect_get_seed( m_effect );
 
         dz_instance_set_seed( m_instance, seed );
 
@@ -2455,7 +2455,7 @@ dz_result_t editor::resetEffectData()
     //float life = dz_effect_get_life( m_effect );
 
     // shape data
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
         timeline_shape_t & data = m_timelineShapeData[index];
 
@@ -2496,7 +2496,7 @@ dz_result_t editor::resetEffectData()
         __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
     }
 
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
         timeline_emitter_t & data = m_timelineEmitterData[index];
 
@@ -2538,7 +2538,7 @@ dz_result_t editor::resetEffectData()
     }
 
     // affector 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         timeline_affector_t & data = m_timelineAffectorData[index];
 
@@ -2638,7 +2638,7 @@ dz_result_t editor::showShapeData()
 
     ImGui::Separator();
 
-    for( uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
         timeline_shape_t & data = m_timelineShapeData[index];
 
@@ -2739,7 +2739,7 @@ dz_result_t editor::showAffectorData()
 
     ImGui::Separator();
 
-    for( uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         // ignore
         if( index == DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT )
@@ -2813,7 +2813,7 @@ dz_result_t editor::showEmitterData()
 
     ImGui::Separator();
 
-    for( uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
     {
         timeline_emitter_t & data = m_timelineEmitterData[index];
 
@@ -2948,10 +2948,10 @@ dz_result_t editor::showMaterialData()
                 return DZ_FAILURE;
             }
 
-            dz_texture_set_width( tempTexture, m_textureWidth );
-            dz_texture_set_height( tempTexture, m_textureHeight );
+            dz_texture_set_width( tempTexture, (float)m_textureWidth );
+            dz_texture_set_height( tempTexture, (float)m_textureHeight );
 
-            dz_texture_set_trim_size( tempTexture, m_textureWidth, m_textureHeight );
+            dz_texture_set_trim_size( tempTexture, (float)m_textureWidth, (float)m_textureHeight );
 
             dz_atlas_add_texture( m_atlas, tempTexture );
 
@@ -3018,7 +3018,7 @@ void editor::showDazzleCanvas()
 //////////////////////////////////////////////////////////////////////////
 bool editor::dumpJSON_( const jpp::object & _json, std::string * _out, bool _needCompactDump )
 {
-    auto my_jpp_dump_callback = []( const char * _buffer, size_t _size, void * _ud )
+    auto my_jpp_dump_callback = []( const char * _buffer, size_t _size, dz_userdata_t _ud )
     {
         std::string * p_str = static_cast<std::string *>(_ud);
 
@@ -3044,11 +3044,11 @@ bool editor::dumpJSON_( const jpp::object & _json, std::string * _out, bool _nee
 void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out ) const
 {
     my_json_load_data_t jd;
-    jd.buffer = static_cast<const uint8_t *>(_buffer);
+    jd.buffer = static_cast<const dz_uint8_t *>(_buffer);
     jd.carriage = 0;
     jd.capacity = _size;
 
-    auto  my_jpp_error = []( int32_t _line, int32_t _column, int32_t _position, const char * _source, const char * _text, void * _ud )
+    auto  my_jpp_error = []( int32_t _line, int32_t _column, int32_t _position, const char * _source, const char * _text, dz_userdata_t _ud )
     {
         DZ_UNUSED( _ud );
 
@@ -3061,7 +3061,7 @@ void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out )
         );
     };
 
-    auto my_jpp_load_callback = []( void * _buffer, size_t _buflen, void * _data )
+    auto my_jpp_load_callback = []( void * _buffer, size_t _buflen, dz_userdata_t _data )
     {
         my_json_load_data_t * jd = static_cast<my_json_load_data_t *>(_data);
 
@@ -3075,7 +3075,7 @@ void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out )
             return (size_t)0;
         }
 
-        const uint8_t * jd_buffer = jd->buffer + jd->carriage;
+        const dz_uint8_t * jd_buffer = jd->buffer + jd->carriage;
         std::memcpy( _buffer, jd_buffer, _buflen );
         jd->carriage += _buflen;
 
@@ -3102,8 +3102,10 @@ dz_result_t editor::showContentPane()
     m_dzWindowSize.y = columnHeight;
 
     ImGuiWindow * window = ImGui::GetCurrentWindow();
-    const ImGuiID id = window->GetID( "DAZZLE_RENDER_CANVAS" );
-    if( window->SkipItems )
+    
+    ImGuiID id = window->GetID( "DAZZLE_RENDER_CANVAS" );
+    
+    if( window->SkipItems == true )
     {
         return DZ_FAILURE;
     }
@@ -3175,8 +3177,8 @@ dz_result_t editor::showContentPane()
 
     if( m_showDebugInfo == true )
     {
-        uint32_t particle_count = dz_instance_get_particle_count( m_instance );
-        uint32_t particle_limit = dz_instance_get_particle_limit( m_instance );
+        dz_uint32_t particle_count = dz_instance_get_particle_count( m_instance );
+        dz_uint32_t particle_limit = dz_instance_get_particle_limit( m_instance );
 
         char buf[1024];
 

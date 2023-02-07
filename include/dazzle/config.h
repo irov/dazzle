@@ -18,8 +18,11 @@ typedef enum dz_boolean_e
 
 typedef dz_result_e dz_result_t;
 typedef uint32_t dz_bool_t;
+typedef int8_t dz_int8_t;
 typedef uint8_t dz_uint8_t;
+typedef int16_t dz_int16_t;
 typedef uint16_t dz_uint16_t;
+typedef int32_t dz_int32_t;
 typedef uint32_t dz_uint32_t;
 typedef size_t dz_size_t;
 typedef void * dz_userdata_t;

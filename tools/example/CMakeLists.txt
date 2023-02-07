@@ -9,7 +9,7 @@ include_directories(${DAZZLE_INCLUDE_DIR})
 include_directories(${DAZZLE_EXAMPLE_SOURCE_DIR})
 include_directories(${DAZZLE_DEPENDENCIES_DIR})
 include_directories(${DAZZLE_THIRDPARTY_DIR}/glfw3/include)
-include_directories(${DAZZLE_THIRDPARTY_DIR}/glad/include)
+include_directories(${DAZZLE_THIRDPARTY_DIR}/glad_gl_core_33/include)
 include_directories(${DAZZLE_TOOLS_DIR}/render/include)
 
 set(DAZZLE_EXAMPLE_SOURCES
@@ -23,7 +23,7 @@ add_executable(${PROJECT_NAME} ${DAZZLE_EXAMPLE_SOURCES})
 target_link_libraries(${PROJECT_NAME} dazzle)
 target_link_libraries(${PROJECT_NAME} dazzle_render)
 
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glad${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glad_gl_core_33${CMAKE_STATIC_LIBRARY_SUFFIX})
 target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glfw3${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)

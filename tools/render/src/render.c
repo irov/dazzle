@@ -6,8 +6,6 @@
 
 #include "render/render.h"
 
-#include "glad/glad.h"
-
 //////////////////////////////////////////////////////////////////////////
 static const char * __gl_get_error_string( GLenum _err )
 {
@@ -37,7 +35,7 @@ static const char * __gl_get_error_string( GLenum _err )
     return "GL_UNKNOWN";
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_error_check( const char * _file, uint32_t _line )
+dz_result_t dz_render_error_check( const char * _file, dz_uint32_t _line )
 {
     GLenum err = glGetError();
 
@@ -137,13 +135,13 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
     return shaderProgram;
 }
 //////////////////////////////////////////////////////////////////////////
-GLuint dz_render_make_texture( const char * _path, int32_t * _out_width, int32_t * _out_height )
+GLuint dz_render_make_texture( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height )
 {
-    int32_t width;
-    int32_t height;
-    int32_t comp;
+    dz_int32_t width;
+    dz_int32_t height;
+    dz_int32_t comp;
 
-    uint8_t * data = stbi_load( _path, &width, &height, &comp, STBI_default );
+    dz_uint8_t * data = stbi_load( _path, &width, &height, &comp, STBI_default );
 
     if( data == DZ_NULLPTR )
     {
@@ -198,13 +196,13 @@ GLuint dz_render_make_texture( const char * _path, int32_t * _out_width, int32_t
     return id;
 }
 //////////////////////////////////////////////////////////////////////////
-GLuint dz_render_make_texture_from_memory( const void * _buffer, size_t _size, int32_t * _out_width, int32_t * _out_height )
+GLuint dz_render_make_texture_from_memory( const void * _buffer, dz_size_t _size, dz_int32_t * const _out_width, dz_int32_t * const _out_height )
 {
-    int32_t width;
-    int32_t height;
-    int32_t comp;
+    dz_int32_t width;
+    dz_int32_t height;
+    dz_int32_t comp;
 
-    uint8_t * data = stbi_load_from_memory( _buffer, _size, &width, &height, &comp, STBI_default );
+    dz_uint8_t * data = stbi_load_from_memory( _buffer, _size, &width, &height, &comp, STBI_default );
 
     if( data == DZ_NULLPTR )
     {
@@ -314,7 +312,7 @@ static const char * fragmentShaderTextureSource = "#version 330 core\n"
 "   oColor = texColor * v2fColor;\n"
 "}\n\0";
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_initialize( dz_render_desc_t * _desc, uint16_t _max_vertex_count, uint16_t _max_index_count )
+dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_vertex_count, dz_uint16_t _max_index_count )
 {
     GLuint shaderColorProgram = __make_program( vertexShaderColorSource, fragmentShaderColorSource );
     GLuint shaderTextureProgram = __make_program( vertexShaderTextureSource, fragmentShaderTextureSource );
@@ -504,14 +502,14 @@ dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instanc
     mesh.a = 1.f;
 
     dz_instance_mesh_chunk_t chunks[16];
-    uint32_t chunk_count;
+    dz_uint32_t chunk_count;
 
     dz_instance_compute_mesh( _instance, &mesh, chunks, 16, &chunk_count );
 
     GLCALL( glUnmapBuffer, (GL_ARRAY_BUFFER) );
     GLCALL( glUnmapBuffer, (GL_ELEMENT_ARRAY_BUFFER) );
 
-    for( uint32_t index = 0; index != chunk_count; ++index )
+    for( dz_uint32_t index = 0; index != chunk_count; ++index )
     {
         dz_instance_mesh_chunk_t * chunk = chunks + index;
 

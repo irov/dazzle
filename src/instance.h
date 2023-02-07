@@ -10,13 +10,13 @@ typedef struct dz_instance_t
 {
     const dz_effect_t * effect;
 
-    uint32_t init_seed;
-    uint32_t seed;
+    dz_uint32_t init_seed;
+    dz_uint32_t seed;
 
     dz_particle_t * partices;
-    uint16_t partices_count;
-    uint16_t partices_capacity;
-    uint16_t particle_limit;
+    dz_uint16_t partices_count;
+    dz_uint16_t partices_capacity;
+    dz_uint16_t particle_limit;
 
     dz_bool_t loop;
     dz_bool_t emit_pause;
