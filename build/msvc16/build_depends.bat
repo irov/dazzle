@@ -13,13 +13,10 @@ set "SOLUTION_DIR=%~dp0..\..\solutions\dazzle_depends_msvc16_%CONFIGURATION%"
 
 @echo Starting build dependencies msvc %CONFIGURATION% configuration...
 
-@pushd ..
 @mkdir %SOLUTION_DIR%
+
 @pushd %SOLUTION_DIR%
-
 @call CMake -G "Visual Studio 16 2019" -A Win32 "%CD%\..\..\cmake\depends_win32" -DCMAKE_BUILD_TYPE:STRING=%CONFIGURATION% -DCMAKE_CONFIGURATION_TYPES:STRING=%CONFIGURATION%
-
-@popd
 @popd
 
 if errorlevel 1 (
@@ -34,13 +31,8 @@ if errorlevel 1 (
     @echo %ESC%[92m=========================================%ESC%[0m
 )
 
-@pushd ..
-@mkdir %SOLUTION_DIR%
 @pushd %SOLUTION_DIR%
-
 @call CMake.exe --build . -j 4 -- /verbosity:minimal
-
-@popd
 @popd
 
 if errorlevel 1 (
@@ -57,7 +49,6 @@ if errorlevel 1 (
 
 :end
 
-@pause
 @exit /b %errorlevel%
 
 :setESC

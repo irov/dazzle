@@ -8,8 +8,12 @@ call :setESC
 set "SOLUTION_DIR=%~dp0..\..\solutions\downloads"
 
 @mkdir %SOLUTION_DIR%
+
 @pushd %SOLUTION_DIR%
 @call CMake.exe "%CD%\..\..\cmake\downloads"
+@popd
+
+@pushd %SOLUTION_DIR%
 @call CMake.exe --build . -j 4 -- /verbosity:minimal
 @popd
 
@@ -22,10 +26,6 @@ if errorlevel 1 (
     @echo %ESC%[92m=============  Successful  ==============%ESC%[0m
     @echo %ESC%[92m=========================================%ESC%[0m
 )
-
-@echo Done
-
-@pause
 
 :setESC
 for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
