@@ -1,6 +1,8 @@
 #ifndef DZ_SERVICE_H_
 #define DZ_SERVICE_H_
 
+#include "dazzle/dazzle.h"
+
 typedef struct dz_service_t
 {
     dz_service_providers_t providers;

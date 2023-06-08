@@ -5,20 +5,20 @@
 
 typedef struct dz_texture_t
 {
-    float u[4];
-    float v[4];
+    dz_float_t u[4];
+    dz_float_t v[4];
 
-    float width;
-    float height;
+    dz_float_t width;
+    dz_float_t height;
 
-    float trim_offset_x;
-    float trim_offset_y;
+    dz_float_t trim_offset_x;
+    dz_float_t trim_offset_y;
 
-    float trim_width;
-    float trim_height;
+    dz_float_t trim_width;
+    dz_float_t trim_height;
 
-    float random_weight;
-    float sequence_delay;
+    dz_float_t random_weight;
+    dz_float_t sequence_delay;
 
     dz_userdata_t ud;
 } dz_texture_t;

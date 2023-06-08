@@ -7,15 +7,15 @@
 
 typedef struct dz_timeline_key_t
 {
-    float p;
-    float d_inv;
+    dz_float_t p;
+    dz_float_t d_inv;
 
     dz_timeline_key_type_e type;
 
-    float const_value;
+    dz_float_t const_value;
 
-    float randomize_min_value;
-    float randomize_max_value;
+    dz_float_t randomize_min_value;
+    dz_float_t randomize_max_value;
 
     const dz_timeline_interpolate_t * interpolate;
 

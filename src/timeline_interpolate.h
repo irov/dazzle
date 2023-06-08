@@ -9,8 +9,8 @@ typedef struct dz_timeline_interpolate_t
 {
     dz_timeline_interpolate_type_e type;
 
-    float p0;
-    float p1;
+    dz_float_t p0;
+    dz_float_t p1;
 
     const struct dz_timeline_key_t * key;
 

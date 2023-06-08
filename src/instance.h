@@ -21,18 +21,18 @@ typedef struct dz_instance_t
     dz_bool_t loop;
     dz_bool_t emit_pause;
 
-    float time;
-    float emitter_time;
+    dz_float_t time;
+    dz_float_t emitter_time;
 
-    float x;
-    float y;
+    dz_float_t x;
+    dz_float_t y;
 
-    float angle;
+    dz_float_t angle;
 
-    float r;
-    float g;
-    float b;
-    float a;
+    dz_float_t r;
+    dz_float_t g;
+    dz_float_t b;
+    dz_float_t a;
 
     dz_userdata_t ud;
 } dz_instance_t;

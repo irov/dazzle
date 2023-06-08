@@ -34,10 +34,10 @@ typedef struct dz_timeline_limits_t
 {
     dz_timeline_limit_status_e status;
 
-    float min_value;
-    float max_value;
-    float default_value;
-    float factor_value;
+    dz_float_t min_value;
+    dz_float_t max_value;
+    dz_float_t default_value;
+    dz_float_t factor_value;
 } dz_timeline_limits_t;
 //////////////////////////////////////////////////////////////////////////
 static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELINE_MAX__] = {
@@ -60,7 +60,7 @@ static const dz_timeline_limits_t affector_timeline_limits[__DZ_AFFECTOR_TIMELIN
     {DZ_TIMELINE_LIMIT_NORMAL, 0.f, 1.f, 1.f, 1.f} //DZ_AFFECTOR_TIMELINE_COLOR_A
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor )
+void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, dz_float_t * const _min, dz_float_t * const _max, dz_float_t * const _default, dz_float_t * const _factor )
 {
     const dz_timeline_limits_t * limit = affector_timeline_limits + _timeline;
 
@@ -71,16 +71,16 @@ void dz_affector_timeline_get_limit( dz_affector_timeline_type_e _timeline, dz_t
     *_factor = limit->factor_value;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_affector_get_particle_size( void )
+dz_float_t dz_affector_get_particle_size( void )
 {
     return DZ_PARTICLE_SIZE;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_timeline_default( dz_affector_timeline_type_e _timeline )
+static dz_float_t __get_affector_timeline_default( dz_affector_timeline_type_e _timeline )
 {
     const dz_timeline_limits_t * limit = affector_timeline_limits + _timeline;
 
-    const float default_value = limit->default_value;
+    const dz_float_t default_value = limit->default_value;
 
     return default_value;
 }
@@ -154,7 +154,7 @@ dz_userdata_t dz_texture_get_ud( const dz_texture_t * _texture )
     return _texture->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_uv( dz_texture_t * const _texture, const float * _u, const float * _v )
+void dz_texture_set_uv( dz_texture_t * const _texture, const dz_float_t * _u, const dz_float_t * _v )
 {
     _texture->u[0] = _u[0];
     _texture->v[0] = _v[0];
@@ -166,7 +166,7 @@ void dz_texture_set_uv( dz_texture_t * const _texture, const float * _u, const f
     _texture->v[3] = _v[3];
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float * const _v )
+void dz_texture_get_uv( const dz_texture_t * _texture, dz_float_t * const _u, dz_float_t * const _v )
 {
     _u[0] = _texture->u[0];
     _v[0] = _texture->v[0];
@@ -178,66 +178,66 @@ void dz_texture_get_uv( const dz_texture_t * _texture, float * const _u, float *
     _v[3] = _texture->v[3];
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_width( dz_texture_t * const _texture, float _width )
+void dz_texture_set_width( dz_texture_t * const _texture, dz_float_t _width )
 {
     _texture->width = _width;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_texture_get_width( const dz_texture_t * _texture )
+dz_float_t dz_texture_get_width( const dz_texture_t * _texture )
 {
     return _texture->width;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_height( dz_texture_t * const _texture, float _height )
+void dz_texture_set_height( dz_texture_t * const _texture, dz_float_t _height )
 {
     _texture->height = _height;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_texture_get_height( const dz_texture_t * _texture )
+dz_float_t dz_texture_get_height( const dz_texture_t * _texture )
 {
     return _texture->height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_trim_offset( dz_texture_t * const _texture, float _x, float _y )
+void dz_texture_set_trim_offset( dz_texture_t * const _texture, dz_float_t _x, dz_float_t _y )
 {
     _texture->trim_offset_x = _x;
     _texture->trim_offset_y = _y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_get_trim_offset( const dz_texture_t * _texture, float * const _x, float * const _y )
+void dz_texture_get_trim_offset( const dz_texture_t * _texture, dz_float_t * const _x, dz_float_t * const _y )
 {
     *_x = _texture->trim_offset_x;
     *_y = _texture->trim_offset_y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_trim_size( dz_texture_t * _texture, float _width, float _height )
+void dz_texture_set_trim_size( dz_texture_t * _texture, dz_float_t _width, dz_float_t _height )
 {
     _texture->trim_width = _width;
     _texture->trim_height = _height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_get_trim_size( const dz_texture_t * _texture, float * const _width, float * const _height )
+void dz_texture_get_trim_size( const dz_texture_t * _texture, dz_float_t * const _width, dz_float_t * const _height )
 {
     *_width = _texture->trim_width;
     *_height = _texture->trim_height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_random_weight( dz_texture_t * const _texture, float _weight )
+void dz_texture_set_random_weight( dz_texture_t * const _texture, dz_float_t _weight )
 {
     _texture->random_weight = _weight;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_texture_get_random_weight( const dz_texture_t * _texture )
+dz_float_t dz_texture_get_random_weight( const dz_texture_t * _texture )
 {
     return _texture->random_weight;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_sequence_delay( dz_texture_t * const _texture, float _delay )
+void dz_texture_set_sequence_delay( dz_texture_t * const _texture, dz_float_t _delay )
 {
     _texture->sequence_delay = _delay;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_texture_get_sequence_delay( const dz_texture_t * _texture )
+dz_float_t dz_texture_get_sequence_delay( const dz_texture_t * _texture )
 {
     return _texture->sequence_delay;
 }
@@ -381,7 +381,7 @@ dz_blend_type_e dz_material_get_blend( const dz_material_t * _material )
     return _material->blend_type;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_set_color( dz_material_t * const _material, float _r, float _g, float _b, float _a )
+void dz_material_set_color( dz_material_t * const _material, dz_float_t _r, dz_float_t _g, dz_float_t _b, dz_float_t _a )
 {
     _material->r = _r;
     _material->g = _g;
@@ -389,7 +389,7 @@ void dz_material_set_color( dz_material_t * const _material, float _r, float _g,
     _material->a = _a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_material_get_color( const dz_material_t * _material, float * const _r, float * const _g, float * const _b, float * const _a )
+void dz_material_get_color( const dz_material_t * _material, dz_float_t * const _r, dz_float_t * const _g, dz_float_t * const _b, dz_float_t * const _a )
 {
     *_r = _material->r;
     *_g = _material->g;
@@ -463,19 +463,19 @@ dz_timeline_interpolate_type_e dz_timeline_interpolate_get_type( const dz_timeli
     return _interpolate->type;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * const _interpolate, float _p0, float _p1 )
+void dz_timeline_interpolate_set_bezier2( dz_timeline_interpolate_t * const _interpolate, dz_float_t _p0, dz_float_t _p1 )
 {
     _interpolate->p0 = _p0;
     _interpolate->p1 = _p1;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, float * const _p0, float * const _p1 )
+void dz_timeline_interpolate_get_bezier2( const dz_timeline_interpolate_t * _interpolate, dz_float_t * const _p0, dz_float_t * const _p1 )
 {
     *_p0 = _interpolate->p0;
     *_p1 = _interpolate->p1;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, float _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
+dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_float_t _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _p < 0.f || _p > 1.f )
@@ -573,33 +573,33 @@ dz_result_t dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_p( dz_timeline_key_t * const _key, float _p )
+void dz_timeline_key_set_p( dz_timeline_key_t * const _key, dz_float_t _p )
 {
     _key->p = _p;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_timeline_key_get_p( const dz_timeline_key_t * _key )
+dz_float_t dz_timeline_key_get_p( const dz_timeline_key_t * _key )
 {
     return _key->p;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_const_value( dz_timeline_key_t * const _key, float _value )
+void dz_timeline_key_set_const_value( dz_timeline_key_t * const _key, dz_float_t _value )
 {
     _key->const_value = _value;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, float * const _value )
+void dz_timeline_key_get_const_value( const dz_timeline_key_t * _key, dz_float_t * const _value )
 {
     *_value = _key->const_value;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * const _key, float _min, float _max )
+void dz_timeline_key_set_randomize_min_max( dz_timeline_key_t * const _key, dz_float_t _min, dz_float_t _max )
 {
     _key->randomize_min_value = _min;
     _key->randomize_max_value = _max;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, float * const _min, float * const _max )
+void dz_timeline_key_get_randomize_min_max( const dz_timeline_key_t * _key, dz_float_t * const _min, dz_float_t * const _max )
 {
     *_min = _key->randomize_min_value;
     *_max = _key->randomize_max_value;
@@ -749,7 +749,7 @@ static const dz_timeline_limits_t shape_timeline_limits[__DZ_SHAPE_TIMELINE_MAX_
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 100.f}, //DZ_SHAPE_RECT_HEIGHT_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor )
+void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, dz_float_t * const _min, dz_float_t * const _max, dz_float_t * const _default, dz_float_t * const _factor )
 {
     const dz_timeline_limits_t * limit = shape_timeline_limits + _timeline;
 
@@ -760,16 +760,16 @@ void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timelin
     *_factor = limit->factor_value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_shape_timeline_default( dz_shape_timeline_type_e _timeline )
+static dz_float_t __get_shape_timeline_default( dz_shape_timeline_type_e _timeline )
 {
     const dz_timeline_limits_t * limit = shape_timeline_limits + _timeline;
 
-    const float default_value = limit->default_value;
+    const dz_float_t default_value = limit->default_value;
 
     return default_value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _triangles, dz_uint32_t _count )
+dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const dz_float_t * _triangles, dz_uint32_t _count )
 {
 #ifdef DZ_DEBUG
     if( _count > 1024 )
@@ -784,7 +784,7 @@ dz_result_t dz_shape_set_polygon( dz_shape_t * const _shape, const float * _tria
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_get_polygon( const dz_shape_t * _shape, const float ** _triangles, dz_uint32_t * _count )
+void dz_shape_get_polygon( const dz_shape_t * _shape, const dz_float_t ** _triangles, dz_uint32_t * _count )
 {
     *_triangles = _shape->triangles;
     *_count = _shape->triangle_count;
@@ -817,12 +817,12 @@ void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, dz_uin
     *_height = _shape->mask_height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_mask_scale( dz_shape_t * const _shape, float _scale )
+void dz_shape_set_mask_scale( dz_shape_t * const _shape, dz_float_t _scale )
 {
     _shape->mask_scale = _scale;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_shape_get_mask_scale( const dz_shape_t * _shape )
+dz_float_t dz_shape_get_mask_scale( const dz_shape_t * _shape )
 {
     return _shape->mask_scale;
 }
@@ -882,12 +882,12 @@ dz_userdata_t dz_emitter_get_ud( const dz_emitter_t * _emitter )
     return _emitter->ud;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_set_life( dz_emitter_t * const _emitter, float _life )
+void dz_emitter_set_life( dz_emitter_t * const _emitter, dz_float_t _life )
 {
     _emitter->life = _life;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_emitter_get_life( const dz_emitter_t * _emitter )
+dz_float_t dz_emitter_get_life( const dz_emitter_t * _emitter )
 {
     return _emitter->life;
 }
@@ -911,7 +911,7 @@ static const dz_timeline_limits_t emitter_timeline_limits[__DZ_EMITTER_TIMELINE_
     {DZ_TIMELINE_LIMIT_MAX, 0.f, DZ_FLT_MAX, 1.f, 10.f}, //DZ_EMITTER_SPAWN_SPIN_MAX
 };
 //////////////////////////////////////////////////////////////////////////
-void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, float * const _min, float * const _max, float * const _default, float * const _factor )
+void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_timeline_limit_status_e * const _status, dz_float_t * const _min, dz_float_t * const _max, dz_float_t * const _default, dz_float_t * const _factor )
 {
     const dz_timeline_limits_t * limit = emitter_timeline_limits + _timeline;
 
@@ -922,11 +922,11 @@ void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_tim
     *_factor = limit->factor_value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_emitter_timeline_default( dz_emitter_timeline_type_e _timeline )
+static dz_float_t __get_emitter_timeline_default( dz_emitter_timeline_type_e _timeline )
 {
     const dz_timeline_limits_t * limit = emitter_timeline_limits + _timeline;
 
-    const float default_value = limit->default_value;
+    const dz_float_t default_value = limit->default_value;
 
     return default_value;
 }
@@ -940,37 +940,37 @@ static dz_uint16_t __get_rand( dz_uint32_t * _seed )
     return value & 0xffff;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_randf( dz_uint32_t * _seed )
+static dz_float_t __get_randf( dz_uint32_t * _seed )
 {
     const dz_uint16_t value = __get_rand( _seed );
 
-    const float valuef = uint16_2_inv_float[value];
+    const dz_float_t valuef = uint16_2_inv_float[value];
 
     return valuef;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_randf2( dz_uint32_t * _seed, float _min, float _max )
+static dz_float_t __get_randf2( dz_uint32_t * _seed, dz_float_t _min, dz_float_t _max )
 {
     const dz_uint16_t value = __get_rand( _seed );
 
-    const float valuef = uint16_2_inv_float[value];
+    const dz_float_t valuef = uint16_2_inv_float[value];
 
     return _min + (_max - _min) * valuef;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key )
+static dz_float_t __get_timeline_key_value( dz_float_t _t, const dz_timeline_key_t * _key )
 {
     switch( _key->type )
     {
     case DZ_TIMELINE_KEY_CONST:
         {
-            const float value = _key->const_value;
+            const dz_float_t value = _key->const_value;
 
             return value;
         }break;
     case DZ_TIMELINE_KEY_RANDOMIZE:
         {
-            const float value = _key->randomize_min_value + (_key->randomize_max_value - _key->randomize_min_value) * _t;
+            const dz_float_t value = _key->randomize_min_value + (_key->randomize_max_value - _key->randomize_min_value) * _t;
 
             return value;
         }break;
@@ -982,11 +982,11 @@ static float __get_timeline_key_value( float _t, const dz_timeline_key_t * _key 
     return 0.f;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, float _p )
+static dz_float_t __get_timeline_value( dz_float_t _t, const dz_timeline_key_t * _key, dz_float_t _p )
 {
     for( ; _key->interpolate != DZ_NULLPTR && _key->interpolate->key->p < _p; _key = _key->interpolate->key );
 
-    const float current_value = __get_timeline_key_value( _t, _key );
+    const dz_float_t current_value = __get_timeline_key_value( _t, _key );
 
     if( _key->interpolate == DZ_NULLPTR ||
         _key->p > _p )
@@ -996,16 +996,16 @@ static float __get_timeline_value( float _t, const dz_timeline_key_t * _key, flo
 
     const dz_timeline_key_t * next = _key->interpolate->key;
 
-    const float next_value = __get_timeline_key_value( _t, next );
+    const dz_float_t next_value = __get_timeline_key_value( _t, next );
 
-    const float t = (_p - _key->p) * _key->d_inv;
+    const dz_float_t t = (_p - _key->p) * _key->d_inv;
 
-    const float value = current_value + (next_value - current_value) * t;
+    const dz_float_t value = current_value + (next_value - current_value) * t;
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, float _life, dz_uint32_t _seed, dz_userdata_t _ud )
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, dz_float_t _life, dz_uint32_t _seed, dz_userdata_t _ud )
 {
 #ifdef DZ_DEBUG
     if( _service == DZ_NULLPTR )
@@ -1113,12 +1113,12 @@ const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect )
     return _effect->affector;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_life( dz_effect_t * const _effect, float _life )
+void dz_effect_set_life( dz_effect_t * const _effect, dz_float_t _life )
 {
     _effect->life = _life;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_effect_get_life( const dz_effect_t * _effect )
+dz_float_t dz_effect_get_life( const dz_effect_t * _effect )
 {
     return _effect->life;
 }
@@ -1248,7 +1248,7 @@ dz_bool_t dz_instance_get_loop( const dz_instance_t * _instance )
     return _instance->loop;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_set_time( dz_instance_t * const _instance, float _time )
+dz_result_t dz_instance_set_time( dz_instance_t * const _instance, dz_float_t _time )
 {
 #ifdef DZ_DEBUG
     if( _time < 0.f )
@@ -1263,52 +1263,52 @@ dz_result_t dz_instance_set_time( dz_instance_t * const _instance, float _time )
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_instance_get_time( const dz_instance_t * _instance )
+dz_float_t dz_instance_get_time( const dz_instance_t * _instance )
 {
     return _instance->time;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_rands( dz_particle_t * _particle, const dz_effect_t * _effect, dz_affector_timeline_type_e _type, float _p )
+static dz_float_t __get_affector_value_rands( dz_particle_t * _particle, const dz_effect_t * _effect, dz_affector_timeline_type_e _type, dz_float_t _p )
 {
     const dz_timeline_key_t * timeline_key = _effect->affector->timelines[_type];
 
     if( timeline_key == DZ_NULLPTR )
     {
-        const float default_value = __get_affector_timeline_default( _type );
+        const dz_float_t default_value = __get_affector_timeline_default( _type );
 
         return default_value;
     }
 
-    const float value = __get_timeline_value( _particle->rands[_type], timeline_key, _p );
+    const dz_float_t value = __get_timeline_value( _particle->rands[_type], timeline_key, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __particle_update( const dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, float _time )
+static dz_result_t __particle_update( const dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, dz_float_t _time )
 {
     _p->time += _time;
 
-    const float p = _p->time / _p->life;
+    const dz_float_t p = _p->time / _p->life;
 
-    const float move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_SPEED, p );
-    const float move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, p );
+    const dz_float_t move_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_SPEED, p );
+    const dz_float_t move_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, p );
 
-    const float rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, p );
-    const float rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, p );
+    const dz_float_t rotate_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, p );
+    const dz_float_t rotate_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, p );
 
-    const float spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED, p );
-    const float spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, p );
+    const dz_float_t spin_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_SPEED, p );
+    const dz_float_t spin_accelerate = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, p );
 
-    const float scale = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SCALE, p );
-    const float aspect = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ASPECT, p );
+    const dz_float_t scale = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_SCALE, p );
+    const dz_float_t aspect = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_ASPECT, p );
 
     _p->scale = scale;
     _p->aspect = aspect;
 
-    const float r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R, p );
-    const float g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_G, p );
-    const float b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_B, p );
-    const float a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_A, p );
+    const dz_float_t r = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_R, p );
+    const dz_float_t g = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_G, p );
+    const dz_float_t b = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_B, p );
+    const dz_float_t a = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_COLOR_A, p );
 
     _p->color_r = r * _p->born_color_r;
     _p->color_g = g * _p->born_color_g;
@@ -1321,20 +1321,20 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
     _p->spin_accelerate_aux += spin_accelerate * _time;
     _p->spin += spin_speed * _time + _p->spin_accelerate_aux * _time;
 
-    const float dx = DZ_COSF( _service, _p->angle );
-    const float dy = DZ_SINF( _service, _p->angle );
+    const dz_float_t dx = DZ_COSF( _service, _p->angle );
+    const dz_float_t dy = DZ_SINF( _service, _p->angle );
 
-    const float strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, p );
+    const dz_float_t strafe_size = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, p );
 
     if( strafe_size != 0.f )
     {
-        const float strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, p );
-        const float strafe_frenquence = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, p );
+        const dz_float_t strafe_speed = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, p );
+        const dz_float_t strafe_frenquence = __get_affector_value_rands( _p, _emitter, DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, p );
 
-        const float strafe_shift = _p->rands[DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT];
+        const dz_float_t strafe_shift = _p->rands[DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT];
 
-        const float strafex = -dy * DZ_COSF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
-        const float strafey = dx * DZ_SINF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
+        const dz_float_t strafex = -dy * DZ_COSF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
+        const dz_float_t strafey = dx * DZ_SINF( _service, strafe_shift * DZ_PI + strafe_frenquence * _p->time ) * strafe_size * strafe_speed * _time;
 
         _p->x += strafex;
         _p->y += strafey;
@@ -1342,14 +1342,14 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
 
     _p->move_accelerate_aux += move_accelerate * _time;
 
-    const float movex = dx * (move_speed * _time + _p->move_accelerate_aux * _time);
-    const float movey = dy * (move_speed * _time + _p->move_accelerate_aux * _time);
+    const dz_float_t movex = dx * (move_speed * _time + _p->move_accelerate_aux * _time);
+    const dz_float_t movey = dy * (move_speed * _time + _p->move_accelerate_aux * _time);
 
     _p->x += movex;
     _p->y += movey;
 
-    const float sx = DZ_COSF( _service, _p->angle + _p->spin );
-    const float sy = DZ_SINF( _service, _p->angle + _p->spin );
+    const dz_float_t sx = DZ_COSF( _service, _p->angle + _p->spin );
+    const dz_float_t sy = DZ_SINF( _service, _p->angle + _p->spin );
 
     _p->sx = sx;
     _p->sy = sy;
@@ -1390,7 +1390,7 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
             }
 #endif
 
-            float texture_time = _p->time;
+            dz_float_t texture_time = _p->time;
             for( ; texture_time > atlas->textures_time; texture_time -= atlas->textures_time );
 
             for( dz_uint32_t index = 0; index != atlas->texture_count; ++index )
@@ -1416,16 +1416,16 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_timeline_value_seed( dz_uint32_t * _seed, const dz_timeline_key_t * _timeline, float _p )
+static dz_float_t __get_timeline_value_seed( dz_uint32_t * _seed, const dz_timeline_key_t * _timeline, dz_float_t _p )
 {
-    const float t = __get_randf( _seed );
+    const dz_float_t t = __get_randf( _seed );
 
-    const float value = __get_timeline_value( t, _timeline, _p );
+    const dz_float_t value = __get_timeline_value( t, _timeline, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_shape_value_seed( dz_instance_t * _instance, dz_shape_timeline_type_e _type, float _p )
+static dz_float_t __get_shape_value_seed( dz_instance_t * _instance, dz_shape_timeline_type_e _type, dz_float_t _p )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -1433,17 +1433,17 @@ static float __get_shape_value_seed( dz_instance_t * _instance, dz_shape_timelin
 
     if( timeline_key == DZ_NULLPTR )
     {
-        const float default_value = __get_shape_timeline_default( _type );
+        const dz_float_t default_value = __get_shape_timeline_default( _type );
 
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
+    const dz_float_t value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_emitter_value_seed( dz_instance_t * _instance, dz_emitter_timeline_type_e _type, float _p )
+static dz_float_t __get_emitter_value_seed( dz_instance_t * _instance, dz_emitter_timeline_type_e _type, dz_float_t _p )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -1451,17 +1451,17 @@ static float __get_emitter_value_seed( dz_instance_t * _instance, dz_emitter_tim
 
     if( timeline_key == DZ_NULLPTR )
     {
-        const float default_value = __get_emitter_timeline_default( _type );
+        const dz_float_t default_value = __get_emitter_timeline_default( _type );
 
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
+    const dz_float_t value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __get_affector_value_seed( dz_instance_t * _instance, dz_affector_timeline_type_e _type, float _p )
+static dz_float_t __get_affector_value_seed( dz_instance_t * _instance, dz_affector_timeline_type_e _type, dz_float_t _p )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -1469,19 +1469,19 @@ static float __get_affector_value_seed( dz_instance_t * _instance, dz_affector_t
 
     if( timeline_key == DZ_NULLPTR )
     {
-        const float default_value = __get_affector_timeline_default( _type );
+        const dz_float_t default_value = __get_affector_timeline_default( _type );
 
         return default_value;
     }
 
-    const float value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
+    const dz_float_t value = __get_timeline_value_seed( &_instance->seed, timeline_key, _p );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float __calc_triangle_area( float ax, float ay, float bx, float by, float cx, float cy )
+static dz_float_t __calc_triangle_area( dz_float_t ax, dz_float_t ay, dz_float_t bx, dz_float_t by, dz_float_t cx, dz_float_t cy )
 {
-    const float area = (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)) * 0.5f;
+    const dz_float_t area = (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)) * 0.5f;
 
     if( area < 0.f )
     {
@@ -1595,7 +1595,7 @@ static dz_result_t __get_mask_threshold_value( const void * _buffer, dz_uint32_t
     return DZ_FAILURE;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_particle_t * _p, float _life, float _spawn_time )
+static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_particle_t * _p, dz_float_t _life, dz_float_t _spawn_time )
 {
     for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
@@ -1614,7 +1614,7 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
 
     _p->angle = _instance->angle;
 
-    const float t = _spawn_time / _life;
+    const dz_float_t t = _spawn_time / _life;
 
     const dz_effect_t * effect = _instance->effect;
 
@@ -1627,7 +1627,7 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             _p->x += 0.f;
             _p->y += 0.f;
 
-            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
+            const dz_float_t angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             _p->angle += angle;
         }break;
@@ -1636,45 +1636,45 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             _p->x += 0.f;
             _p->y += 0.f;
 
-            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MIN, t );
-            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MAX, t );
+            const dz_float_t angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MIN, t );
+            const dz_float_t angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_SEGMENT_ANGLE_MAX, t );
 
-            const float angle = __get_randf2( &_instance->seed, angle_min, angle_max );
+            const dz_float_t angle = __get_randf2( &_instance->seed, angle_min, angle_max );
 
             _p->angle += angle;
         }break;
     case DZ_SHAPE_CIRCLE:
         {
-            const float radius_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MIN, t );
-            const float radius_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MAX, t );
+            const dz_float_t radius_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MIN, t );
+            const dz_float_t radius_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_RADIUS_MAX, t );
 
-            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
-            const float radius = radius_min + DZ_SQRTF( _service, __get_randf( &_instance->seed ) ) * (radius_max - radius_min);
+            const dz_float_t angle = __get_randf( &_instance->seed ) * DZ_PI2;
+            const dz_float_t radius = radius_min + DZ_SQRTF( _service, __get_randf( &_instance->seed ) ) * (radius_max - radius_min);
 
-            const float rx = radius * DZ_COSF( _service, angle );
-            const float ry = radius * DZ_SINF( _service, angle );
+            const dz_float_t rx = radius * DZ_COSF( _service, angle );
+            const dz_float_t ry = radius * DZ_SINF( _service, angle );
 
             _p->x += rx;
             _p->y += ry;
 
-            const float angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MIN, t );
-            const float angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MAX, t );
+            const dz_float_t angle_min = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MIN, t );
+            const dz_float_t angle_max = __get_shape_value_seed( _instance, DZ_SHAPE_CIRCLE_ANGLE_MAX, t );
 
-            const float angle_dispersion = __get_randf2( &_instance->seed, angle_min, angle_max );
+            const dz_float_t angle_dispersion = __get_randf2( &_instance->seed, angle_min, angle_max );
 
             _p->angle += angle + angle_dispersion;
         }break;
     case DZ_SHAPE_LINE:
         {
-            const float angle = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_ANGLE, t );
+            const dz_float_t angle = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_ANGLE, t );
 
-            const float dx = DZ_COSF( _service, angle );
-            const float dy = DZ_SINF( _service, angle );
+            const dz_float_t dx = DZ_COSF( _service, angle );
+            const dz_float_t dy = DZ_SINF( _service, angle );
 
-            const float size = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_SIZE, t );
-            const float offset = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_OFFSET, t );
+            const dz_float_t size = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_SIZE, t );
+            const dz_float_t offset = __get_shape_value_seed( _instance, DZ_SHAPE_LINE_OFFSET, t );
 
-            const float l = (__get_randf( &_instance->seed ) - 0.5f) * size;
+            const dz_float_t l = (__get_randf( &_instance->seed ) - 0.5f) * size;
 
             _p->x += dy * (offset - l);
             _p->y += dx * (offset + l);
@@ -1683,57 +1683,57 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         }break;
     case DZ_SHAPE_RECT:
         {
-            const float width_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MIN, t );
-            const float width_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MAX, t );
-            const float height_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MIN, t );
-            const float height_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MAX, t );
+            const dz_float_t width_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MIN, t );
+            const dz_float_t width_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_WIDTH_MAX, t );
+            const dz_float_t height_min = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MIN, t );
+            const dz_float_t height_max = __get_shape_value_seed( _instance, DZ_SHAPE_RECT_HEIGHT_MAX, t );
 
             DZ_TODO DZ_UNUSED( width_min );
             DZ_TODO DZ_UNUSED( height_min );
 
-            const float x = (__get_randf( &_instance->seed ) - 0.5f) * width_max;
-            const float y = (__get_randf( &_instance->seed ) - 0.5f) * height_max;
+            const dz_float_t x = (__get_randf( &_instance->seed ) - 0.5f) * width_max;
+            const dz_float_t y = (__get_randf( &_instance->seed ) - 0.5f) * height_max;
 
             _p->x += x;
             _p->y += y;
 
-            float angle = __get_randf( &_instance->seed ) * DZ_PI2;
+            dz_float_t angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             _p->angle += angle;
         }break;
     case DZ_SHAPE_POLYGON:
         {
-            float total_area = 0.f;
-            float areas[1024];
+            dz_float_t total_area = 0.f;
+            dz_float_t areas[1024];
 
-            const float * triangles = effect->shape->triangles;
+            const dz_float_t * triangles = effect->shape->triangles;
             const dz_uint32_t triangle_count = effect->shape->triangle_count;
 
             for( dz_uint32_t index = 0; index != triangle_count; ++index )
             {
-                const float ax = triangles[index * 6 + 0];
-                const float ay = triangles[index * 6 + 1];
-                const float bx = triangles[index * 6 + 2];
-                const float by = triangles[index * 6 + 3];
-                const float cx = triangles[index * 6 + 4];
-                const float cy = triangles[index * 6 + 5];
+                const dz_float_t ax = triangles[index * 6 + 0];
+                const dz_float_t ay = triangles[index * 6 + 1];
+                const dz_float_t bx = triangles[index * 6 + 2];
+                const dz_float_t by = triangles[index * 6 + 3];
+                const dz_float_t cx = triangles[index * 6 + 4];
+                const dz_float_t cy = triangles[index * 6 + 5];
 
-                const float area = __calc_triangle_area( ax, ay, bx, by, cx, cy );
+                const dz_float_t area = __calc_triangle_area( ax, ay, bx, by, cx, cy );
 
                 total_area += area;
 
                 areas[index] = total_area;
             }
 
-            const float triangle_rand = __get_randf( &_instance->seed );
+            const dz_float_t triangle_rand = __get_randf( &_instance->seed );
 
-            const float triangle_find_area = triangle_rand * total_area;
+            const dz_float_t triangle_find_area = triangle_rand * total_area;
 
             dz_uint32_t triangle_found_index = 0;
 
             for( dz_uint32_t index = 0; index != triangle_count; ++index )
             {
-                const float area = areas[index];
+                const dz_float_t area = areas[index];
 
                 if( area < triangle_find_area )
                 {
@@ -1745,25 +1745,25 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
                 break;
             }
 
-            const float rax = triangles[triangle_found_index * 6 + 0];
-            const float ray = triangles[triangle_found_index * 6 + 1];
-            const float rbx = triangles[triangle_found_index * 6 + 2];
-            const float rby = triangles[triangle_found_index * 6 + 3];
-            const float rcx = triangles[triangle_found_index * 6 + 4];
-            const float rcy = triangles[triangle_found_index * 6 + 5];
+            const dz_float_t rax = triangles[triangle_found_index * 6 + 0];
+            const dz_float_t ray = triangles[triangle_found_index * 6 + 1];
+            const dz_float_t rbx = triangles[triangle_found_index * 6 + 2];
+            const dz_float_t rby = triangles[triangle_found_index * 6 + 3];
+            const dz_float_t rcx = triangles[triangle_found_index * 6 + 4];
+            const dz_float_t rcy = triangles[triangle_found_index * 6 + 5];
 
-            const float r1 = __get_randf( &_instance->seed );
-            const float r2 = __get_randf( &_instance->seed );
+            const dz_float_t r1 = __get_randf( &_instance->seed );
+            const dz_float_t r2 = __get_randf( &_instance->seed );
 
-            const float qr1 = DZ_SQRTF( _service, r1 );
+            const dz_float_t qr1 = DZ_SQRTF( _service, r1 );
 
-            const float tx = (1.f - qr1) * rax + (qr1 * (1.f - r2)) * rbx + (qr1 * r2) * rcx;
-            const float ty = (1.f - qr1) * ray + (qr1 * (1.f - r2)) * rby + (qr1 * r2) * rcy;
+            const dz_float_t tx = (1.f - qr1) * rax + (qr1 * (1.f - r2)) * rbx + (qr1 * r2) * rcx;
+            const dz_float_t ty = (1.f - qr1) * ray + (qr1 * (1.f - r2)) * rby + (qr1 * r2) * rcy;
 
             _p->x += tx;
             _p->y += ty;
 
-            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
+            const dz_float_t angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             _p->angle += angle;
         }break;
@@ -1775,11 +1775,11 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             const dz_uint32_t mask_width = effect->shape->mask_width;
             const dz_uint32_t mask_height = effect->shape->mask_height;
             const dz_uint32_t mask_threshold = effect->shape->mask_threshold;
-            const float mask_scale = effect->shape->mask_scale;
+            const dz_float_t mask_scale = effect->shape->mask_scale;
 
             const dz_uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
 
-            const float r = __get_randf( &_instance->seed );
+            const dz_float_t r = __get_randf( &_instance->seed );
 
             const dz_uint32_t threshold_value_index = (dz_uint32_t)(r * (threshold_value_count - 1) + 0.5f);
 
@@ -1793,7 +1793,7 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
             _p->x += w_found * mask_scale;
             _p->y += h_found * mask_scale;
 
-            const float angle = __get_randf( &_instance->seed ) * DZ_PI2;
+            const dz_float_t angle = __get_randf( &_instance->seed ) * DZ_PI2;
 
             _p->angle += angle;
         }break;
@@ -1803,13 +1803,13 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         break;
     }
 
-    const float spin_min = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MIN, t );
-    const float spin_max = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MAX, t );
+    const dz_float_t spin_min = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MIN, t );
+    const dz_float_t spin_max = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_SPIN_MAX, t );
 
     _p->spin = (__get_randf( &_instance->seed ) * 2.f - 1.f) * __get_randf2( &_instance->seed, spin_min, spin_max );
 
-    const float sx = DZ_COSF( _service, _p->spin );
-    const float sy = DZ_SINF( _service, _p->spin );
+    const dz_float_t sx = DZ_COSF( _service, _p->spin );
+    const dz_float_t sy = DZ_SINF( _service, _p->spin );
 
     _p->sx = sx;
     _p->sy = sy;
@@ -1822,7 +1822,7 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_instance_t * _instance, float _life, float _spawn_time )
+static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_float_t _life, dz_float_t _spawn_time )
 {
     if( _instance->partices_count >= _instance->partices_capacity )
     {
@@ -1852,7 +1852,7 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
         return DZ_FAILURE;
     }
 
-    const float time = _instance->time - _spawn_time;
+    const dz_float_t time = _instance->time - _spawn_time;
 
     const dz_effect_t * effect = _instance->effect;
 
@@ -1864,19 +1864,19 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_position( dz_instance_t * const _instance, float _x, float _y )
+void dz_instance_set_position( dz_instance_t * const _instance, dz_float_t _x, dz_float_t _y )
 {
     _instance->x = _x;
     _instance->y = _y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_get_position( const dz_instance_t * _instance, float * const _x, float * const _y )
+void dz_instance_get_position( const dz_instance_t * _instance, dz_float_t * const _x, dz_float_t * const _y )
 {
     *_x = _instance->x;
     *_y = _instance->y;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_color( dz_instance_t * const _instance, float _r, float _g, float _b, float _a )
+void dz_instance_set_color( dz_instance_t * const _instance, dz_float_t _r, dz_float_t _g, dz_float_t _b, dz_float_t _a )
 {
     _instance->r = _r;
     _instance->g = _g;
@@ -1884,7 +1884,7 @@ void dz_instance_set_color( dz_instance_t * const _instance, float _r, float _g,
     _instance->a = _a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_get_color( const dz_instance_t * _instance, float * const _r, float * const _g, float * const _b, float * const _a )
+void dz_instance_get_color( const dz_instance_t * _instance, dz_float_t * const _r, dz_float_t * const _g, dz_float_t * const _b, dz_float_t * const _a )
 {
     *_r = _instance->r;
     *_g = _instance->g;
@@ -1892,12 +1892,12 @@ void dz_instance_get_color( const dz_instance_t * _instance, float * const _r, f
     *_a = _instance->a;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_rotate( dz_instance_t * const _instance, float _angle )
+void dz_instance_set_rotate( dz_instance_t * const _instance, dz_float_t _angle )
 {
     _instance->angle = _angle;
 }
 //////////////////////////////////////////////////////////////////////////
-float dz_instance_get_rotate( const dz_instance_t * _instance )
+dz_float_t dz_instance_get_rotate( const dz_instance_t * _instance )
 {
     return _instance->angle;
 }
@@ -1940,7 +1940,7 @@ static dz_particle_t * __find_first_dead_particle( dz_particle_t * _p, const dz_
     return DZ_NULLPTR;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * const _instance, float _time )
+dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * const _instance, dz_float_t _time )
 {
     const dz_effect_t * effect = _instance->effect;
 
@@ -2013,7 +2013,7 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * c
         return DZ_SUCCESSFUL;
     }
 
-    const float effect_life = effect->life;
+    const dz_float_t effect_life = effect->life;
 
     if( _instance->time + _time > effect_life )
     {
@@ -2034,9 +2034,9 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * c
 
     for( ;;)
     {
-        const float instance_p = _instance->emitter_time / effect_life;
+        const dz_float_t instance_p = _instance->emitter_time / effect_life;
 
-        const float delay = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_DELAY, instance_p );
+        const dz_float_t delay = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_DELAY, instance_p );
 
         if( _instance->loop == DZ_FALSE && _instance->emitter_time + delay > effect_life )
         {
@@ -2048,17 +2048,17 @@ dz_result_t dz_instance_update( const dz_service_t * _service, dz_instance_t * c
             break;
         }
 
-        const float spawn_time = _instance->emitter_time + delay;
+        const dz_float_t spawn_time = _instance->emitter_time + delay;
 
-        const float spawn_p = spawn_time / effect_life;
+        const dz_float_t spawn_p = spawn_time / effect_life;
 
-        float count = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_COUNT, spawn_p );
+        dz_float_t count = __get_emitter_value_seed( _instance, DZ_EMITTER_SPAWN_COUNT, spawn_p );
 
         while( count > 0.f )
         {
-            const float life = __get_affector_value_seed( _instance, DZ_AFFECTOR_TIMELINE_LIFE, spawn_p );
+            const dz_float_t life = __get_affector_value_seed( _instance, DZ_AFFECTOR_TIMELINE_LIFE, spawn_p );
 
-            const float ptime = _instance->time - spawn_time;
+            const dz_float_t ptime = _instance->time - spawn_time;
 
             if( life > ptime && _instance->partices_count <= _instance->particle_limit )
             {
@@ -2121,61 +2121,61 @@ static void __particle_compute_positions( const dz_particle_t * _p, dz_uint16_t 
     const dz_size_t base_position_buffer_offset = _mesh->position_offset + _mesh->position_stride * (_iterator * 4);
     dz_uint8_t * base_position_buffer = (dz_uint8_t *)_mesh->position_buffer + base_position_buffer_offset;
 
-    float * p0 = (float *)(base_position_buffer + _mesh->position_stride * 0);
-    float * p1 = (float *)(base_position_buffer + _mesh->position_stride * 1);
-    float * p2 = (float *)(base_position_buffer + _mesh->position_stride * 2);
-    float * p3 = (float *)(base_position_buffer + _mesh->position_stride * 3);
+    dz_float_t * p0 = (dz_float_t *)(base_position_buffer + _mesh->position_stride * 0);
+    dz_float_t * p1 = (dz_float_t *)(base_position_buffer + _mesh->position_stride * 1);
+    dz_float_t * p2 = (dz_float_t *)(base_position_buffer + _mesh->position_stride * 2);
+    dz_float_t * p3 = (dz_float_t *)(base_position_buffer + _mesh->position_stride * 3);
 
     if( _p->texture != DZ_NULLPTR )
     {
-        const float thw = _p->texture->width * 0.5f * _p->scale;
-        const float thh = _p->texture->height * 0.5f * _p->scale;
+        const dz_float_t thw = _p->texture->width * 0.5f * _p->scale;
+        const dz_float_t thh = _p->texture->height * 0.5f * _p->scale;
 
-        const float ha = _p->aspect;
+        const dz_float_t ha = _p->aspect;
 
-        const float tox = _p->texture->trim_offset_x * _p->scale;
-        const float toy = _p->texture->trim_offset_y * _p->scale;
-        const float tw = _p->texture->trim_width * _p->scale;
-        const float th = _p->texture->trim_height * _p->scale;
+        const dz_float_t tox = _p->texture->trim_offset_x * _p->scale;
+        const dz_float_t toy = _p->texture->trim_offset_y * _p->scale;
+        const dz_float_t tw = _p->texture->trim_width * _p->scale;
+        const dz_float_t th = _p->texture->trim_height * _p->scale;
 
-        const float x0 = (tox + 0.f) - thw;
-        const float y0 = (toy + 0.f) - thh;
+        const dz_float_t x0 = (tox + 0.f) - thw;
+        const dz_float_t y0 = (toy + 0.f) - thh;
 
         p0[0] = _p->x + x0 * _p->sx * ha - y0 * _p->sy;
         p0[1] = _p->y + x0 * _p->sy * ha + y0 * _p->sx;
 
-        const float x1 = (tox + tw) - thw;
-        const float y1 = (toy + 0.f) - thh;
+        const dz_float_t x1 = (tox + tw) - thw;
+        const dz_float_t y1 = (toy + 0.f) - thh;
 
         p1[0] = _p->x + x1 * _p->sx * ha - y1 * _p->sy;
         p1[1] = _p->y + x1 * _p->sy * ha + y1 * _p->sx;
 
-        const float x2 = (tox + tw) - thw;
-        const float y2 = (toy + th) - thh;
+        const dz_float_t x2 = (tox + tw) - thw;
+        const dz_float_t y2 = (toy + th) - thh;
 
         p2[0] = _p->x + x2 * _p->sx * ha - y2 * _p->sy;
         p2[1] = _p->y + x2 * _p->sy * ha + y2 * _p->sx;
 
-        const float x3 = (tox + 0.f) - thw;
-        const float y3 = (toy + th) - thh;
+        const dz_float_t x3 = (tox + 0.f) - thw;
+        const dz_float_t y3 = (toy + th) - thh;
 
         p3[0] = _p->x + x3 * _p->sx * ha - y3 * _p->sy;
         p3[1] = _p->y + x3 * _p->sy * ha + y3 * _p->sx;
     }
     else
     {
-        const float hs = _p->scale * DZ_PARTICLE_SIZE * 0.5f;
+        const dz_float_t hs = _p->scale * DZ_PARTICLE_SIZE * 0.5f;
 
-        const float hsx = _p->sx * hs;
-        const float hsy = _p->sy * hs;
+        const dz_float_t hsx = _p->sx * hs;
+        const dz_float_t hsy = _p->sy * hs;
 
-        const float ha = _p->aspect;
+        const dz_float_t ha = _p->aspect;
 
-        const float ux = hsx * ha;
-        const float uy = hsy * ha;
+        const dz_float_t ux = hsx * ha;
+        const dz_float_t uy = hsy * ha;
 
-        const float vx = -hsy;
-        const float vy = hsx;
+        const dz_float_t vx = -hsy;
+        const dz_float_t vy = hsx;
 
         p0[0] = _p->x - ux + vx;
         p0[1] = _p->y - uy + vy;
@@ -2230,22 +2230,22 @@ static void __particle_compute_uvs( const dz_particle_t * _p, dz_uint16_t _itera
     const dz_size_t base_uv_buffer_offset = _mesh->uv_offset + _mesh->uv_stride * (_iterator * 4);
     dz_uint8_t * base_uv_buffer = (dz_uint8_t *)_mesh->uv_buffer + base_uv_buffer_offset;
 
-    float * uv0 = (float *)(base_uv_buffer + _mesh->uv_stride * 0);
+    dz_float_t * uv0 = (dz_float_t *)(base_uv_buffer + _mesh->uv_stride * 0);
 
     uv0[0] = _p->texture->u[0];
     uv0[1] = _p->texture->v[0];
 
-    float * uv1 = (float *)(base_uv_buffer + _mesh->uv_stride * 1);
+    dz_float_t * uv1 = (dz_float_t *)(base_uv_buffer + _mesh->uv_stride * 1);
 
     uv1[0] = _p->texture->u[1];
     uv1[1] = _p->texture->v[1];
 
-    float * uv2 = (float *)(base_uv_buffer + _mesh->uv_stride * 2);
+    dz_float_t * uv2 = (dz_float_t *)(base_uv_buffer + _mesh->uv_stride * 2);
 
     uv2[0] = _p->texture->u[2];
     uv2[1] = _p->texture->v[2];
 
-    float * uv3 = (float *)(base_uv_buffer + _mesh->uv_stride * 3);
+    dz_float_t * uv3 = (dz_float_t *)(base_uv_buffer + _mesh->uv_stride * 3);
 
     uv3[0] = _p->texture->u[3];
     uv3[1] = _p->texture->v[3];

@@ -34,29 +34,29 @@ static void dz_free( const void * _ptr, dz_userdata_t _ud )
     free( (void *)_ptr );
 }
 //////////////////////////////////////////////////////////////////////////
-static float dz_sqrtf( float _a, dz_userdata_t _ud )
+static dz_float_t dz_sqrtf( dz_float_t _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
-    float value = sqrtf( _a );
+    dz_float_t value = sqrtf( _a );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float dz_cosf( float _a, dz_userdata_t _ud )
+static dz_float_t dz_cosf( dz_float_t _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
-    float value = cosf( _a );
+    dz_float_t value = cosf( _a );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float dz_sinf( float _a, dz_userdata_t _ud )
+static dz_float_t dz_sinf( dz_float_t _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
-    float value = sinf( _a );
+    dz_float_t value = sinf( _a );
 
     return value;
 }
@@ -79,7 +79,7 @@ static float dz_sinf( float _a, dz_userdata_t _ud )
 //    return DZ_SUCCESSFUL;
 //}
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _value )
+static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -112,7 +112,7 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
 //    return DZ_SUCCESSFUL;
 //}
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _time0, float _time1, float _value0, float _value1, float _value2 )
+static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _time0, dz_float_t _time1, dz_float_t _value0, dz_float_t _value1, dz_float_t _value2 )
 {
     dz_timeline_key_t * key0;
     if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -290,7 +290,7 @@ int main( int argc, char ** argv )
 
     dz_render_use_texture_program( &opengl_desc );
 
-    dz_render_set_proj( &opengl_desc, -(float)window_width * 0.5f, (float)window_width * 0.5f, -(float)window_height * 0.5f, (float)window_height * 0.5f );
+    dz_render_set_proj( &opengl_desc, -(dz_float_t)window_width * 0.5f, (dz_float_t)window_width * 0.5f, -(dz_float_t)window_height * 0.5f, (dz_float_t)window_height * 0.5f );
 
     char texture_path[250];
     sprintf( texture_path, "%s/%s"
@@ -384,11 +384,11 @@ int main( int argc, char ** argv )
     typedef struct timeline_t
     {
         dz_affector_timeline_type_e type;
-        float time0;
-        float time1;
-        float value0;
-        float value1;
-        float value2;
+        dz_float_t time0;
+        dz_float_t time1;
+        dz_float_t value0;
+        dz_float_t value1;
+        dz_float_t value2;
     } timeline_t;
 
     timeline_t timeline_datas[] = {

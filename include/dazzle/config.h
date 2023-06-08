@@ -24,6 +24,7 @@ typedef int16_t dz_int16_t;
 typedef uint16_t dz_uint16_t;
 typedef int32_t dz_int32_t;
 typedef uint32_t dz_uint32_t;
+typedef float dz_float_t;
 typedef size_t dz_size_t;
 typedef void * dz_userdata_t;
 

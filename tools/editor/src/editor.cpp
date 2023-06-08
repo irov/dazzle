@@ -33,17 +33,17 @@ typedef enum er_window_type_e
     __ER_WINDOW_TYPE_MAX__
 } er_window_type_e;
 //////////////////////////////////////////////////////////////////////////
-//static constexpr float ER_WINDOW_WIDTH = 1024;  // aspect ratio 3:4
-//static constexpr float ER_WINDOW_HEIGHT = 768;
-static constexpr float ER_WINDOW_WIDTH = 1280;    // aspect ratio HD 720p
-static constexpr float ER_WINDOW_HEIGHT = 720;
-static constexpr float ER_TIMELINE_PANEL_WIDTH = 430.f;
+//static constexpr dz_float_t ER_WINDOW_WIDTH = 1024;  // aspect ratio 3:4
+//static constexpr dz_float_t ER_WINDOW_HEIGHT = 768;
+static constexpr dz_float_t ER_WINDOW_WIDTH = 1280;    // aspect ratio HD 720p
+static constexpr dz_float_t ER_WINDOW_HEIGHT = 720;
+static constexpr dz_float_t ER_TIMELINE_PANEL_WIDTH = 430.f;
 static constexpr int32_t ER_CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
 static constexpr ImGuiID ER_CURVE_ID_NONE = 0;
 static constexpr int ER_CURVE_POINT_NONE = -1;
-static constexpr float ER_CURVE_PLOT_BORDER_SIZE = 8.f;
-static constexpr float ER_CURVE_PLOT_HOVER_RADIUS = 4.f;
-static constexpr float ER_CURVE_PLOT_HOVER_RADIUS_POW_2 = ER_CURVE_PLOT_HOVER_RADIUS * ER_CURVE_PLOT_HOVER_RADIUS;
+static constexpr dz_float_t ER_CURVE_PLOT_BORDER_SIZE = 8.f;
+static constexpr dz_float_t ER_CURVE_PLOT_HOVER_RADIUS = 4.f;
+static constexpr dz_float_t ER_CURVE_PLOT_HOVER_RADIUS_POW_2 = ER_CURVE_PLOT_HOVER_RADIUS * ER_CURVE_PLOT_HOVER_RADIUS;
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME = "particle.png";
 //////////////////////////////////////////////////////////////////////////
@@ -78,7 +78,8 @@ static const char * ER_WINDOW_CONTROLS_BTN_RESET_TEXT = "Reset";
 static const char * ER_WINDOW_CONTROLS_BTN_PAUSE_TEXT = "Pause";
 static const char * ER_WINDOW_CONTROLS_BTN_RESUME_TEXT = "Resume";
 static const char * ER_WINDOW_CONTROLS_BTN_LOOP_TEXT = "Loop";
-static const char * ER_WINDOW_CONTROLS_TIMELINE_PREFIX_TEXT = "Time:";
+static const char * ER_WINDOW_CONTROLS_FACTOR_PREFIX_TEXT = "Factor:";
+static const char * ER_WINDOW_CONTROLS_TIME_PREFIX_TEXT = "Time:";
 static const char * ER_WINDOW_CONTROLS_INPUT_LIFE_TEXT = "Life";
 static const char * ER_WINDOW_CONTROLS_BTN_RESET_CAMERA_TEXT = "Reset camera";
 static const char * ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT = "Camera move/scroll: <Space> + Mouse";
@@ -191,29 +192,29 @@ static void dz_free( const void * _ptr, dz_userdata_t _ud )
     free( (void *)_ptr );
 }
 //////////////////////////////////////////////////////////////////////////
-static float dz_sqrtf( float _a, dz_userdata_t _ud )
+static dz_float_t dz_sqrtf( dz_float_t _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
-    float value = sqrtf( _a );
+    dz_float_t value = sqrtf( _a );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float dz_cosf( float _a, dz_userdata_t _ud )
+static dz_float_t dz_cosf( dz_float_t _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
-    float value = cosf( _a );
+    dz_float_t value = cosf( _a );
 
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
-static float dz_sinf( float _a, dz_userdata_t _ud )
+static dz_float_t dz_sinf( dz_float_t _a, dz_userdata_t _ud )
 {
     DZ_UNUSED( _ud );
 
-    float value = sinf( _a );
+    dz_float_t value = sinf( _a );
 
     return value;
 }
@@ -292,7 +293,7 @@ static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<dz_
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
+static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -396,7 +397,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, float _value )
+static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -497,7 +498,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
+static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -598,15 +599,15 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-float camera_scale = 1.f;
-float camera_scale_min = 0.125f;
-float camera_scale_max = 16.f;
-float camera_scale_step = 0.125f;
-float camera_offset_x = 0.f;
-float camera_offset_y = 0.f;
+dz_float_t camera_scale = 1.f;
+dz_float_t camera_scale_min = 0.125f;
+dz_float_t camera_scale_max = 16.f;
+dz_float_t camera_scale_step = 0.125f;
+dz_float_t camera_offset_x = 0.f;
+dz_float_t camera_offset_y = 0.f;
 //////////////////////////////////////////////////////////////////////////
-float mouse_pos_x = 0.f;
-float mouse_pos_y = 0.f;
+dz_float_t mouse_pos_x = 0.f;
+dz_float_t mouse_pos_y = 0.f;
 //////////////////////////////////////////////////////////////////////////
 static void __glfw_framebufferSizeCallback( GLFWwindow * _window, int _width, int _height )
 {
@@ -635,13 +636,13 @@ static void __glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 
     const ImVec2 & dzWindowPos = p_editor->getDzWindowPos();
 
-    float mouse_pos_x_norm = mouse_pos_x - dzWindowPos.x;
-    float mouse_pos_y_norm = mouse_pos_y - dzWindowPos.y;
+    dz_float_t mouse_pos_x_norm = mouse_pos_x - dzWindowPos.x;
+    dz_float_t mouse_pos_y_norm = mouse_pos_y - dzWindowPos.y;
 
     camera_offset_x -= mouse_pos_x_norm / camera_scale;
     camera_offset_y -= mouse_pos_y_norm / camera_scale;
 
-    float scroll = (float)_y * camera_scale_step;
+    dz_float_t scroll = (dz_float_t)_y * camera_scale_step;
 
     if( camera_scale + scroll > camera_scale_max )
     {
@@ -665,15 +666,15 @@ static void __glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y
     if( glfwGetKey( _window, GLFW_KEY_SPACE ) == GLFW_PRESS &&
         glfwGetMouseButton( _window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS )
     {
-        const float dx = (float)_x - mouse_pos_x;
-        const float dy = (float)_y - mouse_pos_y;
+        const dz_float_t dx = (dz_float_t)_x - mouse_pos_x;
+        const dz_float_t dy = (dz_float_t)_y - mouse_pos_y;
 
         camera_offset_x += dx / camera_scale;
         camera_offset_y += dy / camera_scale;
     }
 
-    mouse_pos_x = (float)_x;
-    mouse_pos_y = (float)_y;
+    mouse_pos_x = (dz_float_t)_x;
+    mouse_pos_y = (dz_float_t)_y;
 }
 //////////////////////////////////////////////////////////////////////////
 static void __glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, int _action, int _mods )
@@ -723,6 +724,7 @@ editor::editor()
     , m_affector( nullptr )
 
     , m_loop( DZ_FALSE )
+    , m_time_scale( 1.f )
 
     , m_effect( nullptr )
     , m_instance( nullptr )
@@ -772,8 +774,8 @@ dz_result_t editor::init()
         double cursorPosY;
         glfwGetCursorPos( m_fwWindow, &cursorPosX, &cursorPosY );
 
-        mouse_pos_x = (float)cursorPosX;
-        mouse_pos_y = (float)cursorPosY;
+        mouse_pos_x = (dz_float_t)cursorPosX;
+        mouse_pos_y = (dz_float_t)cursorPosY;
 
         if( gladLoadGL( (GLADloadfunc)&glfwGetProcAddress ) == 0 )
         {
@@ -793,7 +795,7 @@ dz_result_t editor::init()
             return DZ_FAILURE;
         }
 
-        dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
+        dz_render_set_proj( &m_openglDesc, -(dz_float_t)m_dzWindowSize.x * 0.5f, (dz_float_t)m_dzWindowSize.x * 0.5f, -(dz_float_t)m_dzWindowSize.y * 0.5f, (dz_float_t)m_dzWindowSize.y * 0.5f );
 
         m_textureId = 0;
     }
@@ -849,7 +851,8 @@ dz_result_t editor::init()
             data.type = static_cast<dz_shape_timeline_type_e>(index);
             data.name = ER_SHAPE_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_timeline_limit_status_e status; 
+            dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
             data.zoom = 1;
@@ -882,7 +885,8 @@ dz_result_t editor::init()
             data.type = static_cast<dz_emitter_timeline_type_e>(index);
             data.name = ER_EMITTER_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_timeline_limit_status_e status; 
+            dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
             data.zoom = 1;
@@ -913,7 +917,8 @@ dz_result_t editor::init()
             data.type = static_cast<dz_affector_timeline_type_e>(index);
             data.name = ER_AFFECTOR_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_timeline_limit_status_e status; 
+            dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
             data.zoom = 1;
@@ -1001,7 +1006,7 @@ dz_result_t editor::update( double _time )
         window_flags |= ImGuiWindowFlags_MenuBar;
 
         ImGui::SetNextWindowPos( ImVec2( 0.f, 0.f ), ImGuiCond_Always );
-        ImGui::SetNextWindowSize( ImVec2( (float)m_windowWidth, (float)m_windowHeight ), ImGuiCond_Always );
+        ImGui::SetNextWindowSize( ImVec2( (dz_float_t)m_windowWidth, (dz_float_t)m_windowHeight ), ImGuiCond_Always );
 
         if( ImGui::Begin( "LAYOUT", NULL, window_flags ) )
         {
@@ -1113,7 +1118,9 @@ dz_result_t editor::update( double _time )
     if( m_pause == false )
     {
         // update and render dazzle
-        dz_instance_update( m_service, m_instance, (float)_time );
+        dz_float_t time = (dz_float_t)_time * m_time_scale;
+
+        dz_instance_update( m_service, m_instance, time );
     }
     else
     {
@@ -1439,7 +1446,7 @@ dz_result_t editor::showMenuBar()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, float _min, float _range )
+static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, dz_float_t _min, dz_float_t _range )
 {
     int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
@@ -1452,7 +1459,7 @@ static void __pointsDataToCurve( er_curve_point_t * _pointsData, er_curve_point_
     _pointsCurve[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __pointsDataToCurveInv( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, float _min, float _range )
+static void __pointsDataToCurveInv( er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve, dz_float_t _min, dz_float_t _range )
 {
     int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
@@ -1465,7 +1472,7 @@ static void __pointsDataToCurveInv( er_curve_point_t * _pointsData, er_curve_poi
     _pointsCurve[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __pointsCurveToData( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, float _min, float _range )
+static void __pointsCurveToData( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, dz_float_t _min, dz_float_t _range )
 {
     int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
@@ -1478,7 +1485,7 @@ static void __pointsCurveToData( er_curve_point_t * _pointsCurve, er_curve_point
     _pointsData[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __pointsCurveToDataInv( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, float _min, float _range )
+static void __pointsCurveToDataInv( er_curve_point_t * _pointsCurve, er_curve_point_t * _pointsData, dz_float_t _min, dz_float_t _range )
 {
     int32_t end = 0;
     for( ; end < ER_CURVE_MAX_POINTS && _pointsCurve[end].x >= 0; end++ )
@@ -1491,16 +1498,16 @@ static void __pointsCurveToDataInv( er_curve_point_t * _pointsCurve, er_curve_po
     _pointsData[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
+static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, dz_float_t _min, dz_float_t _max, dz_float_t * _factor, int32_t * _zoom, dz_float_t * _y_min, dz_float_t * _y_max )
 {
     if( _status != DZ_TIMELINE_LIMIT_NORMAL )
     {
         // zoom up
         int32_t nextZoomUp = *_zoom * 2;
 
-        float nextFactorUp = nextZoomUp * (*_factor);
+        dz_float_t nextFactorUp = nextZoomUp * (*_factor);
 
-        float y_min_up = _min, y_max_up = _max;
+        dz_float_t y_min_up = _min, y_max_up = _max;
 
         if( _status == DZ_TIMELINE_LIMIT_MAX )
         {
@@ -1535,9 +1542,9 @@ static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_sta
             nextZoomDown = 1;
         }
 
-        float nextFactorDown = nextZoomDown * (*_factor);
+        dz_float_t nextFactorDown = nextZoomDown * (*_factor);
 
-        float y_min_down = _min, y_max_down = _max;
+        dz_float_t y_min_down = _min, y_max_down = _max;
 
         if( _status == DZ_TIMELINE_LIMIT_MAX )
         {
@@ -1605,16 +1612,16 @@ static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_sta
     }
 };
 //////////////////////////////////////////////////////////////////////////
-static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, float _min, float _max, float * _factor, int32_t * _zoom, float * _y_min, float * _y_max )
+static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, dz_float_t _min, dz_float_t _max, dz_float_t * _factor, int32_t * _zoom, dz_float_t * _y_min, dz_float_t * _y_max )
 {
     if( _status != DZ_TIMELINE_LIMIT_NORMAL )
     {
-        float max_value = 0.f;
+        dz_float_t max_value = 0.f;
         {
             int end = 0;
             for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
             {
-                float value = 1.f / _pointsData[end].y;
+                dz_float_t value = 1.f / _pointsData[end].y;
                 if( value > max_value )
                 {
                     max_value = value;
@@ -1622,7 +1629,7 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
             }
         }
 
-        float up_limit = *_zoom * (*_factor);
+        dz_float_t up_limit = *_zoom * (*_factor);
         while( max_value > up_limit )
         {
             (*_zoom)++;
@@ -1633,9 +1640,9 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
         {
             int32_t nextZoomUp = *_zoom * 2;
 
-            float nextFactorUp = nextZoomUp * (*_factor);
+            dz_float_t nextFactorUp = nextZoomUp * (*_factor);
 
-            float y_min_up = _min, y_max_up = _max;
+            dz_float_t y_min_up = _min, y_max_up = _max;
 
             if( _status == DZ_TIMELINE_LIMIT_MAX )
             {
@@ -1672,9 +1679,9 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
                 nextZoomDown = 1;
             }
 
-            float nextFactorDown = nextZoomDown * (*_factor);
+            dz_float_t nextFactorDown = nextZoomDown * (*_factor);
 
-            float y_min_down = _min, y_max_down = _max;
+            dz_float_t y_min_down = _min, y_max_down = _max;
 
             if( _status == DZ_TIMELINE_LIMIT_MAX )
             {
@@ -1695,7 +1702,7 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
             int end = 0;
             for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
             {
-                float value = 1.f / _pointsData[end].y;
+                dz_float_t value = 1.f / _pointsData[end].y;
                 if( value < y_min_down || value > y_max_down )
                 {
                     availableZoomDown = false;
@@ -1733,7 +1740,7 @@ static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_
     }
 };
 //////////////////////////////////////////////////////////////////////////
-static int __setupCurve( const char * _label, const ImVec2 & _size, const int _maxpoints, er_curve_point_t * _points, int * _selected, float _x_min = 0.f, float _x_max = 1.f, float _y_min = 0.f, float _y_max = 1.f )
+static int __setupCurve( const char * _label, const ImVec2 & _size, const int _maxpoints, er_curve_point_t * _points, int * _selected, dz_float_t _x_min = 0.f, dz_float_t _x_max = 1.f, dz_float_t _y_min = 0.f, dz_float_t _y_max = 1.f )
 {
     int modified = 0;
     int i;
@@ -1773,8 +1780,8 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     bb.Max.y -= ER_CURVE_PLOT_BORDER_SIZE;
     ImGui::RenderFrame( bb.Min, bb.Max, ImGui::GetColorU32( ImGuiCol_FrameBg, 1 ), true, style.FrameRounding );
 
-    float ht = bb.Max.y - bb.Min.y;
-    float wd = bb.Max.x - bb.Min.x;
+    dz_float_t ht = bb.Max.y - bb.Min.y;
+    dz_float_t wd = bb.Max.x - bb.Min.x;
 
     static ImGuiID active_id = ER_CURVE_ID_NONE;
     static int active_point = ER_CURVE_POINT_NONE;
@@ -1931,19 +1938,19 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     {
                         if( _points[left].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
-                            float p1d = abs( p.y );
+                            dz_float_t p1d = abs( p.y );
                             if( p1d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) ) sel = left;
                         }
                         else if( _points[left].mode == ER_CURVE_POINT_MODE_RANDOM )
                         {
-                            float p1d = abs( p.y );
+                            dz_float_t p1d = abs( p.y );
                             if( p1d < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left;
                                 is_active_y2 = false;
                             }
 
-                            float p1d_y2 = abs( p_y2.y );
+                            dz_float_t p1d_y2 = abs( p_y2.y );
                             if( p1d_y2 < (1.f / ER_CURVE_PLOT_HOVER_RADIUS_POW_2) )
                             {
                                 sel = left;
@@ -1953,16 +1960,16 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                     }
                     else
                     {
-                        float p1d = sqrt( p.x * p.x + p.y * p.y );
-                        float p1d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
+                        dz_float_t p1d = sqrt( p.x * p.x + p.y * p.y );
+                        dz_float_t p1d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
                         p.x = _points[left + 1].x;
                         p.y = _points[left + 1].y;
                         p = p - pos;
                         p_y2.x = _points[left + 1].x;
                         p_y2.y = _points[left + 1].y2;
                         p_y2 = p_y2 - pos;
-                        float p2d = sqrt( p.x * p.x + p.y * p.y );
-                        float p2d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
+                        dz_float_t p2d = sqrt( p.x * p.x + p.y * p.y );
+                        dz_float_t p2d_y2 = sqrt( p_y2.x * p_y2.x + p_y2.y * p_y2.y );
 
                         if( _points[left].mode == ER_CURVE_POINT_MODE_NORMAL )
                         {
@@ -2319,14 +2326,14 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
         ImVec2 pos = (g.IO.MousePos - bb.Min) / (bb.Max - bb.Min);
         pos.y = 1.f - pos.y;
 
-        float x = 0.f;
+        dz_float_t x = 0.f;
 
         if( max > 1 )
         {
             x = _x_min + pos.x * (_x_max - _x_min);
         }
 
-        float y = _y_min + pos.y * (_y_max - _y_min);
+        dz_float_t y = _y_min + pos.y * (_y_max - _y_min);
 
         ImGui::Text( "(%.3f,%.3f)", x, y );
     }
@@ -2340,7 +2347,7 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     return modified;
 }
 //////////////////////////////////////////////////////////////////////////
-static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float _min, float _max, er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve )
+static int __setupSelectCurvePointMode( int _selectedPoint, dz_float_t _factor, dz_float_t _min, dz_float_t _max, er_curve_point_t * _pointsData, er_curve_point_t * _pointsCurve )
 {
     int modified = 0;
     if( _selectedPoint != ER_CURVE_POINT_NONE )
@@ -2354,20 +2361,20 @@ static int __setupSelectCurvePointMode( int _selectedPoint, float _factor, float
             {
                 if( selected_mode == ER_CURVE_POINT_MODE_NORMAL )
                 {
-                    float distance = _pointsData[_selectedPoint].y2 - _pointsData[_selectedPoint].y;
+                    dz_float_t distance = _pointsData[_selectedPoint].y2 - _pointsData[_selectedPoint].y;
                     _pointsData[_selectedPoint].y = _pointsData[_selectedPoint].y + distance / 2.f;
                 }
                 else if( selected_mode == ER_CURVE_POINT_MODE_RANDOM )
                 {
-                    float normalValue = _pointsData[_selectedPoint].y;
-                    float randMinValue = normalValue - 0.25f * _factor;
+                    dz_float_t normalValue = _pointsData[_selectedPoint].y;
+                    dz_float_t randMinValue = normalValue - 0.25f * _factor;
 
                     if( randMinValue < _min )
                     {
                         randMinValue = _min;
                     }
 
-                    float randMaxValue = normalValue + 0.25f * _factor;
+                    dz_float_t randMaxValue = normalValue + 0.25f * _factor;
 
                     if( randMaxValue > _max )
                     {
@@ -2400,9 +2407,9 @@ dz_result_t editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_po
 
     if( key_type == DZ_TIMELINE_KEY_CONST )
     {
-        float p = dz_timeline_key_get_p( _key );
+        dz_float_t p = dz_timeline_key_get_p( _key );
 
-        float const_value;
+        dz_float_t const_value;
         dz_timeline_key_get_const_value( _key, &const_value );
 
         _pointsData[_index].x = p;
@@ -2414,10 +2421,10 @@ dz_result_t editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_po
     }
     else if( key_type == DZ_TIMELINE_KEY_RANDOMIZE )
     {
-        float p = dz_timeline_key_get_p( _key );
+        dz_float_t p = dz_timeline_key_get_p( _key );
 
-        float randomize_min;
-        float randomize_max;
+        dz_float_t randomize_min;
+        dz_float_t randomize_max;
         dz_timeline_key_get_randomize_min_max( _key, &randomize_min, &randomize_max );
 
         _pointsData[_index].x = p;
@@ -2452,7 +2459,7 @@ dz_result_t editor::readTimelineKey( const dz_timeline_key_t * _key, er_curve_po
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::resetEffectData()
 {
-    //float life = dz_effect_get_life( m_effect );
+    //dz_float_t life = dz_effect_get_life( m_effect );
 
     // shape data
     for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
@@ -2467,7 +2474,7 @@ dz_result_t editor::resetEffectData()
         data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
 
         dz_timeline_limit_status_e status;
-        float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
         dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
         if( key != DZ_NULLPTR )
@@ -2486,12 +2493,12 @@ dz_result_t editor::resetEffectData()
         }
 
         // curve
-        float y_min = min;
-        float y_max = max;
+        dz_float_t y_min = min;
+        dz_float_t y_max = max;
 
         __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-        float y_range = y_max - y_min;
+        dz_float_t y_range = y_max - y_min;
 
         __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
     }
@@ -2508,7 +2515,7 @@ dz_result_t editor::resetEffectData()
         data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
 
         dz_timeline_limit_status_e status;
-        float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
         dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
         if( key != DZ_NULLPTR )
@@ -2527,12 +2534,12 @@ dz_result_t editor::resetEffectData()
         }
 
         // curve
-        float y_min = min;
-        float y_max = max;
+        dz_float_t y_min = min;
+        dz_float_t y_max = max;
 
         __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-        float y_range = y_max - y_min;
+        dz_float_t y_range = y_max - y_min;
 
         __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
     }
@@ -2550,7 +2557,7 @@ dz_result_t editor::resetEffectData()
         data.pointsData[0].x = -1.f; // init data so editor knows to take it from here
 
         dz_timeline_limit_status_e status;
-        float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
         dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
         if( key != DZ_NULLPTR )
@@ -2574,12 +2581,12 @@ dz_result_t editor::resetEffectData()
         }
 
         // curve
-        float y_min = min;
-        float y_max = max;
+        dz_float_t y_min = min;
+        dz_float_t y_max = max;
 
         __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-        float y_range = y_max - y_min;
+        dz_float_t y_range = y_max - y_min;
 
         __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
     }
@@ -2631,7 +2638,7 @@ dz_result_t editor::showShapeData()
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_SHAPE_TITLE );
 
-    float width = ImGui::GetWindowContentRegionWidth();
+    dz_float_t width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = {false};
@@ -2681,20 +2688,20 @@ dz_result_t editor::showShapeData()
             if( headerFlags[index] == true )
             {
                 dz_timeline_limit_status_e status;
-                float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+                dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
                 dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
-                float life = dz_effect_get_life( m_effect );
+                dz_float_t life = dz_effect_get_life( m_effect );
 
                 // curve
-                float x_min = 0.f;
-                float x_max = life;
+                dz_float_t x_min = 0.f;
+                dz_float_t x_max = life;
 
-                float y_min = min;
-                float y_max = max;
+                dz_float_t y_min = min;
+                dz_float_t y_max = max;
 
                 __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-                float y_range = y_max - y_min;
+                dz_float_t y_range = y_max - y_min;
 
                 __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
@@ -2732,7 +2739,7 @@ dz_result_t editor::showAffectorData()
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_AFFECTOR_TITLE );
 
-    float width = ImGui::GetWindowContentRegionWidth();
+    dz_float_t width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = {false};
@@ -2756,20 +2763,20 @@ dz_result_t editor::showAffectorData()
         if( headerFlags[index] == true )
         {
             dz_timeline_limit_status_e status;
-            float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
-            float life = dz_effect_get_life( m_effect );
+            dz_float_t life = dz_effect_get_life( m_effect );
 
             // curve
-            float x_min = 0.f;
-            float x_max = life;
+            dz_float_t x_min = 0.f;
+            dz_float_t x_max = life;
 
-            float y_min = min;
-            float y_max = max;
+            dz_float_t y_min = min;
+            dz_float_t y_max = max;
 
             __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-            float y_range = y_max - y_min;
+            dz_float_t y_range = y_max - y_min;
 
             __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
@@ -2806,7 +2813,7 @@ dz_result_t editor::showEmitterData()
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_EMITTER_TITLE );
 
-    float width = ImGui::GetWindowContentRegionWidth();
+    dz_float_t width = ImGui::GetWindowContentRegionWidth();
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = {false};
@@ -2824,23 +2831,23 @@ dz_result_t editor::showEmitterData()
         if( headerFlags[index] == true )
         {
             dz_timeline_limit_status_e status;
-            float min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+            dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
-            float life = dz_effect_get_life( m_effect );
+            dz_float_t life = dz_effect_get_life( m_effect );
 
             // curve
-            float x_min = 0.f;
-            float x_max = life;
+            dz_float_t x_min = 0.f;
+            dz_float_t x_max = life;
 
-            float y_min = min;
-            float y_max = max;
+            dz_float_t y_min = min;
+            dz_float_t y_max = max;
 
             // inv
             if( index == DZ_EMITTER_SPAWN_DELAY )
             {
                 __setupLimitsInv( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-                float y_range = y_max - y_min;
+                dz_float_t y_range = y_max - y_min;
 
                 __pointsDataToCurveInv( data.pointsData, data.pointsCurve, y_min, y_range );
 
@@ -2866,7 +2873,7 @@ dz_result_t editor::showEmitterData()
             {
                 __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
 
-                float y_range = y_max - y_min;
+                dz_float_t y_range = y_max - y_min;
 
                 __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
 
@@ -2948,10 +2955,10 @@ dz_result_t editor::showMaterialData()
                 return DZ_FAILURE;
             }
 
-            dz_texture_set_width( tempTexture, (float)m_textureWidth );
-            dz_texture_set_height( tempTexture, (float)m_textureHeight );
+            dz_texture_set_width( tempTexture, (dz_float_t)m_textureWidth );
+            dz_texture_set_height( tempTexture, (dz_float_t)m_textureHeight );
 
-            dz_texture_set_trim_size( tempTexture, (float)m_textureWidth, (float)m_textureHeight );
+            dz_texture_set_trim_size( tempTexture, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight );
 
             dz_atlas_add_texture( m_atlas, tempTexture );
 
@@ -2978,7 +2985,7 @@ dz_result_t editor::showMaterialData()
         }
     }
 
-    ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( (float)m_textureWidth, (float)m_textureHeight ) );
+    ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight ) );
 
     return DZ_SUCCESSFUL;
 }
@@ -2995,7 +3002,7 @@ static void __draw_callback( const ImDrawList * parent_list, const ImDrawCmd * c
 void editor::showDazzleCanvas()
 {
     // render dazzle
-    dz_render_set_proj( &m_openglDesc, -(float)m_dzWindowSize.x * 0.5f, (float)m_dzWindowSize.x * 0.5f, -(float)m_dzWindowSize.y * 0.5f, (float)m_dzWindowSize.y * 0.5f );
+    dz_render_set_proj( &m_openglDesc, -(dz_float_t)m_dzWindowSize.x * 0.5f, (dz_float_t)m_dzWindowSize.x * 0.5f, -(dz_float_t)m_dzWindowSize.y * 0.5f, (dz_float_t)m_dzWindowSize.y * 0.5f );
 
     if( m_textureId != 0 )
     {
@@ -3095,8 +3102,8 @@ void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out )
 dz_result_t editor::showContentPane()
 {
     // content
-    float columnWidth = ImGui::GetColumnWidth();
-    float columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * (ER_CONTENT_CONTROLS_PANE_LINES_COUNT + 1);
+    dz_float_t columnWidth = ImGui::GetColumnWidth();
+    dz_float_t columnHeight = ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing() * (ER_CONTENT_CONTROLS_PANE_LINES_COUNT + 1);
 
     m_dzWindowSize.x = columnWidth;
     m_dzWindowSize.y = columnHeight;
@@ -3120,13 +3127,13 @@ dz_result_t editor::showContentPane()
 
     if( m_showCanvasLines == true )
     {
-        const float leftBound = cursorPos.x;
-        const float rightBound = cursorPos.x + columnWidth;
-        const float upperBound = cursorPos.y;
-        const float downBound = cursorPos.y + columnHeight;
+        const dz_float_t leftBound = cursorPos.x;
+        const dz_float_t rightBound = cursorPos.x + columnWidth;
+        const dz_float_t upperBound = cursorPos.y;
+        const dz_float_t downBound = cursorPos.y + columnHeight;
 
-        const float halfWidth = columnWidth / 2.f;
-        const float halfHeight = columnHeight / 2.f;
+        const dz_float_t halfWidth = columnWidth / 2.f;
+        const dz_float_t halfHeight = columnHeight / 2.f;
 
         ImVec2 verticalLineStartPos( cursorPos.x + halfWidth + camera_offset_x, cursorPos.y );
         ImVec2 verticalLineEndPos( cursorPos.x + halfWidth + camera_offset_x, cursorPos.y + columnHeight );
@@ -3235,8 +3242,8 @@ dz_result_t editor::showContentPane()
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showContentPaneControls()
 {
-    float life = dz_effect_get_life( m_effect );
-    float time = dz_instance_get_time( m_instance );
+    dz_float_t life = dz_effect_get_life( m_effect );
+    dz_float_t time = dz_instance_get_time( m_instance );
 
     // buttons
     if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_RESET_TEXT ) )
@@ -3268,16 +3275,24 @@ dz_result_t editor::showContentPaneControls()
 
         dz_instance_set_loop( m_instance, m_loop );
     }
-    ImGui::SameLine();
+
+    // time_scale
+    char factor_format[100];
+    sprintf( factor_format, "%s %%.3f"
+        , ER_WINDOW_CONTROLS_FACTOR_PREFIX_TEXT
+    );
+
+    ImGui::SliderFloat( "##TimeScale", &m_time_scale, 0.0f, 1.0f, factor_format );
+
 
     // time
-    char label[100];
-    sprintf( label, "%s %%.3f s / %.3f s"
-        , ER_WINDOW_CONTROLS_TIMELINE_PREFIX_TEXT
+    char time_format[100];
+    sprintf( time_format, "%s %%.3f s / %.3f s"
+        , ER_WINDOW_CONTROLS_TIME_PREFIX_TEXT
         , life
     );
 
-    if( ImGui::SliderFloat( ER_WINDOW_CONTROLS_TIMELINE_PREFIX_TEXT, &time, 0.0f, life, label ) == true )
+    if( ImGui::SliderFloat( "##Time", &time, 0.0f, life, time_format ) == true )
     {
         this->resetEffect();
 
@@ -3285,7 +3300,7 @@ dz_result_t editor::showContentPaneControls()
     }
 
     // life
-    if( ImGui::InputFloat( ER_WINDOW_CONTROLS_INPUT_LIFE_TEXT, &life, 0.f, 0.f, NULL, ImGuiInputTextFlags_None ) == true )
+    if( ImGui::InputFloat( "##Life", &life, 0.f, 0.f, NULL, ImGuiInputTextFlags_None) == true )
     {
         dz_effect_set_life( m_effect, life );
 

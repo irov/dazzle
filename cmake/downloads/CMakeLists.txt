@@ -13,7 +13,7 @@ DOWNLOAD_FILE(stb_image https://raw.githubusercontent.com/nothings/stb/master/st
 
 GIT_CLONE(glad https://github.com/Dav1dde/glad.git "v2.0.4")
 GIT_CLONE(glfw3 https://github.com/glfw/glfw.git "3.3.8")
-GIT_CLONE(imgui https://github.com/ocornut/imgui.git "v1.89.2")
+GIT_CLONE(imgui https://github.com/ocornut/imgui.git "v1.89.6")
 GIT_CLONE(jansson https://github.com/akheron/jansson.git "v2.14")
 GIT_CLONE(jpp https://github.com/irov/jpp.git)
 GIT_CLONE(nativefiledialog https://github.com/mlabbe/nativefiledialog.git)

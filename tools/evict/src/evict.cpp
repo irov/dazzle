@@ -7,34 +7,34 @@ static jpp::object __evict_texture_write( const dz_texture_t * _texture )
 {
     jpp::object obj = jpp::make_object();
 
-    float u[4];
-    float v[4];
+    dz_float_t u[4];
+    dz_float_t v[4];
     dz_texture_get_uv( _texture, u, v );
 
     obj.set( "u", jpp::make_tuple( u[0], u[1], u[2], u[3] ) );
     obj.set( "v", jpp::make_tuple( v[0], v[1], v[2], v[3] ) );
 
-    float width = dz_texture_get_width( _texture );
-    float height = dz_texture_get_height( _texture );
+    dz_float_t width = dz_texture_get_width( _texture );
+    dz_float_t height = dz_texture_get_height( _texture );
     obj.set( "size", jpp::make_tuple( width, height ) );
 
-    float trim_offset_x;
-    float trim_offset_y;
+    dz_float_t trim_offset_x;
+    dz_float_t trim_offset_y;
     dz_texture_get_trim_offset( _texture, &trim_offset_x, &trim_offset_y );
 
     obj.set( "trim_offset", jpp::make_tuple( trim_offset_x, trim_offset_y ) );
 
-    float trime_width;
-    float trime_height;
+    dz_float_t trime_width;
+    dz_float_t trime_height;
     dz_texture_get_trim_size( _texture, &trime_width, &trime_height );
 
     obj.set( "trim_size", jpp::make_tuple( trime_width, trime_height ) );
 
-    float random_weight = dz_texture_get_random_weight( _texture );
+    dz_float_t random_weight = dz_texture_get_random_weight( _texture );
 
     obj.set( "random_weight", random_weight );
 
-    float sequence_delay = dz_texture_get_sequence_delay( _texture );
+    dz_float_t sequence_delay = dz_texture_get_sequence_delay( _texture );
 
     obj.set( "sequence_delay", sequence_delay );
 
@@ -74,10 +74,10 @@ static jpp::object __evict_material_write( const dz_material_t * _material )
 
     obj.set( "blend_type", blend_type_str );
 
-    float r;
-    float g;
-    float b;
-    float a;
+    dz_float_t r;
+    dz_float_t g;
+    dz_float_t b;
+    dz_float_t a;
     dz_material_get_color( _material, &r, &g, &b, &a );
 
     obj.set( "color", jpp::make_tuple( r, g, b, a ) );
@@ -109,8 +109,8 @@ static jpp::object __evict_timeline_interpolate_write( const dz_timeline_interpo
 
     obj.set( "type", interpolate_type_str );
 
-    float p0;
-    float p1;
+    dz_float_t p0;
+    dz_float_t p1;
     dz_timeline_interpolate_get_bezier2( _interpolate, &p0, &p1 );
 
     jpp::object obj_bezier2 = jpp::make_object();
@@ -142,17 +142,17 @@ static jpp::object __evict_timeline_key_write( const dz_timeline_key_t * _key )
 
     obj.set( "type", key_type_str );
 
-    float p = dz_timeline_key_get_p( _key );
+    dz_float_t p = dz_timeline_key_get_p( _key );
 
     obj.set( "p", p );
 
-    float const_value;
+    dz_float_t const_value;
     dz_timeline_key_get_const_value( _key, &const_value );
 
     obj.set( "const_value", const_value );
 
-    float randomize_min;
-    float randomize_max;
+    dz_float_t randomize_min;
+    dz_float_t randomize_max;
     dz_timeline_key_get_randomize_min_max( _key, &randomize_min, &randomize_max );
 
     obj.set( "randomize_min", randomize_min );
@@ -209,7 +209,7 @@ static jpp::object __evict_emitter_write( const dz_emitter_t * _emitter )
 {
     jpp::object obj = jpp::make_object();
 
-    float life = dz_emitter_get_life( _emitter );
+    dz_float_t life = dz_emitter_get_life( _emitter );
 
     obj.set( "life", life );
 
@@ -271,7 +271,7 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 {
     jpp::object obj = jpp::make_object();
 
-    float life = dz_effect_get_life( _effect );
+    dz_float_t life = dz_effect_get_life( _effect );
 
     obj.set( "life", life );
 
@@ -317,38 +317,38 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
     jpp::array j_u = _data["u"];
     jpp::array j_v = _data["v"];
 
-    float u[4] = {j_u[0], j_u[1], j_u[2], j_u[3]};
-    float v[4] = {j_v[0], j_v[1], j_v[2], j_v[3]};
+    dz_float_t u[4] = {j_u[0], j_u[1], j_u[2], j_u[3]};
+    dz_float_t v[4] = {j_v[0], j_v[1], j_v[2], j_v[3]};
 
     dz_texture_set_uv( texture, u, v );
 
     jpp::array j_size = _data["size"];
 
-    float width = j_size[0];
-    float height = j_size[1];
+    dz_float_t width = j_size[0];
+    dz_float_t height = j_size[1];
     
     dz_texture_set_width( texture, width );
     dz_texture_set_height( texture, height );
 
     jpp::array j_trim_offset = _data["trim_offset"];
 
-    float trim_offset_x = j_trim_offset[0];
-    float trim_offset_y = j_trim_offset[1];
+    dz_float_t trim_offset_x = j_trim_offset[0];
+    dz_float_t trim_offset_y = j_trim_offset[1];
 
     dz_texture_set_trim_offset( texture, trim_offset_x, trim_offset_y );
 
     jpp::array j_trim_size = _data["trim_size"];
 
-    float trime_width = j_trim_size[0];
-    float trime_height = j_trim_size[1];
+    dz_float_t trime_width = j_trim_size[0];
+    dz_float_t trime_height = j_trim_size[1];
 
     dz_texture_set_trim_size( texture, trime_width, trime_height );
 
-    float random_weight = _data["random_weight"];
+    dz_float_t random_weight = _data["random_weight"];
 
     dz_texture_set_random_weight( texture, random_weight );
 
-    float sequence_delay = _data["sequence_delay"];
+    dz_float_t sequence_delay = _data["sequence_delay"];
 
     dz_texture_set_sequence_delay( texture, sequence_delay );
 
@@ -488,8 +488,8 @@ static dz_result_t __evict_timeline_interpolate_load( dz_service_t * _service, d
 
     jpp::object j_bezier2 = _data["bezier2"];
 
-    float p0 = j_bezier2["p0"];
-    float p1 = j_bezier2["p1"];
+    dz_float_t p0 = j_bezier2["p0"];
+    dz_float_t p1 = j_bezier2["p1"];
 
     dz_timeline_interpolate_set_bezier2( interpolate, p0, p1 );
 
@@ -526,7 +526,7 @@ static dz_timeline_key_type_e __load_timeline_key_type( const char * _type )
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeline_key_t ** _key, const jpp::object & _data )
 {
-    float p = _data["p"];
+    dz_float_t p = _data["p"];
 
     const char * j_key_type = _data["type"];
 
@@ -543,11 +543,11 @@ static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeli
         return DZ_FAILURE;
     }
 
-    float const_value = _data["const_value"];
+    dz_float_t const_value = _data["const_value"];
     dz_timeline_key_set_const_value( key, const_value );
 
-    float randomize_min = _data["randomize_min"];
-    float randomize_max = _data["randomize_max"];
+    dz_float_t randomize_min = _data["randomize_min"];
+    dz_float_t randomize_max = _data["randomize_max"];
 
     dz_timeline_key_set_randomize_min_max( key, randomize_min, randomize_max );
 
@@ -658,7 +658,7 @@ static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t *
         return DZ_FAILURE;
     }
 
-    float life = _data["life"];
+    dz_float_t life = _data["life"];
 
     dz_emitter_set_life( emitter, life );
 
@@ -760,7 +760,7 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
         return DZ_FAILURE;
     }
 
-    float life = _data.get( "life", 0.f );
+    dz_float_t life = _data.get( "life", 0.f );
 
     dz_uint32_t seed = _data.get( "seed", 0 );
 

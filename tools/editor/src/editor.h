@@ -7,6 +7,7 @@
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -18,7 +19,7 @@
 // prefix ER_ means editor
 //////////////////////////////////////////////////////////////////////////
 static constexpr dz_uint32_t ER_CURVE_MAX_POINTS = 100;
-static constexpr float ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO = 0.4f;
+static constexpr dz_float_t ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO = 0.4f;
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_curve_point_mode_e
 {
@@ -30,10 +31,10 @@ typedef enum er_curve_point_mode_e
 //////////////////////////////////////////////////////////////////////////
 typedef struct er_curve_point_t
 {
-    float x = 0.f;
-    float y = 0.f;
+    dz_float_t x = 0.f;
+    dz_float_t y = 0.f;
 
-    float y2 = 0.f;
+    dz_float_t y2 = 0.f;
 
     er_curve_point_mode_e mode = ER_CURVE_POINT_MODE_NORMAL;
 
@@ -118,6 +119,7 @@ public:
     dz_instance_t * m_instance;
 
     dz_bool_t m_loop;
+    dz_float_t m_time_scale;
 
     int m_textureWidth;
     int m_textureHeight;

@@ -7,7 +7,7 @@
 
 typedef struct dz_emitter_t
 {
-    float life;
+    dz_float_t life;
 
     const dz_timeline_key_t * timelines[__DZ_EMITTER_TIMELINE_MAX__];
 

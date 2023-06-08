@@ -17,7 +17,7 @@ typedef struct dz_effect_t
 
     dz_uint32_t seed;
 
-    float life;
+    dz_float_t life;
 
     dz_userdata_t ud;
 } dz_effect_t;

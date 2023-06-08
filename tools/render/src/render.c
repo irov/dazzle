@@ -56,7 +56,7 @@ dz_result_t dz_render_error_check( const char * _file, dz_uint32_t _line )
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __make_ortho( float _l, float _r, float _t, float _b, float _n, float _f, float _m[16] )
+static void __make_ortho( dz_float_t _l, dz_float_t _r, dz_float_t _t, dz_float_t _b, dz_float_t _n, dz_float_t _f, dz_float_t _m[16] )
 {
     _m[0] = 2.f / (_r - _l);
     _m[5] = 2.f / (_t - _b);
@@ -407,12 +407,12 @@ void dz_render_finalize( dz_render_desc_t * _desc )
     GLCALL( glDeleteProgram, (_desc->shaderTextureProgram) );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_set_proj( const dz_render_desc_t * _desc, float _left, float _right, float _top, float _bottom )
+void dz_render_set_proj( const dz_render_desc_t * _desc, dz_float_t _left, dz_float_t _right, dz_float_t _top, dz_float_t _bottom )
 {
-    float zNear = -1.f;
-    float zFar = 1.f;
+    dz_float_t zNear = -1.f;
+    dz_float_t zFar = 1.f;
 
-    float projOrtho[16];
+    dz_float_t projOrtho[16];
     __make_ortho( _left, _right, _top, _bottom, zNear, zFar, projOrtho );
 
     GLuint shaderProgram = _desc->shaderCurrentProgram;
@@ -438,7 +438,7 @@ void dz_render_use_texture_program( dz_render_desc_t * _desc )
     _desc->shaderCurrentProgram = _desc->shaderTextureProgram;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_set_camera( const dz_render_desc_t * _desc, float _offsetX, float _offsetY, float _scale )
+void dz_render_set_camera( const dz_render_desc_t * _desc, dz_float_t _offsetX, dz_float_t _offsetY, dz_float_t _scale )
 {
     GLCALL( glUseProgram, (_desc->shaderCurrentProgram) );
 

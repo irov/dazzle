@@ -185,7 +185,7 @@ static dz_result_t __read_timeline_interpolate( const dz_service_t * _service, d
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __read_timeline_key( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_stream_read_t _read, dz_userdata_t _ud )
 {
-    float p;
+    dz_float_t p;
     DZ_READ( _read, _ud, p );
 
     dz_timeline_key_type_e type;
@@ -348,7 +348,7 @@ dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effec
         return DZ_FAILURE;
     }
 
-    float life;
+    dz_float_t life;
     DZ_READ( _read, _ud, life );
 
     dz_uint32_t seed;
