@@ -1498,16 +1498,37 @@ static void __pointsCurveToDataInv( er_curve_point_t * _pointsCurve, er_curve_po
     _pointsData[end].x = -1;
 };
 //////////////////////////////////////////////////////////////////////////
-static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, dz_float_t _min, dz_float_t _max, dz_float_t * _factor, int32_t * _zoom, dz_float_t * _y_min, dz_float_t * _y_max )
+static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, dz_float_t _min, dz_float_t _max, dz_float_t * _factor, int32_t * _zoom, dz_float_t * _y_min, dz_float_t * _y_max, bool _inv )
 {
     if( _status != DZ_TIMELINE_LIMIT_NORMAL )
     {
+        dz_float_t max_value = 0.f;
+        {
+            for( int index = 0; index < ER_CURVE_MAX_POINTS && _pointsData[index].x >= 0; index++ )
+            {
+                dz_float_t value = _inv == false ? _pointsData[index].y : 1.f / _pointsData[index].y;
+
+                if( value > max_value )
+                {
+                    max_value = value;
+                }
+            }
+        }
+
+        dz_float_t up_limit = *_zoom * (*_factor);
+        while( max_value > up_limit )
+        {
+            (*_zoom)++;
+            up_limit = *_zoom * (*_factor);
+        }
+
         // zoom up
         int32_t nextZoomUp = *_zoom * 2;
 
         dz_float_t nextFactorUp = nextZoomUp * (*_factor);
 
-        dz_float_t y_min_up = _min, y_max_up = _max;
+        dz_float_t y_min_up = _min;
+        dz_float_t y_max_up = _max;
 
         if( _status == DZ_TIMELINE_LIMIT_MAX )
         {
@@ -1544,7 +1565,8 @@ static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_sta
 
         dz_float_t nextFactorDown = nextZoomDown * (*_factor);
 
-        dz_float_t y_min_down = _min, y_max_down = _max;
+        dz_float_t y_min_down = _min;
+        dz_float_t y_max_down = _max;
 
         if( _status == DZ_TIMELINE_LIMIT_MAX )
         {
@@ -1562,20 +1584,25 @@ static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_sta
 
         bool availableZoomDown = true;
 
-        int end = 0;
-        for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
+        for( int index = 0; index < ER_CURVE_MAX_POINTS && _pointsData[index].x >= 0.f; index++ )
         {
-            if( _pointsData[end].mode == ER_CURVE_POINT_MODE_NORMAL )
+            dz_float_t value = _inv == false ? _pointsData[index].y : 1.f / _pointsData[index].y;
+
+            er_curve_point_mode_e mode = _pointsData[index].mode;
+
+            if( mode == ER_CURVE_POINT_MODE_NORMAL )
             {
-                if( _pointsData[end].y < y_min_down || _pointsData[end].y > y_max_down )
+                if( value < y_min_down || value > y_max_down )
                 {
                     availableZoomDown = false;
                     break;
                 }
             }
-            else if( _pointsData[end].mode == ER_CURVE_POINT_MODE_RANDOM )
+            else if( mode == ER_CURVE_POINT_MODE_RANDOM )
             {
-                if( _pointsData[end].y < y_min_down || _pointsData[end].y2 < y_min_down || _pointsData[end].y > y_max_down || _pointsData[end].y2 > y_max_down )
+                dz_float_t value2 = _inv == false ? _pointsData[index].y2 : 1.f / _pointsData[index].y2;
+
+                if( value < y_min_down || value2 < y_min_down || value > y_max_down || value2 > y_max_down )
                 {
                     availableZoomDown = false;
                     break;
@@ -1589,134 +1616,6 @@ static void __setupLimits( er_curve_point_t * _pointsData, dz_timeline_limit_sta
             if( ImGui::Button( ER_CURVE_BTN_ZOOM_DOWN_TEXT ) == true )
             {
                 *_zoom = nextZoomDown;
-            }
-        }
-    }
-
-    *_factor *= *_zoom;
-
-    if( _status == DZ_TIMELINE_LIMIT_MAX )
-    {
-        *_y_min = _min;
-        *_y_max = *_factor;
-    }
-    else if( _status == DZ_TIMELINE_LIMIT_MIN )
-    {
-        *_y_min = -*_factor;
-        *_y_max = _max;
-    }
-    else if( _status == DZ_TIMELINE_LIMIT_MINMAX )
-    {
-        *_y_min = -*_factor;
-        *_y_max = *_factor;
-    }
-};
-//////////////////////////////////////////////////////////////////////////
-static void __setupLimitsInv( er_curve_point_t * _pointsData, dz_timeline_limit_status_e _status, dz_float_t _min, dz_float_t _max, dz_float_t * _factor, int32_t * _zoom, dz_float_t * _y_min, dz_float_t * _y_max )
-{
-    if( _status != DZ_TIMELINE_LIMIT_NORMAL )
-    {
-        dz_float_t max_value = 0.f;
-        {
-            int end = 0;
-            for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
-            {
-                dz_float_t value = 1.f / _pointsData[end].y;
-                if( value > max_value )
-                {
-                    max_value = value;
-                }
-            }
-        }
-
-        dz_float_t up_limit = *_zoom * (*_factor);
-        while( max_value > up_limit )
-        {
-            (*_zoom)++;
-            up_limit = *_zoom * (*_factor);
-        }
-
-        // zoom up
-        {
-            int32_t nextZoomUp = *_zoom * 2;
-
-            dz_float_t nextFactorUp = nextZoomUp * (*_factor);
-
-            dz_float_t y_min_up = _min, y_max_up = _max;
-
-            if( _status == DZ_TIMELINE_LIMIT_MAX )
-            {
-                y_max_up = nextFactorUp;
-            }
-            else if( _status == DZ_TIMELINE_LIMIT_MIN )
-            {
-                y_min_up = -nextFactorUp;
-            }
-            else if( _status == DZ_TIMELINE_LIMIT_MINMAX )
-            {
-                y_min_up = -nextFactorUp;
-                y_max_up = nextFactorUp;
-            }
-
-            bool availableZoomUp = y_min_up >= _min && y_max_up <= _max;
-
-            if( availableZoomUp == true )
-            {
-                ImGui::SameLine();
-                if( ImGui::Button( ER_CURVE_BTN_ZOOM_UP_TEXT ) == true )
-                {
-                    *_zoom = nextZoomUp;
-                }
-            }
-        }
-
-        // zoom down
-        {
-            int32_t nextZoomDown = *_zoom / 2;
-
-            if( nextZoomDown < 1 )
-            {
-                nextZoomDown = 1;
-            }
-
-            dz_float_t nextFactorDown = nextZoomDown * (*_factor);
-
-            dz_float_t y_min_down = _min, y_max_down = _max;
-
-            if( _status == DZ_TIMELINE_LIMIT_MAX )
-            {
-                y_max_down = nextFactorDown;
-            }
-            else if( _status == DZ_TIMELINE_LIMIT_MIN )
-            {
-                y_min_down = -nextFactorDown;
-            }
-            else if( _status == DZ_TIMELINE_LIMIT_MINMAX )
-            {
-                y_min_down = -nextFactorDown;
-                y_max_down = nextFactorDown;
-            }
-
-            bool availableZoomDown = true;
-
-            int end = 0;
-            for( ; end < ER_CURVE_MAX_POINTS && _pointsData[end].x >= 0; end++ )
-            {
-                dz_float_t value = 1.f / _pointsData[end].y;
-                if( value < y_min_down || value > y_max_down )
-                {
-                    availableZoomDown = false;
-                    break;
-                }
-            }
-
-            if( availableZoomDown == true )
-            {
-                ImGui::SameLine();
-                if( ImGui::Button( ER_CURVE_BTN_ZOOM_DOWN_TEXT ) == true )
-                {
-                    *_zoom = nextZoomDown;
-                }
             }
         }
     }
@@ -2496,7 +2395,7 @@ dz_result_t editor::resetEffectData()
         dz_float_t y_min = min;
         dz_float_t y_max = max;
 
-        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max, false );
 
         dz_float_t y_range = y_max - y_min;
 
@@ -2537,7 +2436,7 @@ dz_result_t editor::resetEffectData()
         dz_float_t y_min = min;
         dz_float_t y_max = max;
 
-        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max, false );
 
         dz_float_t y_range = y_max - y_min;
 
@@ -2584,7 +2483,7 @@ dz_result_t editor::resetEffectData()
         dz_float_t y_min = min;
         dz_float_t y_max = max;
 
-        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+        __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max, false );
 
         dz_float_t y_range = y_max - y_min;
 
@@ -2699,7 +2598,7 @@ dz_result_t editor::showShapeData()
                 dz_float_t y_min = min;
                 dz_float_t y_max = max;
 
-                __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+                __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max, false );
 
                 dz_float_t y_range = y_max - y_min;
 
@@ -2774,7 +2673,7 @@ dz_result_t editor::showAffectorData()
             dz_float_t y_min = min;
             dz_float_t y_max = max;
 
-            __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+            __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max, false );
 
             dz_float_t y_range = y_max - y_min;
 
@@ -2845,7 +2744,7 @@ dz_result_t editor::showEmitterData()
             // inv
             if( index == DZ_EMITTER_SPAWN_DELAY )
             {
-                __setupLimitsInv( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+                __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max, true );
 
                 dz_float_t y_range = y_max - y_min;
 
@@ -2871,7 +2770,7 @@ dz_result_t editor::showEmitterData()
             }
             else // other
             {
-                __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max );
+                __setupLimits( data.pointsData, status, min, max, &factor, &(data.zoom), &y_min, &y_max, false );
 
                 dz_float_t y_range = y_max - y_min;
 
