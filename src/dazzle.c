@@ -129,7 +129,6 @@ dz_result_t dz_texture_create( const dz_service_t * _service, dz_texture_t ** _t
     texture->trim_width = 0.f;
     texture->trim_height = 0.f;
 
-    texture->random_weight = 1.f;
     texture->sequence_delay = 1.f;
 
     texture->ud = _ud;
@@ -222,16 +221,6 @@ void dz_texture_get_trim_size( const dz_texture_t * _texture, dz_float_t * const
     *_height = _texture->trim_height;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_texture_set_random_weight( dz_texture_t * const _texture, dz_float_t _weight )
-{
-    _texture->random_weight = _weight;
-}
-//////////////////////////////////////////////////////////////////////////
-dz_float_t dz_texture_get_random_weight( const dz_texture_t * _texture )
-{
-    return _texture->random_weight;
-}
-//////////////////////////////////////////////////////////////////////////
 void dz_texture_set_sequence_delay( dz_texture_t * const _texture, dz_float_t _delay )
 {
     _texture->sequence_delay = _delay;
@@ -249,6 +238,7 @@ dz_result_t dz_atlas_create( const dz_service_t * _service, dz_atlas_t ** _atlas
     atlas->texture_count = 0;
 
     atlas->textures_time = 0.f;
+    atlas->textures_random_weight = 0.f;
 
     atlas->surface = _surface;
     atlas->ud = _ud;
@@ -256,6 +246,18 @@ dz_result_t dz_atlas_create( const dz_service_t * _service, dz_atlas_t ** _atlas
     *_atlas = atlas;
 
     return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __atlas_update_textures_random_weight( dz_atlas_t * const _atlas )
+{
+    dz_float_t textures_random_weight = 0.f;
+
+    for( dz_uint32_t index = 0; index != _atlas->texture_count; ++index )
+    {
+        textures_random_weight += DZ_MAX( _atlas->textures[index].random_weight, 0.f );
+    }
+
+    _atlas->textures_random_weight = textures_random_weight;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_atlas_destroy( const dz_service_t * _service, const dz_atlas_t * _atlas )
@@ -290,9 +292,17 @@ dz_uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas )
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t * _texture )
 {
-    _atlas->textures[_atlas->texture_count++] = _texture;
+    if( _atlas->texture_count >= 64 )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_atlas_texture_t * atlas_texture = &_atlas->textures[_atlas->texture_count++];
+    atlas_texture->texture = _texture;
+    atlas_texture->random_weight = 1.f;
 
     _atlas->textures_time += _texture->sequence_delay;
+    __atlas_update_textures_random_weight( _atlas );
 
     return DZ_SUCCESSFUL;
 }
@@ -304,24 +314,60 @@ dz_result_t dz_atlas_pop_texture( dz_atlas_t * const _atlas, const dz_texture_t 
         return DZ_FAILURE;
     }
 
-    const dz_texture_t * texture = _atlas->textures[_atlas->texture_count - 1];
+    const dz_texture_t * texture = _atlas->textures[_atlas->texture_count - 1].texture;
 
     *_texture = texture;
 
-    _atlas->textures[_atlas->texture_count - 1] = DZ_NULLPTR;
+    _atlas->textures[_atlas->texture_count - 1].texture = DZ_NULLPTR;
+    _atlas->textures[_atlas->texture_count - 1].random_weight = 0.f;
 
     _atlas->texture_count--;
 
     _atlas->textures_time -= texture->sequence_delay;
+    __atlas_update_textures_random_weight( _atlas );
 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, dz_uint32_t _index, const dz_texture_t ** _texture )
 {
-    const dz_texture_t * texture = _atlas->textures[_index];
+    if( _index >= _atlas->texture_count )
+    {
+        return DZ_FAILURE;
+    }
+
+    const dz_texture_t * texture = _atlas->textures[_index].texture;
 
     *_texture = texture;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_atlas_set_texture_random_weight( dz_atlas_t * const _atlas, dz_uint32_t _index, dz_float_t _weight )
+{
+    if( _index >= _atlas->texture_count )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_atlas_texture_t * atlas_texture = &_atlas->textures[_index];
+    const dz_float_t weight = DZ_MAX( _weight, 0.f );
+
+    atlas_texture->random_weight = weight;
+
+    __atlas_update_textures_random_weight( _atlas );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_atlas_get_texture_random_weight( const dz_atlas_t * _atlas, dz_uint32_t _index, dz_float_t * const _weight )
+{
+    if( _index >= _atlas->texture_count )
+    {
+        return DZ_FAILURE;
+    }
+
+    *_weight = _atlas->textures[_index].random_weight;
 
     return DZ_SUCCESSFUL;
 }
@@ -1284,6 +1330,48 @@ static dz_float_t __get_affector_value_rands( dz_particle_t * _particle, const d
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
+static const dz_texture_t * __select_texture_random_weight( const dz_atlas_t * _atlas, dz_uint32_t * const _seed )
+{
+    if( _atlas->texture_count == 0 )
+    {
+        return DZ_NULLPTR;
+    }
+
+    if( _atlas->texture_count == 1 )
+    {
+        return _atlas->textures[0].texture;
+    }
+
+    const dz_float_t total_weight = _atlas->textures_random_weight;
+
+    if( total_weight <= 0.f )
+    {
+        return _atlas->textures[0].texture;
+    }
+
+    dz_float_t random_weight = __get_randf( _seed ) * total_weight;
+
+    for( dz_uint32_t index = 0; index != _atlas->texture_count; ++index )
+    {
+        const dz_atlas_texture_t * atlas_texture = &_atlas->textures[index];
+        const dz_float_t weight = atlas_texture->random_weight;
+
+        if( weight <= 0.f )
+        {
+            continue;
+        }
+
+        if( random_weight <= weight )
+        {
+            return atlas_texture->texture;
+        }
+
+        random_weight -= weight;
+    }
+
+    return _atlas->textures[_atlas->texture_count - 1].texture;
+}
+//////////////////////////////////////////////////////////////////////////
 static dz_result_t __particle_update( const dz_service_t * _service, const dz_effect_t * _emitter, dz_particle_t * _p, dz_float_t _time )
 {
     _p->time += _time;
@@ -1374,7 +1462,6 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
             }
 #endif
 
-            _p->texture = atlas->textures[0];
         }break;
     case DZ_MATERIAL_MODE_SEQUENCE:
         {
@@ -1395,7 +1482,7 @@ static dz_result_t __particle_update( const dz_service_t * _service, const dz_ef
 
             for( dz_uint32_t index = 0; index != atlas->texture_count; ++index )
             {
-                const dz_texture_t * texture = atlas->textures[index];
+                const dz_texture_t * texture = atlas->textures[index].texture;
 
                 texture_time -= texture->sequence_delay;
 
@@ -1818,6 +1905,36 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     _p->born_color_g = _instance->g;
     _p->born_color_b = _instance->b;
     _p->born_color_a = _instance->a;
+
+    const dz_material_t * material = effect->material;
+    const dz_atlas_t * atlas = material->atlas;
+
+    switch( material->mode )
+    {
+    case DZ_MATERIAL_MODE_SOLID:
+        {
+            _p->texture = DZ_NULLPTR;
+        }break;
+    case DZ_MATERIAL_MODE_TEXTURE:
+        {
+#ifdef DZ_DEBUG
+            if( atlas->texture_count == 0 )
+            {
+                return DZ_FAILURE;
+            }
+#endif
+
+            _p->texture = __select_texture_random_weight( atlas, &_instance->seed );
+        }break;
+    case DZ_MATERIAL_MODE_SEQUENCE:
+        {
+            _p->texture = DZ_NULLPTR;
+        }break;
+    default:
+        {
+            _p->texture = DZ_NULLPTR;
+        }break;
+    }
 
     return DZ_SUCCESSFUL;
 }

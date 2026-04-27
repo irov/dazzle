@@ -1,10 +1,11 @@
-cmake_minimum_required (VERSION 3.1)
+cmake_minimum_required (VERSION 3.10)
 project(jansson C)
 
 # Options
 option(JANSSON_BUILD_SHARED_LIBS "Build shared libraries." OFF)
 option(USE_URANDOM "Use /dev/urandom to seed the hash function." ON)
 option(USE_WINDOWS_CRYPTOAPI "Use CryptGenRandom to seed the hash function." ON)
+option(USE_DTOA "Use dtoa for optimal floating-point to string conversions." ON)
 
 if (MSVC)
    # This option must match the settings used in your program, in particular if you
@@ -25,10 +26,10 @@ set(JANSSON_TEMP_DIR ${DAZZLE_THIRDPARTY_CONFIG_DIR}/jansson/tmp)
 # set (JANSSON_VERSION "2.3.1")
 # set (JANSSON_SOVERSION 2)
 
-set(JANSSON_DISPLAY_VERSION "2.14")
+set(JANSSON_DISPLAY_VERSION "2.15.0")
 
 # This is what is required to match the same numbers as automake's
-set(JANSSON_VERSION "4.14.0")
+set(JANSSON_VERSION "4.15.0")
 set(JANSSON_SOVERSION 4)
 
 # for CheckFunctionKeywords
@@ -82,6 +83,9 @@ check_function_exists (sched_yield HAVE_SCHED_YIELD)
 
 # Check for the int-type includes
 check_include_files (stdint.h HAVE_STDINT_H)
+
+include (TestBigEndian)
+TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
 
 # Check our 64 bit integer sizes
 check_type_size (__int64 __INT64)
@@ -183,6 +187,8 @@ endif ()
 # detect what to use for the 64 bit type.
 # Note: I will prefer long long if I can get it, as that is what the automake system aimed for.
 if (NOT DEFINED JSON_INT_T)
+   set (JSON_INTEGER_IS_LONG_LONG 1)
+
    if (HAVE_LONG_LONG_INT AND (LONG_LONG_INT EQUAL 8))
       set (JSON_INT_T "long long")
    elseif (HAVE_INT64_T)
@@ -205,18 +211,7 @@ if (NOT DEFINED JSON_INT_T)
    endif ()
 endif ()
 
-
-# If locale.h and localeconv() are available, define to 1, otherwise to 0.
 check_include_files (locale.h HAVE_LOCALE_H)
-check_function_exists (localeconv HAVE_LOCALECONV)
-
-if (HAVE_LOCALECONV AND HAVE_LOCALE_H)
-   set (JSON_HAVE_LOCALECONV 1)
-else ()
-   set (JSON_HAVE_LOCALECONV 0)
-endif()
-
-# check if we have setlocale
 check_function_exists(setlocale HAVE_SETLOCALE)
 
 # Check what the inline keyword is.
@@ -261,20 +256,22 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/cmake/jansson_config.h.cmake
 file (COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/jansson.h
            DESTINATION ${DAZZLE_THIRDPARTY_CONFIG_DIR}/jansson/include/)
 
-add_definitions(-DJANSSON_USING_CMAKE)
-
 # configure the private config file
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/cmake/jansson_private_config.h.cmake
                 ${DAZZLE_THIRDPARTY_CONFIG_DIR}/jansson/private_include/jansson_private_config.h)
 
-# and tell the source code to include it
-add_definitions(-DHAVE_CONFIG_H)
+include_directories (${CMAKE_CURRENT_BINARY_DIR}/private_include)
+
+# Configuration flags will be set on project later once we have defined the target
 
 include_directories (${DAZZLE_THIRDPARTY_CONFIG_DIR}/jansson/include)
 include_directories (${DAZZLE_THIRDPARTY_CONFIG_DIR}/jansson/private_include)
 
 # Add the lib sources.
 file(GLOB JANSSON_SRC src/*.c)
+if (NOT USE_DTOA)
+   list(FILTER JANSSON_SRC EXCLUDE REGEX ".*dtoa\\.c$")
+endif()
 
 set(JANSSON_HDR_PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/hashtable.h
@@ -347,6 +344,20 @@ else()
    set_target_properties(jansson PROPERTIES
       POSITION_INDEPENDENT_CODE true)
 endif()
+
+
+# Now target jansson is declared, set per-target values
+
+target_compile_definitions(jansson PUBLIC JANSSON_USING_CMAKE)
+target_compile_definitions(jansson PRIVATE HAVE_CONFIG_H)
+
+target_include_directories(jansson
+	PUBLIC $<BUILD_INTERFACE:${DAZZLE_THIRDPARTY_CONFIG_DIR}/jansson/include>
+	INTERFACE $<INSTALL_INTERFACE:include>
+)
+
+add_library( jansson::jansson ALIAS jansson )
+
 
 if (JANSSON_EXAMPLES)
 	add_executable(simple_parse "${CMAKE_CURRENT_SOURCE_DIR}/examples/simple_parse.c")
@@ -472,6 +483,7 @@ if (NOT JANSSON_WITHOUT_TESTS)
    set(api_tests
          test_array
          test_chaos
+         test_chaos_realloc
          test_copy
          test_dump
          test_dump_callback
@@ -491,6 +503,7 @@ if (NOT JANSSON_WITHOUT_TESTS)
    # such as secure_malloc and secure_free is doing, so exclude it for now.
    if (NOT MSVC)
       list(APPEND api_tests test_memory_funcs)
+      list(APPEND api_tests test_memory_funcs_realloc)
    endif()
 
    # Helper macro for building and linking a test program.
@@ -526,6 +539,11 @@ if (NOT JANSSON_WITHOUT_TESTS)
        foreach (TESTDIR ${TESTDIRS})
          if (IS_DIRECTORY ${TESTDIR})
             get_filename_component(TNAME ${TESTDIR} NAME)
+
+            if ((USE_DTOA AND EXISTS ${TESTDIR}/skip_if_dtoa) OR
+                (NOT USE_DTOA AND EXISTS ${TESTDIR}/skip_unless_dtoa))
+               continue()
+            endif()
 
             if (JANSSON_TEST_WITH_VALGRIND)
                add_test(memcheck__${SUITE}__${TNAME}

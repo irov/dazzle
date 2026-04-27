@@ -15,10 +15,15 @@
 #include "dazzle/dazzle_read.hpp"
 #include "dazzle/dazzle_write.hpp"
 
+#include "stb_image/stb_image.h"
+#include "zlib.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
+#include <algorithm>
+#include <cstring>
 #include <sstream>
 
 //////////////////////////////////////////////////////////////////////////
@@ -44,6 +49,7 @@ static constexpr int ER_CURVE_POINT_NONE = -1;
 static constexpr dz_float_t ER_CURVE_PLOT_BORDER_SIZE = 8.f;
 static constexpr dz_float_t ER_CURVE_PLOT_HOVER_RADIUS = 4.f;
 static constexpr dz_float_t ER_CURVE_PLOT_HOVER_RADIUS_POW_2 = ER_CURVE_PLOT_HOVER_RADIUS * ER_CURVE_PLOT_HOVER_RADIUS;
+static constexpr dz_uint32_t ER_ATLAS_TEXTURE_MAX = 64;
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME = "particle.png";
 //////////////////////////////////////////////////////////////////////////
@@ -74,6 +80,17 @@ static const char * ER_WINDOW_MATERIAL_COMBO_BLEND_MODE_TEXT = "Blend mode";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_TITLE = "Texture";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL = "Size:";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_BROWSE = "Browse";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_APPEND = "Append Texture";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_ADD_REGION = "Add Region";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_REMOVE_REGION = "Remove Region";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_OPTIMIZE_ATLAS = "Optimize Atlas";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_REGIONS_LABEL = "Regions:";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_WEIGHT_LABEL = "Weight";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_RESET_UV = "Reset UV";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_REGION_X_LABEL = "Region X";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_REGION_Y_LABEL = "Region Y";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_REGION_WIDTH_LABEL = "Region Width";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_REGION_HEIGHT_LABEL = "Region Height";
 static const char * ER_WINDOW_CONTROLS_BTN_RESET_TEXT = "Reset";
 static const char * ER_WINDOW_CONTROLS_BTN_PAUSE_TEXT = "Pause";
 static const char * ER_WINDOW_CONTROLS_BTN_RESUME_TEXT = "Resume";
@@ -714,9 +731,13 @@ editor::editor()
     , m_textureWidth( 0 )
     , m_textureHeight( 0 )
 
+    , m_textureRegionSelecting( false )
+    , m_textureRegionSelectStart( 0.f, 0.f )
+
     , m_service( nullptr )
     , m_atlas( nullptr )
     , m_texture( nullptr )
+    , m_textureIndex( 0 )
     , m_material( nullptr )
 
     , m_shape( nullptr )
@@ -968,11 +989,6 @@ dz_result_t editor::init()
         const char * glsl_version = "#version 330";
 
         if( ImGui_ImplOpenGL3_Init( glsl_version ) == false )
-        {
-            return DZ_FAILURE;
-        }
-
-        if( ImGui_ImplOpenGL3_CreateFontsTexture() == false )
         {
             return DZ_FAILURE;
         }
@@ -1305,6 +1321,8 @@ dz_result_t editor::loadEffect()
 
         m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
 
+        m_textureIndex = 0;
+
         if( dz_atlas_get_texture( m_atlas, 0, const_cast<const dz_texture_t **>(&m_texture) ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -1325,6 +1343,8 @@ dz_result_t editor::loadEffect()
         m_textureId = dz_render_make_texture_from_memory( m_atlasBuffer.data(), m_atlasBuffer.size(), &m_textureWidth, &m_textureHeight );
 
         dz_atlas_set_surface( m_atlas, &m_textureId );
+
+        m_textureRegionSelecting = false;
 
         unzCloseCurrentFile( uf );
 
@@ -2537,7 +2557,7 @@ dz_result_t editor::showShapeData()
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_SHAPE_TITLE );
 
-    dz_float_t width = ImGui::GetWindowContentRegionWidth();
+    dz_float_t width = ImGui::GetContentRegionAvail().x;
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_SHAPE_TIMELINE_MAX__] = {false};
@@ -2638,7 +2658,7 @@ dz_result_t editor::showAffectorData()
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_AFFECTOR_TITLE );
 
-    dz_float_t width = ImGui::GetWindowContentRegionWidth();
+    dz_float_t width = ImGui::GetContentRegionAvail().x;
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_AFFECTOR_TIMELINE_MAX__] = {false};
@@ -2712,7 +2732,7 @@ dz_result_t editor::showEmitterData()
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_EMITTER_TITLE );
 
-    dz_float_t width = ImGui::GetWindowContentRegionWidth();
+    dz_float_t width = ImGui::GetContentRegionAvail().x;
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
 
     static bool headerFlags[__DZ_EMITTER_TIMELINE_MAX__] = {false};
@@ -2804,6 +2824,710 @@ dz_result_t editor::showEmitterData()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+static void __normalize_texture_region_pixels( dz_float_t * const _region, int _atlasWidth, int _atlasHeight )
+{
+    if( _atlasWidth <= 0 || _atlasHeight <= 0 )
+    {
+        _region[0] = 0.f;
+        _region[1] = 0.f;
+        _region[2] = 0.f;
+        _region[3] = 0.f;
+
+        return;
+    }
+
+    dz_float_t x0 = _region[0];
+    dz_float_t y0 = _region[1];
+    dz_float_t x1 = _region[0] + _region[2];
+    dz_float_t y1 = _region[1] + _region[3];
+
+    if( x1 < x0 )
+    {
+        dz_float_t temp = x0;
+        x0 = x1;
+        x1 = temp;
+    }
+
+    if( y1 < y0 )
+    {
+        dz_float_t temp = y0;
+        y0 = y1;
+        y1 = temp;
+    }
+
+    x0 = DZ_MAX( 0.f, DZ_MIN( x0, (dz_float_t)_atlasWidth ) );
+    y0 = DZ_MAX( 0.f, DZ_MIN( y0, (dz_float_t)_atlasHeight ) );
+    x1 = DZ_MAX( 0.f, DZ_MIN( x1, (dz_float_t)_atlasWidth ) );
+    y1 = DZ_MAX( 0.f, DZ_MIN( y1, (dz_float_t)_atlasHeight ) );
+
+    if( x1 - x0 < 1.f )
+    {
+        if( x0 + 1.f <= (dz_float_t)_atlasWidth )
+        {
+            x1 = x0 + 1.f;
+        }
+        else
+        {
+            x0 = (dz_float_t)_atlasWidth - 1.f;
+            x1 = (dz_float_t)_atlasWidth;
+        }
+    }
+
+    if( y1 - y0 < 1.f )
+    {
+        if( y0 + 1.f <= (dz_float_t)_atlasHeight )
+        {
+            y1 = y0 + 1.f;
+        }
+        else
+        {
+            y0 = (dz_float_t)_atlasHeight - 1.f;
+            y1 = (dz_float_t)_atlasHeight;
+        }
+    }
+
+    _region[0] = x0;
+    _region[1] = y0;
+    _region[2] = x1 - x0;
+    _region[3] = y1 - y0;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __get_texture_region_pixels( const dz_texture_t * _texture, int _atlasWidth, int _atlasHeight, dz_float_t * const _region )
+{
+    dz_float_t u[4];
+    dz_float_t v[4];
+    dz_texture_get_uv( _texture, u, v );
+
+    _region[0] = u[0] * (dz_float_t)_atlasWidth;
+    _region[1] = v[0] * (dz_float_t)_atlasHeight;
+    _region[2] = (u[2] - u[0]) * (dz_float_t)_atlasWidth;
+    _region[3] = (v[2] - v[0]) * (dz_float_t)_atlasHeight;
+
+    __normalize_texture_region_pixels( _region, _atlasWidth, _atlasHeight );
+}
+//////////////////////////////////////////////////////////////////////////
+static void __set_texture_region_pixels( dz_texture_t * const _texture, int _atlasWidth, int _atlasHeight, dz_float_t * const _region )
+{
+    __normalize_texture_region_pixels( _region, _atlasWidth, _atlasHeight );
+
+    if( _atlasWidth <= 0 || _atlasHeight <= 0 )
+    {
+        dz_texture_set_width( _texture, 0.f );
+        dz_texture_set_height( _texture, 0.f );
+        dz_texture_set_trim_offset( _texture, 0.f, 0.f );
+        dz_texture_set_trim_size( _texture, 0.f, 0.f );
+
+        return;
+    }
+
+    const dz_float_t x0 = _region[0];
+    const dz_float_t y0 = _region[1];
+    const dz_float_t x1 = _region[0] + _region[2];
+    const dz_float_t y1 = _region[1] + _region[3];
+
+    const dz_float_t invWidth = 1.f / (dz_float_t)_atlasWidth;
+    const dz_float_t invHeight = 1.f / (dz_float_t)_atlasHeight;
+
+    const dz_float_t u[4] = {x0 * invWidth, x1 * invWidth, x1 * invWidth, x0 * invWidth};
+    const dz_float_t v[4] = {y0 * invHeight, y0 * invHeight, y1 * invHeight, y1 * invHeight};
+
+    dz_texture_set_uv( _texture, u, v );
+    dz_texture_set_width( _texture, _region[2] );
+    dz_texture_set_height( _texture, _region[3] );
+    dz_texture_set_trim_offset( _texture, 0.f, 0.f );
+    dz_texture_set_trim_size( _texture, _region[2], _region[3] );
+}
+//////////////////////////////////////////////////////////////////////////
+static void __copy_texture_data( dz_texture_t * const _target, const dz_texture_t * _source )
+{
+    dz_float_t u[4];
+    dz_float_t v[4];
+    dz_texture_get_uv( _source, u, v );
+    dz_texture_set_uv( _target, u, v );
+
+    dz_texture_set_width( _target, dz_texture_get_width( _source ) );
+    dz_texture_set_height( _target, dz_texture_get_height( _source ) );
+
+    dz_float_t trim_offset_x;
+    dz_float_t trim_offset_y;
+    dz_texture_get_trim_offset( _source, &trim_offset_x, &trim_offset_y );
+    dz_texture_set_trim_offset( _target, trim_offset_x, trim_offset_y );
+
+    dz_float_t trim_width;
+    dz_float_t trim_height;
+    dz_texture_get_trim_size( _source, &trim_width, &trim_height );
+    dz_texture_set_trim_size( _target, trim_width, trim_height );
+
+    dz_texture_set_sequence_delay( _target, dz_texture_get_sequence_delay( _source ) );
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __select_atlas_texture( dz_atlas_t * const _atlas, int * const _index, dz_texture_t ** const _texture )
+{
+    const dz_uint32_t textureCount = dz_atlas_get_texture_count( _atlas );
+
+    if( textureCount == 0 )
+    {
+        *_index = 0;
+        *_texture = DZ_NULLPTR;
+
+        return DZ_FAILURE;
+    }
+
+    if( *_index < 0 )
+    {
+        *_index = 0;
+    }
+    else if( (dz_uint32_t)*_index >= textureCount )
+    {
+        *_index = (int)textureCount - 1;
+    }
+
+    const dz_texture_t * texture = DZ_NULLPTR;
+    if( dz_atlas_get_texture( _atlas, (dz_uint32_t)*_index, &texture ) == DZ_FAILURE )
+    {
+        *_texture = DZ_NULLPTR;
+
+        return DZ_FAILURE;
+    }
+
+    *_texture = const_cast<dz_texture_t *>(texture);
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+typedef struct er_atlas_pack_region_t
+{
+    dz_texture_t * texture;
+
+    dz_int32_t sourceX;
+    dz_int32_t sourceY;
+    dz_int32_t width;
+    dz_int32_t height;
+
+    dz_int32_t packedX;
+    dz_int32_t packedY;
+} er_atlas_pack_region_t;
+//////////////////////////////////////////////////////////////////////////
+static void __append_png_u32( std::vector<dz_uint8_t> * const _output, dz_uint32_t _value )
+{
+    _output->push_back( (dz_uint8_t)((_value >> 24) & 0xff) );
+    _output->push_back( (dz_uint8_t)((_value >> 16) & 0xff) );
+    _output->push_back( (dz_uint8_t)((_value >> 8) & 0xff) );
+    _output->push_back( (dz_uint8_t)(_value & 0xff) );
+}
+//////////////////////////////////////////////////////////////////////////
+static void __append_png_chunk( std::vector<dz_uint8_t> * const _output, const char * _type, const dz_uint8_t * _data, dz_size_t _size )
+{
+    __append_png_u32( _output, (dz_uint32_t)_size );
+
+    const dz_uint8_t typeBytes[4] = {(dz_uint8_t)_type[0], (dz_uint8_t)_type[1], (dz_uint8_t)_type[2], (dz_uint8_t)_type[3]};
+
+    _output->insert( _output->end(), typeBytes, typeBytes + 4 );
+
+    if( _size != 0 )
+    {
+        _output->insert( _output->end(), _data, _data + _size );
+    }
+
+    uLong chunkCrc = crc32( 0L, Z_NULL, 0 );
+    chunkCrc = crc32( chunkCrc, typeBytes, 4 );
+
+    if( _size != 0 )
+    {
+        chunkCrc = crc32( chunkCrc, _data, (uInt)_size );
+    }
+
+    __append_png_u32( _output, (dz_uint32_t)chunkCrc );
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __encode_png_rgba( const dz_uint8_t * _pixels, dz_int32_t _width, dz_int32_t _height, std::vector<dz_uint8_t> * const _output )
+{
+    if( _pixels == DZ_NULLPTR || _width <= 0 || _height <= 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    const dz_size_t pixelStride = 4;
+    const dz_size_t sourceStride = (dz_size_t)_width * pixelStride;
+    const dz_size_t filteredStride = sourceStride + 1;
+
+    std::vector<dz_uint8_t> filtered;
+    filtered.resize( filteredStride * (dz_size_t)_height );
+
+    for( dz_int32_t row = 0; row != _height; ++row )
+    {
+        dz_uint8_t * filteredRow = filtered.data() + (dz_size_t)row * filteredStride;
+        const dz_uint8_t * sourceRow = _pixels + (dz_size_t)row * sourceStride;
+
+        filteredRow[0] = 0;
+        std::memcpy( filteredRow + 1, sourceRow, sourceStride );
+    }
+
+    uLongf compressedSize = compressBound( (uLong)filtered.size() );
+
+    std::vector<dz_uint8_t> compressed;
+    compressed.resize( (dz_size_t)compressedSize );
+
+    if( compress2( compressed.data(), &compressedSize, filtered.data(), (uLong)filtered.size(), Z_BEST_COMPRESSION ) != Z_OK )
+    {
+        return DZ_FAILURE;
+    }
+
+    compressed.resize( (dz_size_t)compressedSize );
+
+    _output->clear();
+
+    const dz_uint8_t pngSignature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+    _output->insert( _output->end(), pngSignature, pngSignature + 8 );
+
+    dz_uint8_t ihdr[13];
+    ihdr[0] = (dz_uint8_t)((_width >> 24) & 0xff);
+    ihdr[1] = (dz_uint8_t)((_width >> 16) & 0xff);
+    ihdr[2] = (dz_uint8_t)((_width >> 8) & 0xff);
+    ihdr[3] = (dz_uint8_t)(_width & 0xff);
+    ihdr[4] = (dz_uint8_t)((_height >> 24) & 0xff);
+    ihdr[5] = (dz_uint8_t)((_height >> 16) & 0xff);
+    ihdr[6] = (dz_uint8_t)((_height >> 8) & 0xff);
+    ihdr[7] = (dz_uint8_t)(_height & 0xff);
+    ihdr[8] = 8;
+    ihdr[9] = 6;
+    ihdr[10] = 0;
+    ihdr[11] = 0;
+    ihdr[12] = 0;
+
+    __append_png_chunk( _output, "IHDR", ihdr, sizeof( ihdr ) );
+    __append_png_chunk( _output, "IDAT", compressed.data(), compressed.size() );
+    __append_png_chunk( _output, "IEND", DZ_NULLPTR, 0 );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __get_texture_region_pixels_int( const dz_texture_t * _texture, dz_int32_t _atlasWidth, dz_int32_t _atlasHeight, er_atlas_pack_region_t * const _region )
+{
+    if( _atlasWidth <= 0 || _atlasHeight <= 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_float_t region[4];
+    __get_texture_region_pixels( _texture, _atlasWidth, _atlasHeight, region );
+
+    dz_int32_t sourceX0 = (dz_int32_t)floorf( region[0] );
+    dz_int32_t sourceY0 = (dz_int32_t)floorf( region[1] );
+    dz_int32_t sourceX1 = (dz_int32_t)ceilf( region[0] + region[2] );
+    dz_int32_t sourceY1 = (dz_int32_t)ceilf( region[1] + region[3] );
+
+    sourceX0 = DZ_MAX( 0, DZ_MIN( sourceX0, _atlasWidth - 1 ) );
+    sourceY0 = DZ_MAX( 0, DZ_MIN( sourceY0, _atlasHeight - 1 ) );
+    sourceX1 = DZ_MAX( sourceX0 + 1, DZ_MIN( sourceX1, _atlasWidth ) );
+    sourceY1 = DZ_MAX( sourceY0 + 1, DZ_MIN( sourceY1, _atlasHeight ) );
+
+    _region->sourceX = sourceX0;
+    _region->sourceY = sourceY0;
+    _region->width = sourceX1 - sourceX0;
+    _region->height = sourceY1 - sourceY0;
+    _region->packedX = 0;
+    _region->packedY = 0;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __pack_atlas_regions_shelf( std::vector<er_atlas_pack_region_t> * const _regions, const std::vector<dz_uint32_t> & _order, dz_int32_t _candidateWidth, dz_bool_t _apply, dz_int32_t * const _outWidth, dz_int32_t * const _outHeight )
+{
+    dz_int32_t cursorX = 0;
+    dz_int32_t cursorY = 0;
+    dz_int32_t rowHeight = 0;
+    dz_int32_t usedWidth = 0;
+
+    for( dz_uint32_t regionIndex : _order )
+    {
+        er_atlas_pack_region_t & region = (*_regions)[regionIndex];
+
+        if( cursorX != 0 && cursorX + region.width > _candidateWidth )
+        {
+            cursorY += rowHeight;
+            cursorX = 0;
+            rowHeight = 0;
+        }
+
+        if( _apply == DZ_TRUE )
+        {
+            region.packedX = cursorX;
+            region.packedY = cursorY;
+        }
+
+        cursorX += region.width;
+        rowHeight = DZ_MAX( rowHeight, region.height );
+        usedWidth = DZ_MAX( usedWidth, cursorX );
+    }
+
+    *_outWidth = usedWidth;
+    *_outHeight = cursorY + rowHeight;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __pack_atlas_regions( std::vector<er_atlas_pack_region_t> * const _regions, dz_int32_t * const _outWidth, dz_int32_t * const _outHeight )
+{
+    if( _regions->empty() == true )
+    {
+        return DZ_FAILURE;
+    }
+
+    std::vector<dz_uint32_t> order;
+    order.reserve( _regions->size() );
+
+    dz_int32_t maxRegionWidth = 0;
+    dz_int32_t totalRegionWidth = 0;
+
+    for( dz_uint32_t index = 0; index != (dz_uint32_t)_regions->size(); ++index )
+    {
+        const er_atlas_pack_region_t & region = (*_regions)[index];
+
+        order.push_back( index );
+
+        maxRegionWidth = DZ_MAX( maxRegionWidth, region.width );
+        totalRegionWidth += region.width;
+    }
+
+    std::sort( order.begin(), order.end(), [_regions]( dz_uint32_t _left, dz_uint32_t _right )
+    {
+        const er_atlas_pack_region_t & leftRegion = (*_regions)[_left];
+        const er_atlas_pack_region_t & rightRegion = (*_regions)[_right];
+
+        if( leftRegion.height != rightRegion.height )
+        {
+            return leftRegion.height > rightRegion.height;
+        }
+
+        return leftRegion.width > rightRegion.width;
+    } );
+
+    dz_int32_t bestCandidateWidth = maxRegionWidth;
+    dz_int32_t bestPackedWidth = 0;
+    dz_int32_t bestPackedHeight = 0;
+    dz_size_t bestArea = (dz_size_t)-1;
+    dz_size_t bestMaxSide = (dz_size_t)-1;
+    dz_size_t bestSideDelta = (dz_size_t)-1;
+
+    for( dz_int32_t candidateWidth = maxRegionWidth; candidateWidth <= totalRegionWidth; ++candidateWidth )
+    {
+        dz_int32_t packedWidth;
+        dz_int32_t packedHeight;
+        __pack_atlas_regions_shelf( _regions, order, candidateWidth, DZ_FALSE, &packedWidth, &packedHeight );
+
+        const dz_size_t area = (dz_size_t)packedWidth * (dz_size_t)packedHeight;
+        const dz_size_t maxSide = (dz_size_t)DZ_MAX( packedWidth, packedHeight );
+        const dz_size_t minSide = (dz_size_t)DZ_MIN( packedWidth, packedHeight );
+        const dz_size_t sideDelta = maxSide - minSide;
+
+        if( maxSide < bestMaxSide || (maxSide == bestMaxSide && area < bestArea) || (maxSide == bestMaxSide && area == bestArea && sideDelta < bestSideDelta) )
+        {
+            bestCandidateWidth = candidateWidth;
+            bestPackedWidth = packedWidth;
+            bestPackedHeight = packedHeight;
+            bestArea = area;
+            bestMaxSide = maxSide;
+            bestSideDelta = sideDelta;
+        }
+    }
+
+    __pack_atlas_regions_shelf( _regions, order, bestCandidateWidth, DZ_TRUE, &bestPackedWidth, &bestPackedHeight );
+
+    *_outWidth = bestPackedWidth;
+    *_outHeight = bestPackedHeight;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::optimizeAtlas()
+{
+    if( m_atlas == DZ_NULLPTR || m_atlasBuffer.empty() == true )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_int32_t sourceWidth;
+    dz_int32_t sourceHeight;
+    dz_int32_t sourceComp;
+
+    dz_uint8_t * sourcePixels = stbi_load_from_memory( m_atlasBuffer.data(), (int)m_atlasBuffer.size(), &sourceWidth, &sourceHeight, &sourceComp, STBI_rgb_alpha );
+
+    if( sourcePixels == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_UNUSED( sourceComp );
+
+    const dz_uint32_t textureCount = dz_atlas_get_texture_count( m_atlas );
+
+    std::vector<er_atlas_pack_region_t> regions;
+    regions.reserve( textureCount );
+
+    for( dz_uint32_t index = 0; index != textureCount; ++index )
+    {
+        const dz_texture_t * texture = DZ_NULLPTR;
+        if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+        {
+            stbi_image_free( sourcePixels );
+
+            return DZ_FAILURE;
+        }
+
+        er_atlas_pack_region_t region;
+        region.texture = const_cast<dz_texture_t *>(texture);
+
+        if( __get_texture_region_pixels_int( texture, sourceWidth, sourceHeight, &region ) == DZ_FAILURE )
+        {
+            stbi_image_free( sourcePixels );
+
+            return DZ_FAILURE;
+        }
+
+        regions.push_back( region );
+    }
+
+    dz_int32_t packedWidth;
+    dz_int32_t packedHeight;
+    if( __pack_atlas_regions( &regions, &packedWidth, &packedHeight ) == DZ_FAILURE )
+    {
+        stbi_image_free( sourcePixels );
+
+        return DZ_FAILURE;
+    }
+
+    std::vector<dz_uint8_t> packedPixels;
+    packedPixels.resize( (dz_size_t)packedWidth * (dz_size_t)packedHeight * 4, 0 );
+
+    for( const er_atlas_pack_region_t & region : regions )
+    {
+        for( dz_int32_t row = 0; row != region.height; ++row )
+        {
+            const dz_uint8_t * sourceRow = sourcePixels + (((dz_size_t)(region.sourceY + row) * (dz_size_t)sourceWidth + (dz_size_t)region.sourceX) * 4);
+            dz_uint8_t * packedRow = packedPixels.data() + (((dz_size_t)(region.packedY + row) * (dz_size_t)packedWidth + (dz_size_t)region.packedX) * 4);
+
+            std::memcpy( packedRow, sourceRow, (dz_size_t)region.width * 4 );
+        }
+    }
+
+    stbi_image_free( sourcePixels );
+
+    std::vector<dz_uint8_t> optimizedAtlasBuffer;
+    if( __encode_png_rgba( packedPixels.data(), packedWidth, packedHeight, &optimizedAtlasBuffer ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_int32_t optimizedWidth;
+    dz_int32_t optimizedHeight;
+    GLuint optimizedTextureId = dz_render_make_texture_from_memory( optimizedAtlasBuffer.data(), optimizedAtlasBuffer.size(), &optimizedWidth, &optimizedHeight );
+
+    if( optimizedTextureId == 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    for( er_atlas_pack_region_t & region : regions )
+    {
+        dz_float_t textureRegion[4] = {(dz_float_t)region.packedX, (dz_float_t)region.packedY, (dz_float_t)region.width, (dz_float_t)region.height};
+
+        __set_texture_region_pixels( region.texture, optimizedWidth, optimizedHeight, textureRegion );
+    }
+
+    dz_render_delete_texture( m_textureId );
+
+    m_textureId = optimizedTextureId;
+    m_textureWidth = optimizedWidth;
+    m_textureHeight = optimizedHeight;
+    m_atlasBuffer.swap( optimizedAtlasBuffer );
+
+    dz_atlas_set_surface( m_atlas, &m_textureId );
+
+    if( __select_atlas_texture( m_atlas, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    m_textureRegionSelecting = false;
+
+    return this->resetEffect();
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::appendTextureToAtlas( const char * _path )
+{
+    if( _path == DZ_NULLPTR || m_atlas == DZ_NULLPTR || m_atlasBuffer.empty() == true || m_textureWidth <= 0 || m_textureHeight <= 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    const dz_uint32_t textureCount = dz_atlas_get_texture_count( m_atlas );
+
+    dz_int32_t atlasWidth;
+    dz_int32_t atlasHeight;
+    dz_int32_t atlasComp;
+
+    dz_uint8_t * atlasPixels = stbi_load_from_memory( m_atlasBuffer.data(), (int)m_atlasBuffer.size(), &atlasWidth, &atlasHeight, &atlasComp, STBI_rgb_alpha );
+
+    if( atlasPixels == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_UNUSED( atlasComp );
+
+    dz_int32_t appendWidth;
+    dz_int32_t appendHeight;
+    dz_int32_t appendComp;
+
+    dz_uint8_t * appendPixels = stbi_load( _path, &appendWidth, &appendHeight, &appendComp, STBI_rgb_alpha );
+
+    if( appendPixels == DZ_NULLPTR )
+    {
+        stbi_image_free( atlasPixels );
+
+        return DZ_FAILURE;
+    }
+
+    DZ_UNUSED( appendComp );
+
+    dz_int32_t appendXRight = atlasWidth;
+    dz_int32_t appendYRight = 0;
+    dz_int32_t newWidthRight = atlasWidth + appendWidth;
+    dz_int32_t newHeightRight = DZ_MAX( atlasHeight, appendHeight );
+
+    dz_int32_t appendXBottom = 0;
+    dz_int32_t appendYBottom = atlasHeight;
+    dz_int32_t newWidthBottom = DZ_MAX( atlasWidth, appendWidth );
+    dz_int32_t newHeightBottom = atlasHeight + appendHeight;
+
+    const dz_size_t rightMaxSide = (dz_size_t)DZ_MAX( newWidthRight, newHeightRight );
+    const dz_size_t rightArea = (dz_size_t)newWidthRight * (dz_size_t)newHeightRight;
+    const dz_size_t rightSideDelta = rightMaxSide - (dz_size_t)DZ_MIN( newWidthRight, newHeightRight );
+
+    const dz_size_t bottomMaxSide = (dz_size_t)DZ_MAX( newWidthBottom, newHeightBottom );
+    const dz_size_t bottomArea = (dz_size_t)newWidthBottom * (dz_size_t)newHeightBottom;
+    const dz_size_t bottomSideDelta = bottomMaxSide - (dz_size_t)DZ_MIN( newWidthBottom, newHeightBottom );
+
+    dz_int32_t appendX;
+    dz_int32_t appendY;
+    dz_int32_t newWidth;
+    dz_int32_t newHeight;
+
+    if( bottomMaxSide < rightMaxSide || (bottomMaxSide == rightMaxSide && bottomArea < rightArea) || (bottomMaxSide == rightMaxSide && bottomArea == rightArea && bottomSideDelta < rightSideDelta) )
+    {
+        appendX = appendXBottom;
+        appendY = appendYBottom;
+        newWidth = newWidthBottom;
+        newHeight = newHeightBottom;
+    }
+    else
+    {
+        appendX = appendXRight;
+        appendY = appendYRight;
+        newWidth = newWidthRight;
+        newHeight = newHeightRight;
+    }
+
+    typedef struct er_existing_texture_region_t
+    {
+        dz_texture_t * texture;
+        dz_float_t region[4];
+    } er_existing_texture_region_t;
+
+    std::vector<er_existing_texture_region_t> existingRegions;
+    existingRegions.reserve( textureCount );
+
+    for( dz_uint32_t index = 0; index != textureCount; ++index )
+    {
+        const dz_texture_t * texture = DZ_NULLPTR;
+        if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+        {
+            stbi_image_free( appendPixels );
+            stbi_image_free( atlasPixels );
+
+            return DZ_FAILURE;
+        }
+
+        er_existing_texture_region_t textureRegion;
+        textureRegion.texture = const_cast<dz_texture_t *>(texture);
+        __get_texture_region_pixels( texture, atlasWidth, atlasHeight, textureRegion.region );
+
+        existingRegions.push_back( textureRegion );
+    }
+
+    std::vector<dz_uint8_t> appendedPixels;
+    appendedPixels.resize( (dz_size_t)newWidth * (dz_size_t)newHeight * 4, 0 );
+
+    for( dz_int32_t row = 0; row != atlasHeight; ++row )
+    {
+        const dz_uint8_t * sourceRow = atlasPixels + ((dz_size_t)row * (dz_size_t)atlasWidth * 4);
+        dz_uint8_t * targetRow = appendedPixels.data() + ((dz_size_t)row * (dz_size_t)newWidth * 4);
+
+        std::memcpy( targetRow, sourceRow, (dz_size_t)atlasWidth * 4 );
+    }
+
+    for( dz_int32_t row = 0; row != appendHeight; ++row )
+    {
+        const dz_uint8_t * sourceRow = appendPixels + ((dz_size_t)row * (dz_size_t)appendWidth * 4);
+        dz_uint8_t * targetRow = appendedPixels.data() + (((dz_size_t)(appendY + row) * (dz_size_t)newWidth + (dz_size_t)appendX) * 4);
+
+        std::memcpy( targetRow, sourceRow, (dz_size_t)appendWidth * 4 );
+    }
+
+    stbi_image_free( appendPixels );
+    stbi_image_free( atlasPixels );
+
+    std::vector<dz_uint8_t> appendedAtlasBuffer;
+    if( __encode_png_rgba( appendedPixels.data(), newWidth, newHeight, &appendedAtlasBuffer ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_int32_t appendedTextureWidth;
+    dz_int32_t appendedTextureHeight;
+    GLuint appendedTextureId = dz_render_make_texture_from_memory( appendedAtlasBuffer.data(), appendedAtlasBuffer.size(), &appendedTextureWidth, &appendedTextureHeight );
+
+    if( appendedTextureId == 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    for( er_existing_texture_region_t & existingRegion : existingRegions )
+    {
+        __set_texture_region_pixels( existingRegion.texture, appendedTextureWidth, appendedTextureHeight, existingRegion.region );
+    }
+
+    dz_render_delete_texture( m_textureId );
+
+    m_textureId = appendedTextureId;
+    m_textureWidth = appendedTextureWidth;
+    m_textureHeight = appendedTextureHeight;
+    m_atlasBuffer.swap( appendedAtlasBuffer );
+
+    dz_atlas_set_surface( m_atlas, &m_textureId );
+
+    m_textureRegionSelecting = false;
+
+    return this->resetEffect();
+}
+//////////////////////////////////////////////////////////////////////////
+static ImVec2 __screen_to_atlas_pixel( const ImVec2 & _screenPosition, const ImVec2 & _imageMin, dz_float_t _imageWidth, dz_float_t _imageHeight, int _atlasWidth, int _atlasHeight )
+{
+    ImVec2 point( 0.f, 0.f );
+
+    if( _imageWidth <= 0.f || _imageHeight <= 0.f || _atlasWidth <= 0 || _atlasHeight <= 0 )
+    {
+        return point;
+    }
+
+    point.x = (_screenPosition.x - _imageMin.x) / _imageWidth * (dz_float_t)_atlasWidth;
+    point.y = (_screenPosition.y - _imageMin.y) / _imageHeight * (dz_float_t)_atlasHeight;
+
+    point.x = DZ_MAX( 0.f, DZ_MIN( point.x, (dz_float_t)_atlasWidth ) );
+    point.y = DZ_MAX( 0.f, DZ_MIN( point.y, (dz_float_t)_atlasHeight ) );
+
+    return point;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showMaterialData()
 {
     ImGui::Spacing();
@@ -2854,14 +3578,22 @@ dz_result_t editor::showMaterialData()
                 return DZ_FAILURE;
             }
 
-            dz_texture_set_width( tempTexture, (dz_float_t)m_textureWidth );
-            dz_texture_set_height( tempTexture, (dz_float_t)m_textureHeight );
+            m_texture = tempTexture;
+            m_textureIndex = 0;
 
-            dz_texture_set_trim_size( tempTexture, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight );
+            dz_float_t region[4] = {0.f, 0.f, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight};
+            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
 
-            dz_atlas_add_texture( m_atlas, tempTexture );
+            if( dz_atlas_add_texture( m_atlas, tempTexture ) == DZ_FAILURE )
+            {
+                dz_texture_destroy( m_service, tempTexture );
+
+                return DZ_FAILURE;
+            }
 
             dz_material_set_mode( m_material, DZ_MATERIAL_MODE_TEXTURE );
+
+            m_textureRegionSelecting = false;
 
             FILE * f = fopen( texturePath, "rb" );
             fseek( f, 0L, SEEK_END );
@@ -2873,6 +3605,8 @@ dz_result_t editor::showMaterialData()
             fclose( f );
 
             free( texturePath );
+
+            this->resetEffect();
         }
         else if( result == NFD_CANCEL )
         {
@@ -2884,7 +3618,363 @@ dz_result_t editor::showMaterialData()
         }
     }
 
-    ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight ) );
+    if( m_textureId != 0 )
+    {
+        ImGui::SameLine();
+
+        if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_APPEND ) == true )
+        {
+            nfdchar_t * texturePath = NULL;
+            nfdresult_t result = NFD_OpenDialog( NULL, NULL, &texturePath );
+
+            if( result == NFD_OKAY )
+            {
+                puts( "Success!" );
+                puts( texturePath );
+
+                if( this->appendTextureToAtlas( texturePath ) == DZ_FAILURE )
+                {
+                    free( texturePath );
+
+                    return DZ_FAILURE;
+                }
+
+                free( texturePath );
+            }
+            else if( result == NFD_CANCEL )
+            {
+                puts( "User pressed cancel." );
+            }
+            else
+            {
+                printf( "Error: %s\n", NFD_GetError() );
+            }
+        }
+    }
+
+    if( m_textureId != 0 && m_textureWidth > 0 && m_textureHeight > 0 )
+    {
+        dz_uint32_t textureCount = dz_atlas_get_texture_count( m_atlas );
+
+        if( textureCount == 0 )
+        {
+            return DZ_SUCCESSFUL;
+        }
+
+        if( __select_atlas_texture( m_atlas, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+        {
+            return DZ_SUCCESSFUL;
+        }
+
+        ImGui::Text( "%s %u", ER_WINDOW_MATERIAL_TEXTURE_REGIONS_LABEL, textureCount );
+
+        if( textureCount < ER_ATLAS_TEXTURE_MAX && ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_ADD_REGION ) == true )
+        {
+            dz_float_t textureWeight = 1.f;
+            if( dz_atlas_get_texture_random_weight( m_atlas, (dz_uint32_t)m_textureIndex, &textureWeight ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            dz_texture_t * texture;
+            if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            __copy_texture_data( texture, m_texture );
+
+            if( dz_atlas_add_texture( m_atlas, texture ) == DZ_FAILURE )
+            {
+                dz_texture_destroy( m_service, texture );
+
+                return DZ_FAILURE;
+            }
+
+            if( dz_atlas_set_texture_random_weight( m_atlas, textureCount, textureWeight ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            m_textureIndex = (int)textureCount;
+            m_texture = texture;
+            m_textureRegionSelecting = false;
+
+            dz_material_set_mode( m_material, DZ_MATERIAL_MODE_TEXTURE );
+            this->resetEffect();
+
+            textureCount = dz_atlas_get_texture_count( m_atlas );
+        }
+
+        if( textureCount > 1 )
+        {
+            ImGui::SameLine();
+
+            if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_REMOVE_REGION ) == true )
+            {
+                typedef struct er_atlas_texture_data_t
+                {
+                    const dz_texture_t * texture;
+                    dz_float_t random_weight;
+                } er_atlas_texture_data_t;
+
+                std::vector<er_atlas_texture_data_t> textures;
+                textures.reserve( textureCount - 1 );
+
+                const dz_texture_t * removeTexture = DZ_NULLPTR;
+
+                for( dz_uint32_t index = 0; index != textureCount; ++index )
+                {
+                    const dz_texture_t * texture = DZ_NULLPTR;
+                    if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+
+                    dz_float_t randomWeight;
+                    if( dz_atlas_get_texture_random_weight( m_atlas, index, &randomWeight ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+
+                    if( (int)index == m_textureIndex )
+                    {
+                        removeTexture = texture;
+                    }
+                    else
+                    {
+                        er_atlas_texture_data_t textureData = {texture, randomWeight};
+                        textures.push_back( textureData );
+                    }
+                }
+
+                const dz_texture_t * popTexture = DZ_NULLPTR;
+                while( dz_atlas_pop_texture( m_atlas, &popTexture ) == DZ_SUCCESSFUL )
+                {
+                }
+
+                if( removeTexture != DZ_NULLPTR )
+                {
+                    dz_texture_destroy( m_service, removeTexture );
+                }
+
+                for( const er_atlas_texture_data_t & textureData : textures )
+                {
+                    if( dz_atlas_add_texture( m_atlas, textureData.texture ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+
+                    const dz_uint32_t textureIndex = dz_atlas_get_texture_count( m_atlas ) - 1;
+                    if( dz_atlas_set_texture_random_weight( m_atlas, textureIndex, textureData.random_weight ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+                }
+
+                textureCount = dz_atlas_get_texture_count( m_atlas );
+
+                if( m_textureIndex >= (int)textureCount )
+                {
+                    m_textureIndex = (int)textureCount - 1;
+                }
+
+                if( __select_atlas_texture( m_atlas, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                m_textureRegionSelecting = false;
+                this->resetEffect();
+            }
+        }
+
+        ImGui::SameLine();
+
+        if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_OPTIMIZE_ATLAS ) == true )
+        {
+            if( this->optimizeAtlas() == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            textureCount = dz_atlas_get_texture_count( m_atlas );
+        }
+
+        bool weightChanged = false;
+
+        for( dz_uint32_t index = 0; index != textureCount; ++index )
+        {
+            const dz_texture_t * texture = DZ_NULLPTR;
+            if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            char label[32];
+            snprintf( label, sizeof( label ), "Region %u", index + 1 );
+
+            ImGui::PushID( (int)index );
+
+            if( ImGui::Selectable( label, (int)index == m_textureIndex, 0, ImVec2( 100.f, 0.f ) ) == true )
+            {
+                m_textureIndex = (int)index;
+                m_texture = const_cast<dz_texture_t *>(texture);
+                m_textureRegionSelecting = false;
+            }
+
+            ImGui::SameLine();
+
+            dz_float_t weight;
+            if( dz_atlas_get_texture_random_weight( m_atlas, index, &weight ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            const dz_float_t weightMax = DZ_MAX( 10.f, weight );
+
+            ImGui::SetNextItemWidth( 180.f );
+            if( ImGui::SliderFloat( ER_WINDOW_MATERIAL_TEXTURE_WEIGHT_LABEL, &weight, 0.f, weightMax, "%.2f" ) == true )
+            {
+                if( dz_atlas_set_texture_random_weight( m_atlas, index, weight ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                weightChanged = true;
+            }
+
+            ImGui::PopID();
+        }
+
+        if( weightChanged == true )
+        {
+            this->resetEffect();
+        }
+
+        dz_float_t region[4];
+        __get_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+
+        bool regionChanged = false;
+
+        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_X_LABEL, &region[0], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_Y_LABEL, &region[1], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_WIDTH_LABEL, &region[2], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_HEIGHT_LABEL, &region[3], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+
+        if( regionChanged == true )
+        {
+            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+        }
+
+        if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_RESET_UV ) == true )
+        {
+            region[0] = 0.f;
+            region[1] = 0.f;
+            region[2] = (dz_float_t)m_textureWidth;
+            region[3] = (dz_float_t)m_textureHeight;
+
+            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+
+            m_textureRegionSelecting = false;
+        }
+
+        dz_float_t previewWidth = (dz_float_t)m_textureWidth;
+        const dz_float_t availableWidth = ImGui::GetContentRegionAvail().x;
+
+        if( availableWidth > 0.f && previewWidth > availableWidth )
+        {
+            previewWidth = availableWidth;
+        }
+
+        const dz_float_t previewHeight = previewWidth * (dz_float_t)m_textureHeight / (dz_float_t)m_textureWidth;
+
+        ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( previewWidth, previewHeight ) );
+
+        const ImVec2 imageMin = ImGui::GetItemRectMin();
+        const ImVec2 imageMax = ImGui::GetItemRectMax();
+
+        const dz_float_t imageWidth = imageMax.x - imageMin.x;
+        const dz_float_t imageHeight = imageMax.y - imageMin.y;
+
+        if( ImGui::IsItemHovered() == true && ImGui::IsMouseDoubleClicked( 0 ) == true )
+        {
+            const ImVec2 click = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
+
+            dz_int32_t alpha_x;
+            dz_int32_t alpha_y;
+            dz_int32_t alpha_width;
+            dz_int32_t alpha_height;
+
+            if( dz_render_find_alpha_bounds_near_from_memory( m_atlasBuffer.data(), m_atlasBuffer.size(), (dz_int32_t)click.x, (dz_int32_t)click.y, 1, &alpha_x, &alpha_y, &alpha_width, &alpha_height ) == DZ_SUCCESSFUL )
+            {
+                region[0] = (dz_float_t)alpha_x;
+                region[1] = (dz_float_t)alpha_y;
+                region[2] = (dz_float_t)alpha_width;
+                region[3] = (dz_float_t)alpha_height;
+
+                __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+            }
+
+            m_textureRegionSelecting = false;
+        }
+        else if( ImGui::IsItemHovered() == true && ImGui::IsMouseClicked( 0 ) == true )
+        {
+            m_textureRegionSelecting = true;
+            m_textureRegionSelectStart = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
+        }
+
+        if( m_textureRegionSelecting == true )
+        {
+            const ImVec2 current = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
+
+            region[0] = m_textureRegionSelectStart.x;
+            region[1] = m_textureRegionSelectStart.y;
+            region[2] = current.x - m_textureRegionSelectStart.x;
+            region[3] = current.y - m_textureRegionSelectStart.y;
+
+            m_textureRegionSelecting = ImGui::IsMouseDown( 0 );
+
+            if( region[2] != 0.f || region[3] != 0.f )
+            {
+                __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+            }
+        }
+
+        const dz_float_t scaleX = imageWidth / (dz_float_t)m_textureWidth;
+        const dz_float_t scaleY = imageHeight / (dz_float_t)m_textureHeight;
+
+        for( dz_uint32_t index = 0; index != textureCount; ++index )
+        {
+            const dz_texture_t * texture = DZ_NULLPTR;
+            if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            dz_float_t textureRegion[4];
+            __get_texture_region_pixels( texture, m_textureWidth, m_textureHeight, textureRegion );
+
+            const ImVec2 selectionMin( imageMin.x + textureRegion[0] * scaleX, imageMin.y + textureRegion[1] * scaleY );
+            const ImVec2 selectionMax( imageMin.x + (textureRegion[0] + textureRegion[2]) * scaleX, imageMin.y + (textureRegion[1] + textureRegion[3]) * scaleY );
+
+            if( (int)index == m_textureIndex )
+            {
+                ImGui::GetWindowDrawList()->AddRectFilled( selectionMin, selectionMax, IM_COL32( 255, 216, 64, 48 ) );
+                ImGui::GetWindowDrawList()->AddRect( selectionMin, selectionMax, IM_COL32( 255, 216, 64, 255 ) );
+            }
+            else
+            {
+                ImGui::GetWindowDrawList()->AddRect( selectionMin, selectionMax, IM_COL32( 64, 192, 255, 192 ) );
+            }
+        }
+
+        dz_float_t u[4];
+        dz_float_t v[4];
+        dz_texture_get_uv( m_texture, u, v );
+
+        ImGui::Text( "UV: %.4f %.4f - %.4f %.4f", u[0], v[0], u[2], v[2] );
+    }
 
     return DZ_SUCCESSFUL;
 }

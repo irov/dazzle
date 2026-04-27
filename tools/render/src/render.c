@@ -6,6 +6,8 @@
 
 #include "render/render.h"
 
+#include <stdlib.h>
+
 //////////////////////////////////////////////////////////////////////////
 static const char * __gl_get_error_string( GLenum _err )
 {
@@ -255,6 +257,229 @@ GLuint dz_render_make_texture_from_memory( const void * _buffer, dz_size_t _size
     *_out_height = height;
 
     return id;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __is_alpha_pixel( const dz_uint8_t * _data, dz_int32_t _width, dz_int32_t _comp, dz_int32_t _x, dz_int32_t _y )
+{
+    dz_int32_t alpha_offset;
+
+    switch( _comp )
+    {
+    case 2:
+        alpha_offset = 1;
+        break;
+    case 4:
+        alpha_offset = 3;
+        break;
+    default:
+        return DZ_FALSE;
+    }
+
+    const dz_size_t index = (((dz_size_t)_y * (dz_size_t)_width + (dz_size_t)_x) * (dz_size_t)_comp) + (dz_size_t)alpha_offset;
+
+    return _data[index] != 0 ? DZ_TRUE : DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __find_nearest_alpha_pixel( const dz_uint8_t * _data, dz_int32_t _width, dz_int32_t _height, dz_int32_t _comp, dz_int32_t _x, dz_int32_t _y, dz_int32_t * const _out_x, dz_int32_t * const _out_y )
+{
+    if( __is_alpha_pixel( _data, _width, _comp, _x, _y ) == DZ_TRUE )
+    {
+        *_out_x = _x;
+        *_out_y = _y;
+
+        return DZ_SUCCESSFUL;
+    }
+
+    const dz_int32_t max_radius = DZ_MAX( _width, _height );
+
+    for( dz_int32_t radius = 1; radius != max_radius; ++radius )
+    {
+        const dz_int32_t x0 = DZ_MAX( _x - radius, 0 );
+        const dz_int32_t y0 = DZ_MAX( _y - radius, 0 );
+        const dz_int32_t x1 = DZ_MIN( _x + radius, _width - 1 );
+        const dz_int32_t y1 = DZ_MIN( _y + radius, _height - 1 );
+
+        for( dz_int32_t x = x0; x <= x1; ++x )
+        {
+            if( __is_alpha_pixel( _data, _width, _comp, x, y0 ) == DZ_TRUE )
+            {
+                *_out_x = x;
+                *_out_y = y0;
+
+                return DZ_SUCCESSFUL;
+            }
+
+            if( y1 != y0 && __is_alpha_pixel( _data, _width, _comp, x, y1 ) == DZ_TRUE )
+            {
+                *_out_x = x;
+                *_out_y = y1;
+
+                return DZ_SUCCESSFUL;
+            }
+        }
+
+        for( dz_int32_t y = y0 + 1; y < y1; ++y )
+        {
+            if( __is_alpha_pixel( _data, _width, _comp, x0, y ) == DZ_TRUE )
+            {
+                *_out_x = x0;
+                *_out_y = y;
+
+                return DZ_SUCCESSFUL;
+            }
+
+            if( x1 != x0 && __is_alpha_pixel( _data, _width, _comp, x1, y ) == DZ_TRUE )
+            {
+                *_out_x = x1;
+                *_out_y = y;
+
+                return DZ_SUCCESSFUL;
+            }
+        }
+    }
+
+    return DZ_FAILURE;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_render_find_alpha_bounds_near_from_memory( const void * _buffer, dz_size_t _size, dz_int32_t _x, dz_int32_t _y, dz_int32_t _border, dz_int32_t * const _out_x, dz_int32_t * const _out_y, dz_int32_t * const _out_width, dz_int32_t * const _out_height )
+{
+    if( _buffer == DZ_NULLPTR || _size == 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_int32_t width;
+    dz_int32_t height;
+    dz_int32_t comp;
+
+    dz_uint8_t * data = stbi_load_from_memory( _buffer, (int)_size, &width, &height, &comp, STBI_default );
+
+    if( data == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( comp != 2 && comp != 4 )
+    {
+        stbi_image_free( data );
+
+        return DZ_FAILURE;
+    }
+
+    _x = DZ_MAX( 0, DZ_MIN( _x, width - 1 ) );
+    _y = DZ_MAX( 0, DZ_MIN( _y, height - 1 ) );
+
+    dz_int32_t seed_x;
+    dz_int32_t seed_y;
+
+    if( __find_nearest_alpha_pixel( data, width, height, comp, _x, _y, &seed_x, &seed_y ) == DZ_FAILURE )
+    {
+        stbi_image_free( data );
+
+        return DZ_FAILURE;
+    }
+
+    const dz_size_t pixel_count = (dz_size_t)width * (dz_size_t)height;
+
+    dz_uint8_t * visited = (dz_uint8_t *)calloc( pixel_count, sizeof( dz_uint8_t ) );
+
+    if( visited == DZ_NULLPTR )
+    {
+        stbi_image_free( data );
+
+        return DZ_FAILURE;
+    }
+
+    dz_size_t * stack = (dz_size_t *)malloc( pixel_count * sizeof( dz_size_t ) );
+
+    if( stack == DZ_NULLPTR )
+    {
+        free( visited );
+        stbi_image_free( data );
+
+        return DZ_FAILURE;
+    }
+
+    dz_int32_t min_x = width;
+    dz_int32_t min_y = height;
+    dz_int32_t max_x = -1;
+    dz_int32_t max_y = -1;
+
+    dz_size_t stack_count = 0;
+
+    const dz_size_t seed_index = (dz_size_t)seed_y * (dz_size_t)width + (dz_size_t)seed_x;
+    stack[stack_count++] = seed_index;
+    visited[seed_index] = 1U;
+
+    while( stack_count != 0 )
+    {
+        const dz_size_t index = stack[--stack_count];
+        const dz_int32_t x = (dz_int32_t)(index % (dz_size_t)width);
+        const dz_int32_t y = (dz_int32_t)(index / (dz_size_t)width);
+
+        min_x = DZ_MIN( min_x, x );
+        min_y = DZ_MIN( min_y, y );
+        max_x = DZ_MAX( max_x, x );
+        max_y = DZ_MAX( max_y, y );
+
+        for( dz_int32_t dy = -1; dy <= 1; ++dy )
+        {
+            for( dz_int32_t dx = -1; dx <= 1; ++dx )
+            {
+                if( dx == 0 && dy == 0 )
+                {
+                    continue;
+                }
+
+                const dz_int32_t nx = x + dx;
+                const dz_int32_t ny = y + dy;
+
+                if( nx < 0 || ny < 0 || nx >= width || ny >= height )
+                {
+                    continue;
+                }
+
+                const dz_size_t neighbor_index = (dz_size_t)ny * (dz_size_t)width + (dz_size_t)nx;
+
+                if( visited[neighbor_index] != 0U )
+                {
+                    continue;
+                }
+
+                visited[neighbor_index] = 1U;
+
+                if( __is_alpha_pixel( data, width, comp, nx, ny ) == DZ_FALSE )
+                {
+                    continue;
+                }
+
+                stack[stack_count++] = neighbor_index;
+            }
+        }
+    }
+
+    free( stack );
+    free( visited );
+    stbi_image_free( data );
+
+    if( max_x < min_x || max_y < min_y )
+    {
+        return DZ_FAILURE;
+    }
+
+    _border = DZ_MAX( _border, 0 );
+
+    min_x = DZ_MAX( min_x - _border, 0 );
+    min_y = DZ_MAX( min_y - _border, 0 );
+    max_x = DZ_MIN( max_x + _border, width - 1 );
+    max_y = DZ_MIN( max_y + _border, height - 1 );
+
+    *_out_x = min_x;
+    *_out_y = min_y;
+    *_out_width = max_x - min_x + 1;
+    *_out_height = max_y - min_y + 1;
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_render_delete_texture( GLuint _id )

@@ -82,6 +82,9 @@ protected:
     dz_result_t showEmitterData();
     dz_result_t showMaterialData();
 
+    dz_result_t optimizeAtlas();
+    dz_result_t appendTextureToAtlas( const char * _path );
+
     dz_result_t showContentPane();
     dz_result_t showContentPaneControls();
 
@@ -110,6 +113,7 @@ public:
 
     dz_atlas_t * m_atlas;
     dz_texture_t * m_texture;
+    int m_textureIndex;
     dz_material_t * m_material;
     dz_shape_t * m_shape;
     dz_emitter_t * m_emitter;
@@ -123,6 +127,9 @@ public:
 
     int m_textureWidth;
     int m_textureHeight;
+
+    bool m_textureRegionSelecting;
+    ImVec2 m_textureRegionSelectStart;
 
     std::vector<dz_uint8_t> m_atlasBuffer;
 
