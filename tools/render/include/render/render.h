@@ -44,6 +44,8 @@ typedef struct dz_render_desc_t
     GLuint shaderCurrentProgram;
     GLuint shaderColorProgram;
     GLuint shaderTextureProgram;
+
+    GLuint whiteTextureId;
 }dz_render_desc_t;
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_vertex_count, dz_uint16_t _max_index_count );

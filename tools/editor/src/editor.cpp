@@ -8,6 +8,9 @@
 #include "unzip.h"
 
 #ifdef _WIN32
+#   ifdef APIENTRY
+#       undef APIENTRY
+#   endif
 #   define USEWIN32IOAPI
 #   include "iowin32.h"
 #endif
@@ -24,24 +27,25 @@
 
 #include <algorithm>
 #include <cstring>
-#include <sstream>
 
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_window_type_e
 {
     ER_WINDOW_TYPE_EFFECT_DATA,
+    ER_WINDOW_TYPE_COMPOSER_DATA,
     ER_WINDOW_TYPE_SHAPE_DATA,
     ER_WINDOW_TYPE_AFFECTOR_DATA,
     ER_WINDOW_TYPE_EMITTER_DATA,
     ER_WINDOW_TYPE_MATERIAL_DATA,
+    ER_WINDOW_TYPE_ATLAS_DATA,
 
     __ER_WINDOW_TYPE_MAX__
 } er_window_type_e;
 //////////////////////////////////////////////////////////////////////////
-//static constexpr dz_float_t ER_WINDOW_WIDTH = 1024;  // aspect ratio 3:4
-//static constexpr dz_float_t ER_WINDOW_HEIGHT = 768;
-static constexpr dz_float_t ER_WINDOW_WIDTH = 1280;    // aspect ratio HD 720p
-static constexpr dz_float_t ER_WINDOW_HEIGHT = 720;
+//static constexpr dz_uint32_t ER_WINDOW_WIDTH = 1024;  // aspect ratio 3:4
+//static constexpr dz_uint32_t ER_WINDOW_HEIGHT = 768;
+static constexpr dz_uint32_t ER_WINDOW_WIDTH = 1280;    // aspect ratio HD 720p
+static constexpr dz_uint32_t ER_WINDOW_HEIGHT = 720;
 static constexpr dz_float_t ER_TIMELINE_PANEL_WIDTH = 430.f;
 static constexpr int32_t ER_CONTENT_CONTROLS_PANE_LINES_COUNT = 5;
 static constexpr ImGuiID ER_CURVE_ID_NONE = 0;
@@ -50,6 +54,10 @@ static constexpr dz_float_t ER_CURVE_PLOT_BORDER_SIZE = 8.f;
 static constexpr dz_float_t ER_CURVE_PLOT_HOVER_RADIUS = 4.f;
 static constexpr dz_float_t ER_CURVE_PLOT_HOVER_RADIUS_POW_2 = ER_CURVE_PLOT_HOVER_RADIUS * ER_CURVE_PLOT_HOVER_RADIUS;
 static constexpr dz_uint32_t ER_ATLAS_TEXTURE_MAX = 64;
+static constexpr dz_float_t ER_LAYER_GIZMO_HIT_RADIUS = 14.f;
+static constexpr dz_float_t ER_LAYER_GIZMO_HIT_RADIUS_POW_2 = ER_LAYER_GIZMO_HIT_RADIUS * ER_LAYER_GIZMO_HIT_RADIUS;
+static constexpr dz_float_t ER_LAYER_GIZMO_SELECTED_RADIUS = 6.f;
+static constexpr dz_float_t ER_LAYER_GIZMO_RADIUS = 4.f;
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME = "particle.png";
 //////////////////////////////////////////////////////////////////////////
@@ -71,21 +79,52 @@ static const char * ER_CURVE_BTN_ZOOM_DOWN_TEXT = "-";
 static const char * ER_CURVE_COMBO_MODE_LABEL_TEXT = "Mode";
 static const char * ER_WINDOW_EFFECT_TITLE = "Effect data:";
 static const char * ER_WINDOW_EFFECT_SEED_TEXT = "Seed";
+static const char * ER_WINDOW_EFFECT_LIFE_TEXT = "Life";
+static const char * ER_WINDOW_COMPOSER_TITLE = "Composer";
+static const char * ER_WINDOW_COMPOSER_LAYER_MATERIAL_LABEL = "Material";
+static const char * ER_WINDOW_COMPOSER_LAYER_SHAPE_LABEL = "Shape";
+static const char * ER_WINDOW_COMPOSER_LAYER_EMITTER_LABEL = "Emitter";
+static const char * ER_WINDOW_COMPOSER_LAYER_AFFECTOR_LABEL = "Affector";
+static const char * ER_WINDOW_COMPOSER_LAYER_X_LABEL = "Layer X";
+static const char * ER_WINDOW_COMPOSER_LAYER_Y_LABEL = "Layer Y";
+static const char * ER_WINDOW_COMPOSER_LAYER_ANGLE_LABEL = "Layer Rotation";
+static const char * ER_WINDOW_COMPOSER_LAYER_LIFE_LABEL = "Layer Life";
+static const char * ER_WINDOW_COMPOSER_LAYER_SEED_LABEL = "Layer Seed";
+static const char * ER_WINDOW_COMPOSER_LAYER_NAME_LABEL = "Layer Name";
+static const char * ER_WINDOW_COMPOSER_LAYER_TRIGGERS_TITLE = "Layer Trigger";
+static const char * ER_WINDOW_RESOURCE_NAME_LABEL = "Name";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_EVENT_LABEL = "Type";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_SOURCE_LABEL = "Source Layer";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_TIME_LABEL = "Trigger Time";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_PROBABILITY_LABEL = "Probability";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_COUNT_MIN_LABEL = "Spawn Count Min";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_COUNT_MAX_LABEL = "Spawn Count Max";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_DELAY_MIN_LABEL = "Delay Min";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_DELAY_MAX_LABEL = "Delay Max";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_INHERIT_POSITION_LABEL = "Inherit Position";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_INHERIT_ANGLE_LABEL = "Inherit Angle";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_INHERIT_VELOCITY_LABEL = "Inherit Velocity";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_OFFSET_X_LABEL = "Offset X";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_OFFSET_Y_LABEL = "Offset Y";
+static const char * ER_WINDOW_COMPOSER_TRIGGER_ANGLE_OFFSET_LABEL = "Angle Offset";
 static const char * ER_WINDOW_SHAPE_TITLE = "Shape timelines:";
 static const char * ER_WINDOW_COMBO_SHAPE_TYPE_TEXT = "Shape type";
 static const char * ER_WINDOW_AFFECTOR_TITLE = "Affector timelines:";
 static const char * ER_WINDOW_EMITTER_TITLE = "Emitter timelines:";
 static const char * ER_WINDOW_MATERIAL_TITLE = "Material data";
 static const char * ER_WINDOW_MATERIAL_COMBO_BLEND_MODE_TEXT = "Blend mode";
+static const char * ER_WINDOW_MATERIAL_COMBO_MODE_TEXT = "Mode";
+static const char * ER_WINDOW_MATERIAL_UV_INDEX_LABEL = "UV";
+static const char * ER_WINDOW_MATERIAL_UV_COUNT_LABEL = "UV Count";
+static const char * ER_WINDOW_ATLAS_TITLE = "Atlas data";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_TITLE = "Texture";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL = "Size:";
-static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_BROWSE = "Browse";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_APPEND = "Append Texture";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_ADD_REGION = "Add Region";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_REMOVE_REGION = "Remove Region";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_OPTIMIZE_ATLAS = "Optimize Atlas";
+static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_CLEAR_ATLAS = "Clear Atlas";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_REGIONS_LABEL = "Regions:";
-static const char * ER_WINDOW_MATERIAL_TEXTURE_WEIGHT_LABEL = "Weight";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_BTN_RESET_UV = "Reset UV";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_REGION_X_LABEL = "Region X";
 static const char * ER_WINDOW_MATERIAL_TEXTURE_REGION_Y_LABEL = "Region Y";
@@ -100,16 +139,35 @@ static const char * ER_WINDOW_CONTROLS_TIME_PREFIX_TEXT = "Time:";
 static const char * ER_WINDOW_CONTROLS_INPUT_LIFE_TEXT = "Life";
 static const char * ER_WINDOW_CONTROLS_BTN_RESET_CAMERA_TEXT = "Reset camera";
 static const char * ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT = "Camera move/scroll: <Space> + Mouse";
+static const char * ER_WINDOW_CONTROLS_SHOW_LAYER_GIZMOS_TEXT = "Layer Gizmos";
+static const char * ER_WINDOW_CONTROLS_SHOW_EFFECT_CENTER_TEXT = "Effect Center";
 static const char * ER_WINDOW_CONTROLS_EMIT_STATES_LABEL_TEXT = "Emitter states:";
 static const char * ER_WINDOW_CONTROLS_EMIT_COMPLETE_STATE_TEXT = "[Emit complete]";
 static const char * ER_WINDOW_CONTROLS_PARTICLE_COMPLETE_STATE_TEXT = "[Particle complete]";
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_WINDOW_TYPE_NAMES[] = {
     "Effect",            //ER_WINDOW_TYPE_EFFECT_DATA
+    "Composer",          //ER_WINDOW_TYPE_COMPOSER_DATA
     "Shape",             //ER_WINDOW_TYPE_SHAPE_DATA
     "Affector",          //ER_WINDOW_TYPE_AFFECTOR_DATA
     "Emitter",           //ER_WINDOW_TYPE_EMITTER_DATA
     "Material",          //ER_WINDOW_TYPE_MATERIAL_DATA
+    "Atlas",             //ER_WINDOW_TYPE_ATLAS_DATA
+};
+//////////////////////////////////////////////////////////////////////////
+static const char * ER_MATERIAL_MODE_NAMES[] = {
+    "Solid",             //DZ_MATERIAL_MODE_SOLID
+    "Texture",           //DZ_MATERIAL_MODE_TEXTURE
+    "Sequence",          //DZ_MATERIAL_MODE_SEQUENCE
+};
+//////////////////////////////////////////////////////////////////////////
+static const char * ER_EFFECT_EVENT_NAMES[] = {
+    "Effect Start",      //DZ_EFFECT_EVENT_EFFECT_START
+    "Time",              //DZ_EFFECT_EVENT_TIME
+    "Layer Emit Complete", //DZ_EFFECT_EVENT_LAYER_EMIT_COMPLETE
+    "Layer Particle Complete", //DZ_EFFECT_EVENT_LAYER_PARTICLE_COMPLETE
+    "Particle Death",    //DZ_EFFECT_EVENT_PARTICLE_DEATH
+    "Custom",            //DZ_EFFECT_EVENT_CUSTOM
 };
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_TIMELINE_KEY_MODE_NAMES[] = {
@@ -296,8 +354,13 @@ static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<dz_
         return DZ_FAILURE;
     }
 
-    void * content_buffer = malloc( file_info.uncompressed_size );
-    size_t content_size = file_info.uncompressed_size;
+    if( file_info.uncompressed_size > (ZPOS64_T)((uInt)-1) )
+    {
+        return DZ_FAILURE;
+    }
+
+    const uInt content_size = (uInt)file_info.uncompressed_size;
+    void * content_buffer = malloc( (size_t)content_size );
 
     unzReadCurrentFile( _uf, content_buffer, content_size );
 
@@ -495,7 +558,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
         }
 
         dz_timeline_interpolate_set_key( interpolate, nextKey );
-        
+
         if( dz_timeline_key_set_interpolate( prevKey, interpolate ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -596,7 +659,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
         }
 
         dz_timeline_interpolate_set_key( interpolate, nextKey );
-        
+
         if( dz_timeline_key_set_interpolate( prevKey, interpolate ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -715,6 +778,8 @@ static void __glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, i
     }
 }
 //////////////////////////////////////////////////////////////////////////
+static void __editor_set_default_name( er_editor_instance_info_t * const _info, dz_uint32_t * const _nextId, const char * _prefix, dz_uint32_t _index );
+//////////////////////////////////////////////////////////////////////////
 editor::editor()
     : m_windowWidth( ER_WINDOW_WIDTH )
     , m_windowHeight( ER_WINDOW_HEIGHT )
@@ -726,7 +791,10 @@ editor::editor()
 
     , m_showDebugInfo( false )
     , m_showCanvasLines( false )
+    , m_showLayerGizmos( true )
+    , m_showEffectCenter( true )
     , m_pause( false )
+    , m_windowType( ER_WINDOW_TYPE_COMPOSER_DATA )
 
     , m_textureWidth( 0 )
     , m_textureHeight( 0 )
@@ -743,11 +811,25 @@ editor::editor()
     , m_shape( nullptr )
     , m_emitter( nullptr )
     , m_affector( nullptr )
+    , m_materialCount( 0 )
+    , m_shapeCount( 0 )
+    , m_emitterCount( 0 )
+    , m_affectorCount( 0 )
+    , m_materialIndex( 0 )
+    , m_shapeIndex( 0 )
+    , m_emitterIndex( 0 )
+    , m_affectorIndex( 0 )
 
-    , m_loop( DZ_FALSE )
+    , m_loop( DZ_TRUE )
     , m_time_scale( 1.f )
 
     , m_effect( nullptr )
+    , m_layerIndex( 0 )
+    , m_triggerIndex( 0 )
+    , m_nextEditorInstanceId( 1 )
+    , m_layerGizmoDragging( false )
+    , m_layerGizmoDragIndex( 0 )
+    , m_layerGizmoDragOffset( 0.f, 0.f )
     , m_instance( nullptr )
     , m_fwWindow( nullptr )
 
@@ -847,8 +929,6 @@ dz_result_t editor::init()
             return DZ_FAILURE;
         }
 
-        dz_atlas_add_texture( m_atlas, m_texture );
-
         if( dz_material_create( m_service, &m_material, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -858,6 +938,11 @@ dz_result_t editor::init()
 
         dz_material_set_blend( m_material, blend_type );
         dz_material_set_atlas( m_material, m_atlas );
+
+        if( dz_material_add_texture( m_material, m_texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
 
         // shape data
         if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
@@ -872,7 +957,7 @@ dz_result_t editor::init()
             data.type = static_cast<dz_shape_timeline_type_e>(index);
             data.name = ER_SHAPE_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; 
+            dz_timeline_limit_status_e status;
             dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_shape_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
@@ -906,7 +991,7 @@ dz_result_t editor::init()
             data.type = static_cast<dz_emitter_timeline_type_e>(index);
             data.name = ER_EMITTER_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; 
+            dz_timeline_limit_status_e status;
             dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_emitter_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
@@ -938,7 +1023,7 @@ dz_result_t editor::init()
             data.type = static_cast<dz_affector_timeline_type_e>(index);
             data.name = ER_AFFECTOR_DATA_NAMES[index];
 
-            dz_timeline_limit_status_e status; 
+            dz_timeline_limit_status_e status;
             dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
             dz_affector_timeline_get_limit( data.type, &status, &min, &max, &default_value, &factor );
 
@@ -957,11 +1042,56 @@ dz_result_t editor::init()
             data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
         }
 
-        // emitter
-        if( dz_effect_create( m_service, &m_effect, m_material, m_shape, m_emitter, m_affector, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
+        if( dz_effect_create( m_service, &m_effect, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
+
+        dz_effect_set_atlas( m_effect, m_atlas );
+
+        dz_effect_layer_desc_t layer;
+        layer.material = m_material;
+        layer.shape = m_shape;
+        layer.emitter = m_emitter;
+        layer.affector = m_affector;
+        layer.x = 0.f;
+        layer.y = 0.f;
+        layer.angle = 0.f;
+        layer.life = 5.f;
+        layer.seed = 0;
+
+        if( dz_effect_add_layer( m_effect, &layer, &m_layerIndex ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        __editor_set_default_name( m_layerInfos + m_layerIndex, &m_nextEditorInstanceId, "Layer", m_layerIndex );
+
+        this->rebuildResourceLists();
+
+        dz_effect_trigger_desc_t trigger;
+        trigger.event_type = DZ_EFFECT_EVENT_EFFECT_START;
+        trigger.source_layer_index = DZ_EFFECT_LAYER_NONE;
+        trigger.target_layer_index = m_layerIndex;
+        trigger.time = 0.f;
+        trigger.probability = 1.f;
+        trigger.spawn_count_min = 1;
+        trigger.spawn_count_max = 1;
+        trigger.delay_min = 0.f;
+        trigger.delay_max = 0.f;
+        trigger.inherit_position = DZ_FALSE;
+        trigger.inherit_angle = DZ_FALSE;
+        trigger.inherit_velocity = DZ_FALSE;
+        trigger.offset_x = 0.f;
+        trigger.offset_y = 0.f;
+        trigger.angle_offset = 0.f;
+
+        if( dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        __editor_set_default_name( m_triggerInfos + m_triggerIndex, &m_nextEditorInstanceId, "Trigger", m_triggerIndex );
 
         if( dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR ) == DZ_FAILURE )
         {
@@ -1032,18 +1162,33 @@ dz_result_t editor::update( double _time )
                 return DZ_FAILURE;
             }
 
-            // left panel
-            static int selected = ER_WINDOW_TYPE_EFFECT_DATA;
             {
-                ImGui::BeginChild( "LEFT_PANEL", ImVec2( 150, 0 ), true );
+                ImGui::BeginChild( "CATEGORY_BAR", ImVec2( 0.f, ImGui::GetFrameHeightWithSpacing() + 8.f ), false, ImGuiWindowFlags_NoScrollbar );
 
                 for( int32_t selectableIdx = 0; selectableIdx < IM_ARRAYSIZE( ER_WINDOW_TYPE_NAMES ); selectableIdx++ )
                 {
-                    const bool isSelected = selected == selectableIdx;
-                    if( ImGui::Selectable( ER_WINDOW_TYPE_NAMES[selectableIdx], isSelected ) )
+                    const bool isSelected = m_windowType == selectableIdx;
+                    if( ImGui::Selectable( ER_WINDOW_TYPE_NAMES[selectableIdx], isSelected, 0, ImVec2( 96.f, 0.f ) ) )
                     {
-                        selected = selectableIdx;
+                        m_windowType = selectableIdx;
                     }
+
+                    if( selectableIdx + 1 < IM_ARRAYSIZE( ER_WINDOW_TYPE_NAMES ) )
+                    {
+                        ImGui::SameLine();
+                    }
+                }
+
+                ImGui::EndChild();
+            }
+
+            // left panel
+            {
+                ImGui::BeginChild( "INSTANCE_SELECT", ImVec2( 190.f, 0.f ), true );
+
+                if( this->showResourceList( m_windowType ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
                 }
 
                 ImGui::EndChild();
@@ -1057,11 +1202,19 @@ dz_result_t editor::update( double _time )
                 // elements
                 ImGui::BeginChild( "WINDOW_SELECT", ImVec2( ER_TIMELINE_PANEL_WIDTH, 0.f ), true );
 
-                switch( selected )
+                switch( m_windowType )
                 {
                 case ER_WINDOW_TYPE_EFFECT_DATA:
                     {
                         if( this->showEffectData() == DZ_FAILURE )
+                        {
+                            return DZ_FAILURE;
+                        }
+                    }
+                    break;
+                case ER_WINDOW_TYPE_COMPOSER_DATA:
+                    {
+                        if( this->showComposerData() == DZ_FAILURE )
                         {
                             return DZ_FAILURE;
                         }
@@ -1086,6 +1239,14 @@ dz_result_t editor::update( double _time )
                 case ER_WINDOW_TYPE_EMITTER_DATA:
                     {
                         if( this->showEmitterData() == DZ_FAILURE )
+                        {
+                            return DZ_FAILURE;
+                        }
+                    }
+                    break;
+                case ER_WINDOW_TYPE_ATLAS_DATA:
+                    {
+                        if( this->showAtlasData() == DZ_FAILURE )
                         {
                             return DZ_FAILURE;
                         }
@@ -1209,6 +1370,579 @@ const ImVec2 & editor::getDzWindowSize() const
     return m_dzWindowSize;
 }
 //////////////////////////////////////////////////////////////////////////
+static void __normalize_texture_region_pixels( dz_float_t * const _region, int _atlasWidth, int _atlasHeight )
+{
+    if( _atlasWidth <= 0 || _atlasHeight <= 0 )
+    {
+        _region[0] = 0.f;
+        _region[1] = 0.f;
+        _region[2] = 0.f;
+        _region[3] = 0.f;
+
+        return;
+    }
+
+    dz_float_t x0 = _region[0];
+    dz_float_t y0 = _region[1];
+    dz_float_t x1 = _region[0] + _region[2];
+    dz_float_t y1 = _region[1] + _region[3];
+
+    if( x1 < x0 )
+    {
+        dz_float_t temp = x0;
+        x0 = x1;
+        x1 = temp;
+    }
+
+    if( y1 < y0 )
+    {
+        dz_float_t temp = y0;
+        y0 = y1;
+        y1 = temp;
+    }
+
+    x0 = DZ_MAX( 0.f, DZ_MIN( x0, (dz_float_t)_atlasWidth ) );
+    y0 = DZ_MAX( 0.f, DZ_MIN( y0, (dz_float_t)_atlasHeight ) );
+    x1 = DZ_MAX( 0.f, DZ_MIN( x1, (dz_float_t)_atlasWidth ) );
+    y1 = DZ_MAX( 0.f, DZ_MIN( y1, (dz_float_t)_atlasHeight ) );
+
+    if( x1 - x0 < 1.f )
+    {
+        if( x0 + 1.f <= (dz_float_t)_atlasWidth )
+        {
+            x1 = x0 + 1.f;
+        }
+        else
+        {
+            x0 = (dz_float_t)_atlasWidth - 1.f;
+            x1 = (dz_float_t)_atlasWidth;
+        }
+    }
+
+    if( y1 - y0 < 1.f )
+    {
+        if( y0 + 1.f <= (dz_float_t)_atlasHeight )
+        {
+            y1 = y0 + 1.f;
+        }
+        else
+        {
+            y0 = (dz_float_t)_atlasHeight - 1.f;
+            y1 = (dz_float_t)_atlasHeight;
+        }
+    }
+
+    _region[0] = x0;
+    _region[1] = y0;
+    _region[2] = x1 - x0;
+    _region[3] = y1 - y0;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __get_texture_region_pixels( const dz_texture_t * _texture, int _atlasWidth, int _atlasHeight, dz_float_t * const _region )
+{
+    dz_float_t u[4];
+    dz_float_t v[4];
+    dz_texture_get_uv( _texture, u, v );
+
+    _region[0] = u[0] * (dz_float_t)_atlasWidth;
+    _region[1] = v[0] * (dz_float_t)_atlasHeight;
+    _region[2] = (u[2] - u[0]) * (dz_float_t)_atlasWidth;
+    _region[3] = (v[2] - v[0]) * (dz_float_t)_atlasHeight;
+
+    __normalize_texture_region_pixels( _region, _atlasWidth, _atlasHeight );
+}
+//////////////////////////////////////////////////////////////////////////
+static void __set_texture_region_pixels( dz_texture_t * const _texture, int _atlasWidth, int _atlasHeight, dz_float_t * const _region )
+{
+    __normalize_texture_region_pixels( _region, _atlasWidth, _atlasHeight );
+
+    if( _atlasWidth <= 0 || _atlasHeight <= 0 )
+    {
+        dz_texture_set_width( _texture, 0.f );
+        dz_texture_set_height( _texture, 0.f );
+        dz_texture_set_trim_offset( _texture, 0.f, 0.f );
+        dz_texture_set_trim_size( _texture, 0.f, 0.f );
+
+        return;
+    }
+
+    const dz_float_t x0 = _region[0];
+    const dz_float_t y0 = _region[1];
+    const dz_float_t x1 = _region[0] + _region[2];
+    const dz_float_t y1 = _region[1] + _region[3];
+
+    const dz_float_t invWidth = 1.f / (dz_float_t)_atlasWidth;
+    const dz_float_t invHeight = 1.f / (dz_float_t)_atlasHeight;
+
+    const dz_float_t u[4] = {x0 * invWidth, x1 * invWidth, x1 * invWidth, x0 * invWidth};
+    const dz_float_t v[4] = {y0 * invHeight, y0 * invHeight, y1 * invHeight, y1 * invHeight};
+
+    dz_texture_set_uv( _texture, u, v );
+    dz_texture_set_width( _texture, _region[2] );
+    dz_texture_set_height( _texture, _region[3] );
+    dz_texture_set_trim_offset( _texture, 0.f, 0.f );
+    dz_texture_set_trim_size( _texture, _region[2], _region[3] );
+}
+//////////////////////////////////////////////////////////////////////////
+static void __copy_texture_data( dz_texture_t * const _target, const dz_texture_t * _source )
+{
+    dz_float_t u[4];
+    dz_float_t v[4];
+    dz_texture_get_uv( _source, u, v );
+    dz_texture_set_uv( _target, u, v );
+
+    dz_texture_set_width( _target, dz_texture_get_width( _source ) );
+    dz_texture_set_height( _target, dz_texture_get_height( _source ) );
+
+    dz_float_t trim_offset_x;
+    dz_float_t trim_offset_y;
+    dz_texture_get_trim_offset( _source, &trim_offset_x, &trim_offset_y );
+    dz_texture_set_trim_offset( _target, trim_offset_x, trim_offset_y );
+
+    dz_float_t trim_width;
+    dz_float_t trim_height;
+    dz_texture_get_trim_size( _source, &trim_width, &trim_height );
+    dz_texture_set_trim_size( _target, trim_width, trim_height );
+
+    dz_texture_set_sequence_delay( _target, dz_texture_get_sequence_delay( _source ) );
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __select_material_texture( dz_material_t * const _material, int * const _index, dz_texture_t ** const _texture )
+{
+    const dz_uint32_t textureCount = dz_material_get_texture_slot_count( _material );
+
+    if( textureCount == 0 )
+    {
+        *_index = 0;
+        *_texture = DZ_NULLPTR;
+
+        return DZ_FAILURE;
+    }
+
+    if( *_index < 0 )
+    {
+        *_index = 0;
+    }
+    else if( (dz_uint32_t)*_index >= textureCount )
+    {
+        *_index = (int)textureCount - 1;
+    }
+
+    const dz_texture_t * texture = DZ_NULLPTR;
+    if( dz_material_get_texture( _material, (dz_uint32_t)*_index, &texture ) == DZ_FAILURE )
+    {
+        *_texture = DZ_NULLPTR;
+
+        return DZ_FAILURE;
+    }
+
+    *_texture = const_cast<dz_texture_t *>(texture);
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+template<class T>
+static dz_uint32_t __resource_index_of( T * const * _resources, dz_uint32_t _count, const T * _resource )
+{
+    for( dz_uint32_t index = 0; index != _count; ++index )
+    {
+        if( _resources[index] == _resource )
+        {
+            return index;
+        }
+    }
+
+    return _count;
+}
+//////////////////////////////////////////////////////////////////////////
+template<class T>
+static dz_result_t __resource_push_unique( T ** const _resources, dz_uint32_t * const _count, T * _resource )
+{
+    if( _resource == DZ_NULLPTR )
+    {
+        return DZ_SUCCESSFUL;
+    }
+
+    for( dz_uint32_t index = 0; index != *_count; ++index )
+    {
+        if( _resources[index] == _resource )
+        {
+            return DZ_SUCCESSFUL;
+        }
+    }
+
+    if( *_count >= ER_EDITOR_RESOURCE_MAX )
+    {
+        return DZ_FAILURE;
+    }
+
+    _resources[(*_count)++] = _resource;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+template<class T>
+static void __resource_erase( T ** const _resources, er_editor_instance_info_t * const _infos, dz_uint32_t * const _count, dz_uint32_t _index )
+{
+    for( dz_uint32_t index = _index + 1; index != *_count; ++index )
+    {
+        _resources[index - 1] = _resources[index];
+        _infos[index - 1] = _infos[index];
+    }
+
+    --(*_count);
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __effect_uses_material( const dz_effect_t * _effect, const dz_material_t * _material )
+{
+    const dz_uint32_t layerCount = dz_effect_get_layer_count( _effect );
+
+    for( dz_uint32_t index = 0; index != layerCount; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.material == _material )
+        {
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __effect_uses_shape( const dz_effect_t * _effect, const dz_shape_t * _shape )
+{
+    const dz_uint32_t layerCount = dz_effect_get_layer_count( _effect );
+
+    for( dz_uint32_t index = 0; index != layerCount; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.shape == _shape )
+        {
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __effect_uses_emitter( const dz_effect_t * _effect, const dz_emitter_t * _emitter )
+{
+    const dz_uint32_t layerCount = dz_effect_get_layer_count( _effect );
+
+    for( dz_uint32_t index = 0; index != layerCount; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.emitter == _emitter )
+        {
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __effect_uses_affector( const dz_effect_t * _effect, const dz_affector_t * _affector )
+{
+    const dz_uint32_t layerCount = dz_effect_get_layer_count( _effect );
+
+    for( dz_uint32_t index = 0; index != layerCount; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.affector == _affector )
+        {
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __editor_set_default_name( er_editor_instance_info_t * const _info, dz_uint32_t * const _nextId, const char * _prefix, dz_uint32_t _index )
+{
+    _info->id = (*_nextId)++;
+    snprintf( _info->name, ER_EDITOR_NAME_MAX, "%s %u", _prefix, _index + 1 );
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __editor_name_exists( const er_editor_instance_info_t * _infos, dz_uint32_t _count, dz_uint32_t _skipIndex, const char * _name )
+{
+    for( dz_uint32_t index = 0; index != _count; ++index )
+    {
+        if( index == _skipIndex )
+        {
+            continue;
+        }
+
+        if( strcmp( _infos[index].name, _name ) == 0 )
+        {
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __editor_set_unique_name( er_editor_instance_info_t * const _infos, dz_uint32_t _count, dz_uint32_t _index, const char * _prefix, const char * _name )
+{
+    char baseName[ER_EDITOR_NAME_MAX];
+
+    if( _name == DZ_NULLPTR || _name[0] == '\0' )
+    {
+        snprintf( baseName, sizeof( baseName ), "%s %u", _prefix, _index + 1 );
+    }
+    else
+    {
+        snprintf( baseName, sizeof( baseName ), "%s", _name );
+    }
+
+    snprintf( _infos[_index].name, ER_EDITOR_NAME_MAX, "%s", baseName );
+
+    if( __editor_name_exists( _infos, _count, _index, _infos[_index].name ) == DZ_FALSE )
+    {
+        return;
+    }
+
+    for( dz_uint32_t suffix = 2; suffix != 10000; ++suffix )
+    {
+        snprintf( _infos[_index].name, ER_EDITOR_NAME_MAX, "%s %u", baseName, suffix );
+
+        if( __editor_name_exists( _infos, _count, _index, _infos[_index].name ) == DZ_FALSE )
+        {
+            return;
+        }
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+static bool __editor_name_input( const char * _label, er_editor_instance_info_t * const _infos, dz_uint32_t _count, dz_uint32_t _index, const char * _prefix )
+{
+    char name[ER_EDITOR_NAME_MAX];
+    snprintf( name, sizeof( name ), "%s", _infos[_index].name );
+
+    if( ImGui::InputText( _label, name, sizeof( name ) ) == false )
+    {
+        return false;
+    }
+
+    __editor_set_unique_name( _infos, _count, _index, _prefix, name );
+
+    return true;
+}
+//////////////////////////////////////////////////////////////////////////
+static jpp::array __editor_instance_infos_write( const er_editor_instance_info_t * _infos, dz_uint32_t _count )
+{
+    jpp::array array = jpp::make_array();
+
+    for( dz_uint32_t index = 0; index != _count; ++index )
+    {
+        jpp::object info = jpp::make_object();
+        info.set( "id", _infos[index].id );
+        info.set( "name", _infos[index].name );
+
+        array.push_back( info );
+    }
+
+    return array;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __editor_instance_infos_load( const jpp::object & _metadata, const char * _key, er_editor_instance_info_t * const _infos, dz_uint32_t _count, const char * _prefix, dz_uint32_t * const _maxId )
+{
+    jpp::object valuesObject;
+    if( _metadata.exist( _key, &valuesObject ) == false )
+    {
+        return;
+    }
+
+    jpp::array values = valuesObject;
+    const dz_uint32_t count = (dz_uint32_t)DZ_MIN( (dz_uint32_t)values.size(), _count );
+
+    for( dz_uint32_t index = 0; index != count; ++index )
+    {
+        jpp::object info = values[index];
+
+        const dz_uint32_t id = info.get( "id", _infos[index].id );
+        const char * name = info.get( "name", _infos[index].name );
+
+        _infos[index].id = id != 0 ? id : _infos[index].id;
+        __editor_set_unique_name( _infos, _count, index, _prefix, name );
+
+        if( *_maxId < _infos[index].id )
+        {
+            *_maxId = _infos[index].id;
+        }
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+static bool __resource_index_combo( const char * _label, const er_editor_instance_info_t * _infos, dz_uint32_t _count, dz_uint32_t _current, dz_uint32_t * const _selected )
+{
+    char preview[64];
+
+    if( _current < _count )
+    {
+        snprintf( preview, sizeof( preview ), "%s", _infos[_current].name );
+    }
+    else
+    {
+        snprintf( preview, sizeof( preview ), "None" );
+    }
+
+    bool changed = false;
+
+    if( ImGui::BeginCombo( _label, preview ) == true )
+    {
+        for( dz_uint32_t index = 0; index != _count; ++index )
+        {
+            char label[64];
+            snprintf( label, sizeof( label ), "%s", _infos[index].name );
+
+            const bool selected = index == _current;
+            if( ImGui::Selectable( label, selected ) == true )
+            {
+                *_selected = index;
+                changed = true;
+            }
+
+            if( selected == true )
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+
+        ImGui::EndCombo();
+    }
+
+    return changed;
+}
+//////////////////////////////////////////////////////////////////////////
+static bool __layer_index_combo( const char * _label, const er_editor_instance_info_t * _infos, dz_uint32_t _count, dz_bool_t _allowNone, dz_uint32_t _current, dz_uint32_t * const _selected )
+{
+    char preview[64];
+
+    if( _current == DZ_EFFECT_LAYER_NONE )
+    {
+        snprintf( preview, sizeof( preview ), "None" );
+    }
+    else if( _current < _count )
+    {
+        snprintf( preview, sizeof( preview ), "%s", _infos[_current].name );
+    }
+    else
+    {
+        snprintf( preview, sizeof( preview ), "Invalid" );
+    }
+
+    bool changed = false;
+
+    if( ImGui::BeginCombo( _label, preview ) == true )
+    {
+        if( _allowNone == DZ_TRUE )
+        {
+            const bool selected = _current == DZ_EFFECT_LAYER_NONE;
+            if( ImGui::Selectable( "None", selected ) == true )
+            {
+                *_selected = DZ_EFFECT_LAYER_NONE;
+                changed = true;
+            }
+
+            if( selected == true )
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+
+        for( dz_uint32_t index = 0; index != _count; ++index )
+        {
+            char label[64];
+            snprintf( label, sizeof( label ), "%s", _infos[index].name );
+
+            const bool selected = index == _current;
+            if( ImGui::Selectable( label, selected ) == true )
+            {
+                *_selected = index;
+                changed = true;
+            }
+
+            if( selected == true )
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+
+        ImGui::EndCombo();
+    }
+
+    return changed;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __find_first_layer_trigger( const dz_effect_t * _effect, dz_uint32_t _layerIndex, dz_uint32_t * const _triggerIndex )
+{
+    const dz_uint32_t triggerCount = dz_effect_get_trigger_count( _effect );
+
+    for( dz_uint32_t index = 0; index != triggerCount; ++index )
+    {
+        dz_effect_trigger_desc_t trigger;
+        if( dz_effect_get_trigger( _effect, index, &trigger ) == DZ_FAILURE )
+        {
+            continue;
+        }
+
+        if( trigger.target_layer_index == _layerIndex )
+        {
+            *_triggerIndex = index;
+
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __trigger_event_uses_source_layer( dz_effect_event_type_e _eventType )
+{
+    switch( _eventType )
+    {
+    case DZ_EFFECT_EVENT_LAYER_EMIT_COMPLETE:
+    case DZ_EFFECT_EVENT_LAYER_PARTICLE_COMPLETE:
+    case DZ_EFFECT_EVENT_PARTICLE_DEATH:
+        return DZ_TRUE;
+    case DZ_EFFECT_EVENT_EFFECT_START:
+    case DZ_EFFECT_EVENT_TIME:
+    case DZ_EFFECT_EVENT_CUSTOM:
+    case __DZ_EFFECT_EVENT_MAX__:
+    default:
+        break;
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __trigger_event_uses_time( dz_effect_event_type_e _eventType )
+{
+    return _eventType == DZ_EFFECT_EVENT_TIME ? DZ_TRUE : DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __trigger_event_uses_inherit( dz_effect_event_type_e _eventType )
+{
+    return __trigger_event_uses_source_layer( _eventType );
+}
+//////////////////////////////////////////////////////////////////////////
+static void __make_default_layer_trigger( dz_effect_trigger_desc_t * const _trigger, dz_uint32_t _layerIndex )
+{
+    _trigger->event_type = DZ_EFFECT_EVENT_EFFECT_START;
+    _trigger->source_layer_index = DZ_EFFECT_LAYER_NONE;
+    _trigger->target_layer_index = _layerIndex;
+    _trigger->time = 0.f;
+    _trigger->probability = 1.f;
+    _trigger->spawn_count_min = 1;
+    _trigger->spawn_count_max = 1;
+    _trigger->delay_min = 0.f;
+    _trigger->delay_max = 0.f;
+    _trigger->inherit_position = DZ_FALSE;
+    _trigger->inherit_angle = DZ_FALSE;
+    _trigger->inherit_velocity = DZ_FALSE;
+    _trigger->offset_x = 0.f;
+    _trigger->offset_y = 0.f;
+    _trigger->angle_offset = 0.f;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t editor::resetEffect()
 {
     dz_shape_set_type( m_shape, m_shapeType );
@@ -1218,6 +1952,668 @@ dz_result_t editor::resetEffect()
     dz_instance_emit_resume( m_instance );
 
     return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::createDefaultMaterial( dz_material_t ** const _material )
+{
+    if( m_atlas == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_material_t * material;
+    if( dz_material_create( m_service, &material, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_material_set_blend( material, dz_material_get_default_blend() );
+    dz_material_set_mode( material, m_textureId != 0 ? DZ_MATERIAL_MODE_TEXTURE : dz_material_get_default_mode() );
+    dz_material_set_atlas( material, m_atlas );
+    dz_material_set_texture_index( material, 0 );
+    dz_material_set_texture_count( material, 1 );
+
+    dz_texture_t * texture;
+    if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        dz_material_destroy( m_service, material );
+
+        return DZ_FAILURE;
+    }
+
+    dz_float_t region[4] = {0.f, 0.f, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight};
+    __set_texture_region_pixels( texture, m_textureWidth, m_textureHeight, region );
+
+    if( dz_material_add_texture( material, texture ) == DZ_FAILURE )
+    {
+        dz_texture_destroy( m_service, texture );
+        dz_material_destroy( m_service, material );
+
+        return DZ_FAILURE;
+    }
+
+    if( m_effect != DZ_NULLPTR )
+    {
+        dz_effect_set_atlas( m_effect, m_atlas );
+    }
+
+    *_material = material;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::createDefaultShape( dz_shape_t ** const _shape )
+{
+    dz_shape_t * shape;
+    if( dz_shape_create( m_service, &shape, DZ_SHAPE_RECT, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
+    {
+        dz_timeline_limit_status_e status;
+        dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_shape_timeline_get_limit( (dz_shape_timeline_type_e)index, &status, &min, &max, &default_value, &factor );
+
+        DZ_UNUSED( status );
+        DZ_UNUSED( min );
+        DZ_UNUSED( max );
+        DZ_UNUSED( factor );
+
+        if( __set_shape_timeline_const( m_service, shape, (dz_shape_timeline_type_e)index, default_value ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    *_shape = shape;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::createDefaultEmitter( dz_emitter_t ** const _emitter )
+{
+    dz_emitter_t * emitter;
+    if( dz_emitter_create( m_service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_emitter_set_life( emitter, 1000.f );
+
+    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
+    {
+        dz_timeline_limit_status_e status;
+        dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_emitter_timeline_get_limit( (dz_emitter_timeline_type_e)index, &status, &min, &max, &default_value, &factor );
+
+        DZ_UNUSED( status );
+        DZ_UNUSED( min );
+        DZ_UNUSED( max );
+        DZ_UNUSED( factor );
+
+        if( __set_emitter_timeline_const( m_service, emitter, (dz_emitter_timeline_type_e)index, default_value ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    *_emitter = emitter;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::createDefaultAffector( dz_affector_t ** const _affector )
+{
+    dz_affector_t * affector;
+    if( dz_affector_create( m_service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
+    {
+        dz_timeline_limit_status_e status;
+        dz_float_t min = 0.f, max = 0.f, default_value = 0.f, factor = 0.f;
+        dz_affector_timeline_get_limit( (dz_affector_timeline_type_e)index, &status, &min, &max, &default_value, &factor );
+
+        DZ_UNUSED( status );
+        DZ_UNUSED( min );
+        DZ_UNUSED( max );
+        DZ_UNUSED( factor );
+
+        if( __set_affector_timeline_const( m_service, affector, (dz_affector_timeline_type_e)index, default_value ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    *_affector = affector;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::selectMaterialResource( dz_uint32_t _index )
+{
+    if( _index >= m_materialCount )
+    {
+        return DZ_FAILURE;
+    }
+
+    m_materialIndex = _index;
+    m_material = m_materials[_index];
+
+    const dz_atlas_t * effectAtlas = m_effect != DZ_NULLPTR ? dz_effect_get_atlas( m_effect ) : DZ_NULLPTR;
+    if( effectAtlas != DZ_NULLPTR )
+    {
+        m_atlas = const_cast<dz_atlas_t *>(effectAtlas);
+        dz_material_set_atlas( m_material, m_atlas );
+    }
+    else if( dz_material_get_atlas( m_material ) == DZ_NULLPTR )
+    {
+        dz_material_set_atlas( m_material, m_atlas );
+        if( m_effect != DZ_NULLPTR )
+        {
+            dz_effect_set_atlas( m_effect, m_atlas );
+        }
+    }
+    else
+    {
+        m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
+        if( m_effect != DZ_NULLPTR )
+        {
+            dz_effect_set_atlas( m_effect, m_atlas );
+        }
+    }
+
+    m_textureIndex = (int)dz_material_get_texture_index( m_material );
+
+    if( dz_material_get_texture_slot_count( m_material ) != 0 )
+    {
+        if( __select_material_texture( m_material, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+    else
+    {
+        m_texture = DZ_NULLPTR;
+    }
+
+    m_textureRegionSelecting = false;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::selectShapeResource( dz_uint32_t _index )
+{
+    if( _index >= m_shapeCount )
+    {
+        return DZ_FAILURE;
+    }
+
+    m_shapeIndex = _index;
+    m_shape = m_shapes[_index];
+    m_shapeType = dz_shape_get_type( m_shape );
+
+    return this->resetEffectData();
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::selectEmitterResource( dz_uint32_t _index )
+{
+    if( _index >= m_emitterCount )
+    {
+        return DZ_FAILURE;
+    }
+
+    m_emitterIndex = _index;
+    m_emitter = m_emitters[_index];
+
+    return this->resetEffectData();
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::selectAffectorResource( dz_uint32_t _index )
+{
+    if( _index >= m_affectorCount )
+    {
+        return DZ_FAILURE;
+    }
+
+    m_affectorIndex = _index;
+    m_affector = m_affectors[_index];
+
+    return this->resetEffectData();
+}
+//////////////////////////////////////////////////////////////////////////
+void editor::rebuildResourceLists()
+{
+    m_materialCount = 0;
+    m_shapeCount = 0;
+    m_emitterCount = 0;
+    m_affectorCount = 0;
+
+    const dz_uint32_t layerCount = m_effect != DZ_NULLPTR ? dz_effect_get_layer_count( m_effect ) : 0;
+
+    for( dz_uint32_t index = 0; index != layerCount; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
+        {
+            continue;
+        }
+
+        if( __resource_push_unique( m_materials, &m_materialCount, const_cast<dz_material_t *>(layer.material) ) == DZ_FAILURE )
+        {
+            continue;
+        }
+
+        if( __resource_push_unique( m_shapes, &m_shapeCount, const_cast<dz_shape_t *>(layer.shape) ) == DZ_FAILURE )
+        {
+            continue;
+        }
+
+        if( __resource_push_unique( m_emitters, &m_emitterCount, const_cast<dz_emitter_t *>(layer.emitter) ) == DZ_FAILURE )
+        {
+            continue;
+        }
+
+        if( __resource_push_unique( m_affectors, &m_affectorCount, const_cast<dz_affector_t *>(layer.affector) ) == DZ_FAILURE )
+        {
+            continue;
+        }
+    }
+
+    for( dz_uint32_t index = 0; index != m_materialCount; ++index )
+    {
+        __editor_set_default_name( m_materialInfos + index, &m_nextEditorInstanceId, "Material", index );
+    }
+
+    for( dz_uint32_t index = 0; index != m_shapeCount; ++index )
+    {
+        __editor_set_default_name( m_shapeInfos + index, &m_nextEditorInstanceId, "Shape", index );
+    }
+
+    for( dz_uint32_t index = 0; index != m_emitterCount; ++index )
+    {
+        __editor_set_default_name( m_emitterInfos + index, &m_nextEditorInstanceId, "Emitter", index );
+    }
+
+    for( dz_uint32_t index = 0; index != m_affectorCount; ++index )
+    {
+        __editor_set_default_name( m_affectorInfos + index, &m_nextEditorInstanceId, "Affector", index );
+    }
+
+    this->syncSelectedResourceIndices();
+}
+//////////////////////////////////////////////////////////////////////////
+void editor::syncSelectedResourceIndices()
+{
+    m_materialIndex = __resource_index_of( m_materials, m_materialCount, m_material );
+    m_shapeIndex = __resource_index_of( m_shapes, m_shapeCount, m_shape );
+    m_emitterIndex = __resource_index_of( m_emitters, m_emitterCount, m_emitter );
+    m_affectorIndex = __resource_index_of( m_affectors, m_affectorCount, m_affector );
+
+    if( m_materialIndex >= m_materialCount && m_materialCount != 0 )
+    {
+        m_materialIndex = 0;
+    }
+
+    if( m_shapeIndex >= m_shapeCount && m_shapeCount != 0 )
+    {
+        m_shapeIndex = 0;
+    }
+
+    if( m_emitterIndex >= m_emitterCount && m_emitterCount != 0 )
+    {
+        m_emitterIndex = 0;
+    }
+
+    if( m_affectorIndex >= m_affectorCount && m_affectorCount != 0 )
+    {
+        m_affectorIndex = 0;
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * const _triggerIndex )
+{
+    const dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
+    if( _layerIndex >= layerCount )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_uint32_t triggerCount = dz_effect_get_trigger_count( m_effect );
+    dz_uint32_t keepTriggerIndex = triggerCount;
+    dz_bool_t changed = DZ_FALSE;
+
+    if( m_triggerIndex < triggerCount )
+    {
+        dz_effect_trigger_desc_t trigger;
+        if( dz_effect_get_trigger( m_effect, m_triggerIndex, &trigger ) == DZ_SUCCESSFUL && trigger.target_layer_index == _layerIndex )
+        {
+            keepTriggerIndex = m_triggerIndex;
+        }
+    }
+
+    if( keepTriggerIndex == triggerCount )
+    {
+        for( dz_uint32_t index = 0; index != triggerCount; ++index )
+        {
+            dz_effect_trigger_desc_t trigger;
+            if( dz_effect_get_trigger( m_effect, index, &trigger ) == DZ_FAILURE )
+            {
+                continue;
+            }
+
+            if( trigger.target_layer_index == _layerIndex && trigger.event_type != DZ_EFFECT_EVENT_TIME )
+            {
+                keepTriggerIndex = index;
+
+                break;
+            }
+        }
+    }
+
+    if( keepTriggerIndex == triggerCount )
+    {
+        if( __find_first_layer_trigger( m_effect, _layerIndex, &keepTriggerIndex ) == DZ_FALSE )
+        {
+            dz_effect_trigger_desc_t trigger;
+            __make_default_layer_trigger( &trigger, _layerIndex );
+
+            if( dz_effect_add_trigger( m_effect, &trigger, &keepTriggerIndex ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            __editor_set_default_name( m_triggerInfos + keepTriggerIndex, &m_nextEditorInstanceId, "Trigger", keepTriggerIndex );
+            triggerCount = dz_effect_get_trigger_count( m_effect );
+            changed = DZ_TRUE;
+        }
+    }
+
+    for( dz_uint32_t index = 0; index != triggerCount; )
+    {
+        dz_effect_trigger_desc_t trigger;
+        if( dz_effect_get_trigger( m_effect, index, &trigger ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        if( trigger.target_layer_index == _layerIndex && index != keepTriggerIndex )
+        {
+            if( dz_effect_remove_trigger( m_effect, index, DZ_NULLPTR ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            for( dz_uint32_t shift = index + 1; shift != triggerCount; ++shift )
+            {
+                m_triggerInfos[shift - 1] = m_triggerInfos[shift];
+            }
+
+            --triggerCount;
+            changed = DZ_TRUE;
+
+            if( keepTriggerIndex > index )
+            {
+                --keepTriggerIndex;
+            }
+
+            continue;
+        }
+
+        ++index;
+    }
+
+    m_triggerIndex = keepTriggerIndex;
+    *_triggerIndex = keepTriggerIndex;
+
+    if( changed == DZ_TRUE && m_instance != DZ_NULLPTR )
+    {
+        if( this->resetEffect() == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::selectLayer( dz_uint32_t _index )
+{
+    dz_effect_layer_desc_t layer;
+    if( dz_effect_get_layer( m_effect, _index, &layer ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    m_layerIndex = _index;
+    m_material = const_cast<dz_material_t *>(layer.material);
+    m_shape = const_cast<dz_shape_t *>(layer.shape);
+    m_emitter = const_cast<dz_emitter_t *>(layer.emitter);
+    m_affector = const_cast<dz_affector_t *>(layer.affector);
+    m_shapeType = dz_shape_get_type( m_shape );
+
+    const dz_atlas_t * effectAtlas = dz_effect_get_atlas( m_effect );
+    if( effectAtlas != DZ_NULLPTR )
+    {
+        m_atlas = const_cast<dz_atlas_t *>(effectAtlas);
+        dz_material_set_atlas( m_material, m_atlas );
+    }
+    else if( dz_material_get_atlas( m_material ) == DZ_NULLPTR )
+    {
+        dz_material_set_atlas( m_material, m_atlas );
+        dz_effect_set_atlas( m_effect, m_atlas );
+    }
+    else
+    {
+        m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
+        dz_effect_set_atlas( m_effect, m_atlas );
+    }
+
+    m_textureIndex = (int)dz_material_get_texture_index( m_material );
+
+    if( dz_material_get_texture_slot_count( m_material ) != 0 )
+    {
+        if( __select_material_texture( m_material, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+    else
+    {
+        m_texture = nullptr;
+    }
+
+    m_textureRegionSelecting = false;
+
+    this->syncSelectedResourceIndices();
+
+    dz_uint32_t triggerIndex;
+    if( this->ensureLayerTrigger( m_layerIndex, &triggerIndex ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    return this->resetEffectData();
+}
+//////////////////////////////////////////////////////////////////////////
+void editor::setEffectAtlasesSurface()
+{
+    dz_atlas_t * effectAtlas = const_cast<dz_atlas_t *>(dz_effect_get_atlas( m_effect ));
+    if( effectAtlas != nullptr )
+    {
+        dz_atlas_set_surface( effectAtlas, &m_textureId );
+    }
+
+    const dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
+
+    for( dz_uint32_t index = 0; index != layerCount; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
+        {
+            continue;
+        }
+
+        dz_atlas_t * atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( layer.material ));
+
+        if( atlas != nullptr )
+        {
+            dz_atlas_set_surface( atlas, &m_textureId );
+        }
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+void editor::destroyEffectResources()
+{
+    if( m_instance != nullptr )
+    {
+        dz_instance_destroy( m_service, m_instance );
+        m_instance = nullptr;
+    }
+
+    dz_material_t * materials[ER_EDITOR_RESOURCE_MAX];
+    dz_shape_t * shapes[ER_EDITOR_RESOURCE_MAX];
+    dz_emitter_t * emitters[ER_EDITOR_RESOURCE_MAX];
+    dz_affector_t * affectors[ER_EDITOR_RESOURCE_MAX];
+    dz_atlas_t * atlases[ER_EDITOR_RESOURCE_MAX];
+    dz_uint32_t materialCount = 0;
+    dz_uint32_t shapeCount = 0;
+    dz_uint32_t emitterCount = 0;
+    dz_uint32_t affectorCount = 0;
+    dz_uint32_t atlasCount = 0;
+
+    for( dz_uint32_t index = 0; index != m_materialCount; ++index )
+    {
+        __resource_push_unique( materials, &materialCount, m_materials[index] );
+    }
+
+    for( dz_uint32_t index = 0; index != m_shapeCount; ++index )
+    {
+        __resource_push_unique( shapes, &shapeCount, m_shapes[index] );
+    }
+
+    for( dz_uint32_t index = 0; index != m_emitterCount; ++index )
+    {
+        __resource_push_unique( emitters, &emitterCount, m_emitters[index] );
+    }
+
+    for( dz_uint32_t index = 0; index != m_affectorCount; ++index )
+    {
+        __resource_push_unique( affectors, &affectorCount, m_affectors[index] );
+    }
+
+    for( dz_uint32_t index = 0; index != m_materialCount; ++index )
+    {
+        dz_material_t * material = m_materials[index];
+        const dz_atlas_t * atlas = dz_material_get_atlas( material );
+        if( atlas != DZ_NULLPTR )
+        {
+            __resource_push_unique( atlases, &atlasCount, const_cast<dz_atlas_t *>(atlas) );
+        }
+    }
+
+    if( m_effect != nullptr )
+    {
+        const dz_atlas_t * effectAtlas = dz_effect_get_atlas( m_effect );
+        if( effectAtlas != nullptr )
+        {
+            __resource_push_unique( atlases, &atlasCount, const_cast<dz_atlas_t *>(effectAtlas) );
+        }
+
+        const dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
+
+        for( dz_uint32_t index = 0; index != layerCount; ++index )
+        {
+            dz_effect_layer_desc_t layer;
+            if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
+            {
+                continue;
+            }
+
+            __resource_push_unique( materials, &materialCount, const_cast<dz_material_t *>(layer.material) );
+            __resource_push_unique( shapes, &shapeCount, const_cast<dz_shape_t *>(layer.shape) );
+            __resource_push_unique( emitters, &emitterCount, const_cast<dz_emitter_t *>(layer.emitter) );
+            __resource_push_unique( affectors, &affectorCount, const_cast<dz_affector_t *>(layer.affector) );
+
+            const dz_atlas_t * atlas = dz_material_get_atlas( layer.material );
+            if( atlas != nullptr )
+            {
+                __resource_push_unique( atlases, &atlasCount, const_cast<dz_atlas_t *>(atlas) );
+            }
+        }
+
+        dz_effect_destroy( m_service, m_effect );
+        m_effect = nullptr;
+    }
+
+    for( dz_uint32_t index = 0; index != affectorCount; ++index )
+    {
+        dz_affector_destroy( m_service, affectors[index] );
+    }
+
+    for( dz_uint32_t index = 0; index != emitterCount; ++index )
+    {
+        dz_emitter_destroy( m_service, emitters[index] );
+    }
+
+    for( dz_uint32_t index = 0; index != shapeCount; ++index )
+    {
+        dz_shape_destroy( m_service, shapes[index] );
+    }
+
+    std::vector<const dz_texture_t *> materialTextures;
+    for( dz_uint32_t index = 0; index != materialCount; ++index )
+    {
+        const dz_texture_t * texture;
+        while( dz_material_pop_texture( materials[index], &texture ) == DZ_SUCCESSFUL )
+        {
+            if( std::find( materialTextures.begin(), materialTextures.end(), texture ) == materialTextures.end() )
+            {
+                materialTextures.push_back( texture );
+            }
+        }
+    }
+
+    for( const dz_texture_t * texture : materialTextures )
+    {
+        dz_texture_destroy( m_service, texture );
+    }
+
+    for( dz_uint32_t index = 0; index != materialCount; ++index )
+    {
+        dz_material_destroy( m_service, materials[index] );
+    }
+
+    for( dz_uint32_t index = 0; index != atlasCount; ++index )
+    {
+        dz_atlas_t * mutableAtlas = atlases[index];
+        dz_atlas_destroy( m_service, mutableAtlas );
+    }
+
+    m_atlas = nullptr;
+    m_texture = nullptr;
+    m_material = nullptr;
+    m_shape = nullptr;
+    m_emitter = nullptr;
+    m_affector = nullptr;
+    m_materialCount = 0;
+    m_shapeCount = 0;
+    m_emitterCount = 0;
+    m_affectorCount = 0;
+    m_materialIndex = 0;
+    m_shapeIndex = 0;
+    m_emitterIndex = 0;
+    m_affectorIndex = 0;
+    m_layerIndex = 0;
+    m_triggerIndex = 0;
+    m_nextEditorInstanceId = 1;
+    m_layerGizmoDragging = false;
+    m_layerGizmoDragIndex = 0;
+    m_layerGizmoDragOffset = ImVec2( 0.f, 0.f );
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::saveEffect()
@@ -1230,18 +2626,43 @@ dz_result_t editor::saveEffect()
         puts( "Success!" );
         puts( outPath );
 
+        dz_effect_set_atlas( m_effect, m_atlas );
+
         jpp::object json = dz_evict_write( m_effect );
 
-        std::string dumpJson;
+        jpp::object editorMetadata = jpp::make_object();
+        editorMetadata.set( "version", 1 );
+        editorMetadata.set( "next_id", m_nextEditorInstanceId );
+        editorMetadata.set( "layers", __editor_instance_infos_write( m_layerInfos, dz_effect_get_layer_count( m_effect ) ) );
+        editorMetadata.set( "materials", __editor_instance_infos_write( m_materialInfos, m_materialCount ) );
+        editorMetadata.set( "shapes", __editor_instance_infos_write( m_shapeInfos, m_shapeCount ) );
+        editorMetadata.set( "emitters", __editor_instance_infos_write( m_emitterInfos, m_emitterCount ) );
+        editorMetadata.set( "affectors", __editor_instance_infos_write( m_affectorInfos, m_affectorCount ) );
 
-        this->dumpJSON_( json, &dumpJson, /*_needCompactDump*/ false );
+        json.set( "editor", editorMetadata );
+
+        er_memory_buffer_t dumpJson;
+        dumpJson.data = DZ_NULLPTR;
+        dumpJson.size = 0;
+        dumpJson.capacity = 0;
+
+        if( this->dumpJSON_( json, &dumpJson, /*_needCompactDump*/ false ) == false )
+        {
+            free( dumpJson.data );
+
+            return DZ_FAILURE;
+        }
 
         zipFile zf = zipOpen64( outPath, 0 );
 
-        if( addZipFile( zf, "data.json", dumpJson.data(), dumpJson.size() ) == DZ_FAILURE )
+        if( addZipFile( zf, "data.json", dumpJson.data, dumpJson.size ) == DZ_FAILURE )
         {
+            free( dumpJson.data );
+
             return DZ_FAILURE;
         }
+
+        free( dumpJson.data );
 
         if( addZipFile( zf, "atlas.png", m_atlasBuffer.data(), m_atlasBuffer.size() ) == DZ_FAILURE )
         {
@@ -1291,21 +2712,42 @@ dz_result_t editor::loadEffect()
         jpp::object data;
         this->loadJSON_( data_buffer.data(), data_buffer.size(), &data );
 
-        dz_effect_destroy( m_service, m_effect );
-        dz_emitter_destroy( m_service, m_emitter );
-        dz_affector_destroy( m_service, m_affector );
-        dz_shape_destroy( m_service, m_shape );
-        dz_instance_destroy( m_service, m_instance );
-
-        m_effect = nullptr;
-        m_emitter = nullptr;
-        m_affector = nullptr;
-        m_shape = nullptr;
-        m_instance = nullptr;
+        this->destroyEffectResources();
 
         if( dz_evict_load( m_service, &m_effect, data ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
+        }
+
+        const dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
+
+        const dz_atlas_t * sharedAtlas = dz_effect_get_atlas( m_effect );
+        if( sharedAtlas == DZ_NULLPTR && layerCount != 0 )
+        {
+            dz_effect_layer_desc_t baseLayer;
+            if( dz_effect_get_layer( m_effect, 0, &baseLayer ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            sharedAtlas = dz_material_get_atlas( baseLayer.material );
+            dz_effect_set_atlas( m_effect, sharedAtlas );
+        }
+
+        if( sharedAtlas != DZ_NULLPTR )
+        {
+            m_atlas = const_cast<dz_atlas_t *>(sharedAtlas);
+
+            for( dz_uint32_t index = 0; index != layerCount; ++index )
+            {
+                dz_effect_layer_desc_t layer;
+                if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_material_set_atlas( const_cast<dz_material_t *>(layer.material), sharedAtlas );
+            }
         }
 
         if( dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR ) == DZ_FAILURE )
@@ -1316,23 +2758,7 @@ dz_result_t editor::loadEffect()
         dz_uint32_t seed = dz_effect_get_seed( m_effect );
 
         dz_instance_set_seed( m_instance, seed );
-
-        m_material = const_cast<dz_material_t *>(dz_effect_get_material( m_effect ));
-
-        m_atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( m_material ));
-
-        m_textureIndex = 0;
-
-        if( dz_atlas_get_texture( m_atlas, 0, const_cast<const dz_texture_t **>(&m_texture) ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        m_shape = const_cast<dz_shape_t *>(dz_effect_get_shape( m_effect ));
-        m_emitter = const_cast<dz_emitter_t *>(dz_effect_get_emitter( m_effect ));
-        m_affector = const_cast<dz_affector_t *>(dz_effect_get_affector( m_effect ));
-
-        m_shapeType = dz_shape_get_type( m_shape );
+        dz_instance_set_loop( m_instance, m_loop );
 
         m_atlasBuffer.clear();
 
@@ -1342,7 +2768,45 @@ dz_result_t editor::loadEffect()
 
         m_textureId = dz_render_make_texture_from_memory( m_atlasBuffer.data(), m_atlasBuffer.size(), &m_textureWidth, &m_textureHeight );
 
-        dz_atlas_set_surface( m_atlas, &m_textureId );
+        this->setEffectAtlasesSurface();
+
+        m_nextEditorInstanceId = 1;
+
+        for( dz_uint32_t index = 0; index != layerCount; ++index )
+        {
+            __editor_set_default_name( m_layerInfos + index, &m_nextEditorInstanceId, "Layer", index );
+        }
+
+        const dz_uint32_t triggerCount = dz_effect_get_trigger_count( m_effect );
+        for( dz_uint32_t index = 0; index != triggerCount; ++index )
+        {
+            __editor_set_default_name( m_triggerInfos + index, &m_nextEditorInstanceId, "Trigger", index );
+        }
+
+        this->rebuildResourceLists();
+
+        jpp::object editorMetadata;
+        if( data.exist( "editor", &editorMetadata ) == true )
+        {
+            m_nextEditorInstanceId = editorMetadata.get( "next_id", m_nextEditorInstanceId );
+
+            dz_uint32_t maxEditorInstanceId = 0;
+            __editor_instance_infos_load( editorMetadata, "layers", m_layerInfos, layerCount, "Layer", &maxEditorInstanceId );
+            __editor_instance_infos_load( editorMetadata, "materials", m_materialInfos, m_materialCount, "Material", &maxEditorInstanceId );
+            __editor_instance_infos_load( editorMetadata, "shapes", m_shapeInfos, m_shapeCount, "Shape", &maxEditorInstanceId );
+            __editor_instance_infos_load( editorMetadata, "emitters", m_emitterInfos, m_emitterCount, "Emitter", &maxEditorInstanceId );
+            __editor_instance_infos_load( editorMetadata, "affectors", m_affectorInfos, m_affectorCount, "Affector", &maxEditorInstanceId );
+
+            if( m_nextEditorInstanceId <= maxEditorInstanceId )
+            {
+                m_nextEditorInstanceId = maxEditorInstanceId + 1;
+            }
+        }
+
+        if( this->selectLayer( 0 ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
 
         m_textureRegionSelecting = false;
 
@@ -1350,10 +2814,7 @@ dz_result_t editor::loadEffect()
 
         free( outPath );
 
-        if( this->resetEffectData() == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        this->resetEffect();
     }
     else if( result == NFD_CANCEL )
     {
@@ -1387,6 +2848,8 @@ dz_result_t editor::exportEffect()
 
             return DZ_SUCCESSFUL;
         };
+
+        dz_effect_set_atlas( m_effect, m_atlas );
 
         dz_header_write( lambda_write, (dz_userdata_t)f );
 
@@ -2463,7 +3926,7 @@ dz_result_t editor::resetEffectData()
         __pointsDataToCurve( data.pointsData, data.pointsCurve, y_min, y_range );
     }
 
-    // affector 
+    // affector
     for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
         timeline_affector_t & data = m_timelineAffectorData[index];
@@ -2533,12 +3996,695 @@ dz_result_t editor::showEffectData()
         this->resetEffect();
     }
 
+    dz_float_t life = dz_effect_get_life( m_effect );
+
+    if( ImGui::InputFloat( ER_WINDOW_EFFECT_LIFE_TEXT, &life, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None ) == true )
+    {
+        if( life < 0.f )
+        {
+            life = 0.f;
+        }
+
+        dz_effect_set_life( m_effect, life );
+
+        this->resetEffect();
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::showResourceList( int _selected )
+{
+    switch( _selected )
+    {
+    case ER_WINDOW_TYPE_EFFECT_DATA:
+        {
+            ImGui::Selectable( "Effect", true );
+        }
+        break;
+    case ER_WINDOW_TYPE_COMPOSER_DATA:
+        {
+            dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
+
+            if( ImGui::Button( "+##Layer" ) == true )
+            {
+                dz_effect_layer_desc_t layer;
+                if( dz_effect_get_layer( m_effect, m_layerIndex, &layer ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_uint32_t layerIndex;
+                if( dz_effect_add_layer( m_effect, &layer, &layerIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                __editor_set_default_name( m_layerInfos + layerIndex, &m_nextEditorInstanceId, "Layer", layerIndex );
+
+                const dz_uint32_t materialCount = m_materialCount;
+                const dz_uint32_t shapeCount = m_shapeCount;
+                const dz_uint32_t emitterCount = m_emitterCount;
+                const dz_uint32_t affectorCount = m_affectorCount;
+
+                if( __resource_push_unique( m_materials, &m_materialCount, const_cast<dz_material_t *>(layer.material) ) == DZ_FAILURE
+                    || __resource_push_unique( m_shapes, &m_shapeCount, const_cast<dz_shape_t *>(layer.shape) ) == DZ_FAILURE
+                    || __resource_push_unique( m_emitters, &m_emitterCount, const_cast<dz_emitter_t *>(layer.emitter) ) == DZ_FAILURE
+                    || __resource_push_unique( m_affectors, &m_affectorCount, const_cast<dz_affector_t *>(layer.affector) ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                if( materialCount != m_materialCount )
+                {
+                    __editor_set_default_name( m_materialInfos + materialCount, &m_nextEditorInstanceId, "Material", materialCount );
+                }
+
+                if( shapeCount != m_shapeCount )
+                {
+                    __editor_set_default_name( m_shapeInfos + shapeCount, &m_nextEditorInstanceId, "Shape", shapeCount );
+                }
+
+                if( emitterCount != m_emitterCount )
+                {
+                    __editor_set_default_name( m_emitterInfos + emitterCount, &m_nextEditorInstanceId, "Emitter", emitterCount );
+                }
+
+                if( affectorCount != m_affectorCount )
+                {
+                    __editor_set_default_name( m_affectorInfos + affectorCount, &m_nextEditorInstanceId, "Affector", affectorCount );
+                }
+
+                dz_uint32_t sourceTriggerIndex;
+                if( this->ensureLayerTrigger( m_layerIndex, &sourceTriggerIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_effect_trigger_desc_t trigger;
+                if( dz_effect_get_trigger( m_effect, sourceTriggerIndex, &trigger ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                trigger.target_layer_index = layerIndex;
+
+                if( trigger.source_layer_index == m_layerIndex )
+                {
+                    trigger.source_layer_index = layerIndex;
+                }
+
+                if( __trigger_event_uses_source_layer( trigger.event_type ) == DZ_FALSE )
+                {
+                    trigger.source_layer_index = DZ_EFFECT_LAYER_NONE;
+                }
+
+                if( dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                __editor_set_default_name( m_triggerInfos + m_triggerIndex, &m_nextEditorInstanceId, "Trigger", m_triggerIndex );
+
+                if( this->selectLayer( layerIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                this->resetEffect();
+
+                layerCount = dz_effect_get_layer_count( m_effect );
+            }
+
+            ImGui::SameLine();
+
+            if( ImGui::Button( "-##Layer" ) == true && layerCount > 1 )
+            {
+                const dz_uint32_t removedLayerIndex = m_layerIndex;
+
+                if( dz_effect_remove_layer( m_effect, removedLayerIndex, DZ_NULLPTR ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                for( dz_uint32_t index = removedLayerIndex + 1; index != layerCount; ++index )
+                {
+                    m_layerInfos[index - 1] = m_layerInfos[index];
+                }
+
+                layerCount = dz_effect_get_layer_count( m_effect );
+
+                const dz_uint32_t triggerCountAfterRemove = dz_effect_get_trigger_count( m_effect );
+                for( dz_uint32_t index = 0; index != triggerCountAfterRemove; ++index )
+                {
+                    __editor_set_default_name( m_triggerInfos + index, &m_nextEditorInstanceId, "Trigger", index );
+                }
+
+                if( m_layerIndex >= layerCount )
+                {
+                    m_layerIndex = layerCount - 1;
+                }
+
+                if( this->selectLayer( m_layerIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                this->resetEffect();
+            }
+
+            ImGui::Separator();
+
+            layerCount = dz_effect_get_layer_count( m_effect );
+            for( dz_uint32_t index = 0; index != layerCount; ++index )
+            {
+                if( ImGui::Selectable( m_layerInfos[index].name, index == m_layerIndex ) == true )
+                {
+                    if( this->selectLayer( index ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+                }
+            }
+        }
+        break;
+    case ER_WINDOW_TYPE_ATLAS_DATA:
+        {
+            ImGui::Selectable( "Atlas", true );
+        }
+        break;
+    case ER_WINDOW_TYPE_MATERIAL_DATA:
+        {
+            if( ImGui::Button( "+##Material" ) == true )
+            {
+                if( m_materialCount >= ER_EDITOR_RESOURCE_MAX )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_material_t * material;
+                if( this->createDefaultMaterial( &material ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                const dz_uint32_t index = m_materialCount++;
+                m_materials[index] = material;
+                __editor_set_default_name( m_materialInfos + index, &m_nextEditorInstanceId, "Material", index );
+
+                if( this->selectMaterialResource( index ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::SameLine();
+
+            if( ImGui::Button( "-##Material" ) == true && m_materialCount > 1 && m_materialIndex < m_materialCount && __effect_uses_material( m_effect, m_materials[m_materialIndex] ) == DZ_FALSE )
+            {
+                dz_material_t * material = m_materials[m_materialIndex];
+
+                dz_material_destroy( m_service, material );
+                __resource_erase( m_materials, m_materialInfos, &m_materialCount, m_materialIndex );
+
+                if( m_materialIndex >= m_materialCount )
+                {
+                    m_materialIndex = m_materialCount - 1;
+                }
+
+                if( this->selectMaterialResource( m_materialIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::Separator();
+
+            for( dz_uint32_t index = 0; index != m_materialCount; ++index )
+            {
+                if( ImGui::Selectable( m_materialInfos[index].name, index == m_materialIndex ) == true )
+                {
+                    if( this->selectMaterialResource( index ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+                }
+            }
+        }
+        break;
+    case ER_WINDOW_TYPE_SHAPE_DATA:
+        {
+            if( ImGui::Button( "+##Shape" ) == true )
+            {
+                if( m_shapeCount >= ER_EDITOR_RESOURCE_MAX )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_shape_t * shape;
+                if( this->createDefaultShape( &shape ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                const dz_uint32_t index = m_shapeCount++;
+                m_shapes[index] = shape;
+                __editor_set_default_name( m_shapeInfos + index, &m_nextEditorInstanceId, "Shape", index );
+
+                if( this->selectShapeResource( index ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::SameLine();
+
+            if( ImGui::Button( "-##Shape" ) == true && m_shapeCount > 1 && m_shapeIndex < m_shapeCount && __effect_uses_shape( m_effect, m_shapes[m_shapeIndex] ) == DZ_FALSE )
+            {
+                dz_shape_t * shape = m_shapes[m_shapeIndex];
+
+                dz_shape_destroy( m_service, shape );
+                __resource_erase( m_shapes, m_shapeInfos, &m_shapeCount, m_shapeIndex );
+
+                if( m_shapeIndex >= m_shapeCount )
+                {
+                    m_shapeIndex = m_shapeCount - 1;
+                }
+
+                if( this->selectShapeResource( m_shapeIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::Separator();
+
+            for( dz_uint32_t index = 0; index != m_shapeCount; ++index )
+            {
+                if( ImGui::Selectable( m_shapeInfos[index].name, index == m_shapeIndex ) == true )
+                {
+                    if( this->selectShapeResource( index ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+                }
+            }
+        }
+        break;
+    case ER_WINDOW_TYPE_EMITTER_DATA:
+        {
+            if( ImGui::Button( "+##Emitter" ) == true )
+            {
+                if( m_emitterCount >= ER_EDITOR_RESOURCE_MAX )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_emitter_t * emitter;
+                if( this->createDefaultEmitter( &emitter ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                const dz_uint32_t index = m_emitterCount++;
+                m_emitters[index] = emitter;
+                __editor_set_default_name( m_emitterInfos + index, &m_nextEditorInstanceId, "Emitter", index );
+
+                if( this->selectEmitterResource( index ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::SameLine();
+
+            if( ImGui::Button( "-##Emitter" ) == true && m_emitterCount > 1 && m_emitterIndex < m_emitterCount && __effect_uses_emitter( m_effect, m_emitters[m_emitterIndex] ) == DZ_FALSE )
+            {
+                dz_emitter_t * emitter = m_emitters[m_emitterIndex];
+
+                dz_emitter_destroy( m_service, emitter );
+                __resource_erase( m_emitters, m_emitterInfos, &m_emitterCount, m_emitterIndex );
+
+                if( m_emitterIndex >= m_emitterCount )
+                {
+                    m_emitterIndex = m_emitterCount - 1;
+                }
+
+                if( this->selectEmitterResource( m_emitterIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::Separator();
+
+            for( dz_uint32_t index = 0; index != m_emitterCount; ++index )
+            {
+                if( ImGui::Selectable( m_emitterInfos[index].name, index == m_emitterIndex ) == true )
+                {
+                    if( this->selectEmitterResource( index ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+                }
+            }
+        }
+        break;
+    case ER_WINDOW_TYPE_AFFECTOR_DATA:
+        {
+            if( ImGui::Button( "+##Affector" ) == true )
+            {
+                if( m_affectorCount >= ER_EDITOR_RESOURCE_MAX )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_affector_t * affector;
+                if( this->createDefaultAffector( &affector ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                const dz_uint32_t index = m_affectorCount++;
+                m_affectors[index] = affector;
+                __editor_set_default_name( m_affectorInfos + index, &m_nextEditorInstanceId, "Affector", index );
+
+                if( this->selectAffectorResource( index ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::SameLine();
+
+            if( ImGui::Button( "-##Affector" ) == true && m_affectorCount > 1 && m_affectorIndex < m_affectorCount && __effect_uses_affector( m_effect, m_affectors[m_affectorIndex] ) == DZ_FALSE )
+            {
+                dz_affector_t * affector = m_affectors[m_affectorIndex];
+
+                dz_affector_destroy( m_service, affector );
+                __resource_erase( m_affectors, m_affectorInfos, &m_affectorCount, m_affectorIndex );
+
+                if( m_affectorIndex >= m_affectorCount )
+                {
+                    m_affectorIndex = m_affectorCount - 1;
+                }
+
+                if( this->selectAffectorResource( m_affectorIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            ImGui::Separator();
+
+            for( dz_uint32_t index = 0; index != m_affectorCount; ++index )
+            {
+                if( ImGui::Selectable( m_affectorInfos[index].name, index == m_affectorIndex ) == true )
+                {
+                    if( this->selectAffectorResource( index ) == DZ_FAILURE )
+                    {
+                        return DZ_FAILURE;
+                    }
+                }
+            }
+        }
+        break;
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::showComposerData()
+{
+    ImGui::Spacing();
+    ImGui::Text( ER_WINDOW_COMPOSER_TITLE );
+    ImGui::Separator();
+
+    dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
+
+    if( layerCount != 0 )
+    {
+        dz_effect_layer_desc_t layer;
+        if( dz_effect_get_layer( m_effect, m_layerIndex, &layer ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        __editor_name_input( ER_WINDOW_COMPOSER_LAYER_NAME_LABEL, m_layerInfos, layerCount, m_layerIndex, "Layer" );
+
+        ImGui::Separator();
+
+        bool layerChanged = false;
+        bool layerResourcesChanged = false;
+
+        dz_uint32_t materialIndex = __resource_index_of( m_materials, m_materialCount, layer.material );
+        dz_uint32_t selectedMaterialIndex = materialIndex;
+        if( __resource_index_combo( ER_WINDOW_COMPOSER_LAYER_MATERIAL_LABEL, m_materialInfos, m_materialCount, materialIndex, &selectedMaterialIndex ) == true )
+        {
+            layer.material = m_materials[selectedMaterialIndex];
+            layerChanged = true;
+            layerResourcesChanged = true;
+        }
+
+        ImGui::SameLine();
+        if( ImGui::Button( ">##EditMaterial" ) == true && selectedMaterialIndex < m_materialCount )
+        {
+            if( this->selectMaterialResource( selectedMaterialIndex ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            m_windowType = ER_WINDOW_TYPE_MATERIAL_DATA;
+        }
+
+        dz_uint32_t shapeIndex = __resource_index_of( m_shapes, m_shapeCount, layer.shape );
+        dz_uint32_t selectedShapeIndex = shapeIndex;
+        if( __resource_index_combo( ER_WINDOW_COMPOSER_LAYER_SHAPE_LABEL, m_shapeInfos, m_shapeCount, shapeIndex, &selectedShapeIndex ) == true )
+        {
+            layer.shape = m_shapes[selectedShapeIndex];
+            layerChanged = true;
+            layerResourcesChanged = true;
+        }
+
+        ImGui::SameLine();
+        if( ImGui::Button( ">##EditShape" ) == true && selectedShapeIndex < m_shapeCount )
+        {
+            if( this->selectShapeResource( selectedShapeIndex ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            m_windowType = ER_WINDOW_TYPE_SHAPE_DATA;
+        }
+
+        dz_uint32_t emitterIndex = __resource_index_of( m_emitters, m_emitterCount, layer.emitter );
+        dz_uint32_t selectedEmitterIndex = emitterIndex;
+        if( __resource_index_combo( ER_WINDOW_COMPOSER_LAYER_EMITTER_LABEL, m_emitterInfos, m_emitterCount, emitterIndex, &selectedEmitterIndex ) == true )
+        {
+            layer.emitter = m_emitters[selectedEmitterIndex];
+            layerChanged = true;
+            layerResourcesChanged = true;
+        }
+
+        ImGui::SameLine();
+        if( ImGui::Button( ">##EditEmitter" ) == true && selectedEmitterIndex < m_emitterCount )
+        {
+            if( this->selectEmitterResource( selectedEmitterIndex ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            m_windowType = ER_WINDOW_TYPE_EMITTER_DATA;
+        }
+
+        dz_uint32_t affectorIndex = __resource_index_of( m_affectors, m_affectorCount, layer.affector );
+        dz_uint32_t selectedAffectorIndex = affectorIndex;
+        if( __resource_index_combo( ER_WINDOW_COMPOSER_LAYER_AFFECTOR_LABEL, m_affectorInfos, m_affectorCount, affectorIndex, &selectedAffectorIndex ) == true )
+        {
+            layer.affector = m_affectors[selectedAffectorIndex];
+            layerChanged = true;
+            layerResourcesChanged = true;
+        }
+
+        ImGui::SameLine();
+        if( ImGui::Button( ">##EditAffector" ) == true && selectedAffectorIndex < m_affectorCount )
+        {
+            if( this->selectAffectorResource( selectedAffectorIndex ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            m_windowType = ER_WINDOW_TYPE_AFFECTOR_DATA;
+        }
+
+        ImGui::Separator();
+
+        layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_X_LABEL, &layer.x, 1.f, 10.f, "%.2f", ImGuiInputTextFlags_None );
+        layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_Y_LABEL, &layer.y, 1.f, 10.f, "%.2f", ImGuiInputTextFlags_None );
+        layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_ANGLE_LABEL, &layer.angle, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
+        layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_LIFE_LABEL, &layer.life, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
+
+        int layerSeed = (int)layer.seed;
+        if( ImGui::InputInt( ER_WINDOW_COMPOSER_LAYER_SEED_LABEL, &layerSeed, 1, 16, ImGuiInputTextFlags_None ) == true )
+        {
+            layer.seed = (dz_uint32_t)DZ_MAX( 0, layerSeed );
+            layerChanged = true;
+        }
+
+        if( layerChanged == true )
+        {
+            if( layer.life < 0.f )
+            {
+                layer.life = 0.f;
+            }
+
+            if( dz_effect_set_layer( m_effect, m_layerIndex, &layer ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            if( layerResourcesChanged == true )
+            {
+                if( this->selectLayer( m_layerIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            this->resetEffect();
+        }
+    }
+
+    if( layerCount == 0 )
+    {
+        return DZ_SUCCESSFUL;
+    }
+
+    ImGui::Separator();
+    ImGui::Text( ER_WINDOW_COMPOSER_LAYER_TRIGGERS_TITLE );
+
+    dz_uint32_t triggerIndex;
+    if( this->ensureLayerTrigger( m_layerIndex, &triggerIndex ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_effect_trigger_desc_t trigger;
+    if( dz_effect_get_trigger( m_effect, triggerIndex, &trigger ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    bool triggerChanged = false;
+
+    int eventType = (int)trigger.event_type;
+    if( ImGui::Combo( ER_WINDOW_COMPOSER_TRIGGER_EVENT_LABEL, &eventType, ER_EFFECT_EVENT_NAMES, IM_ARRAYSIZE( ER_EFFECT_EVENT_NAMES ) ) == true )
+    {
+        trigger.event_type = (dz_effect_event_type_e)eventType;
+        triggerChanged = true;
+    }
+
+    const dz_bool_t triggerUsesSourceLayer = __trigger_event_uses_source_layer( trigger.event_type );
+    const dz_bool_t triggerUsesTime = __trigger_event_uses_time( trigger.event_type );
+    const dz_bool_t triggerUsesInherit = __trigger_event_uses_inherit( trigger.event_type );
+
+    if( triggerUsesSourceLayer == DZ_TRUE )
+    {
+        if( trigger.source_layer_index == DZ_EFFECT_LAYER_NONE || trigger.source_layer_index >= layerCount )
+        {
+            trigger.source_layer_index = m_layerIndex;
+            triggerChanged = true;
+        }
+
+        dz_uint32_t sourceLayer = trigger.source_layer_index;
+        if( __layer_index_combo( ER_WINDOW_COMPOSER_TRIGGER_SOURCE_LABEL, m_layerInfos, layerCount, DZ_FALSE, trigger.source_layer_index, &sourceLayer ) == true )
+        {
+            trigger.source_layer_index = sourceLayer;
+            triggerChanged = true;
+        }
+    }
+
+    if( triggerUsesTime == DZ_TRUE )
+    {
+        triggerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_TRIGGER_TIME_LABEL, &trigger.time, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
+    }
+
+    triggerChanged |= ImGui::SliderFloat( ER_WINDOW_COMPOSER_TRIGGER_PROBABILITY_LABEL, &trigger.probability, 0.f, 1.f, "%.3f" );
+
+    int spawnMin = (int)trigger.spawn_count_min;
+    int spawnMax = (int)trigger.spawn_count_max;
+    triggerChanged |= ImGui::InputInt( ER_WINDOW_COMPOSER_TRIGGER_COUNT_MIN_LABEL, &spawnMin, 1, 1, ImGuiInputTextFlags_None );
+    triggerChanged |= ImGui::InputInt( ER_WINDOW_COMPOSER_TRIGGER_COUNT_MAX_LABEL, &spawnMax, 1, 1, ImGuiInputTextFlags_None );
+
+    triggerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_TRIGGER_DELAY_MIN_LABEL, &trigger.delay_min, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
+    triggerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_TRIGGER_DELAY_MAX_LABEL, &trigger.delay_max, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
+
+    bool inheritPosition = trigger.inherit_position == DZ_TRUE;
+    bool inheritAngle = trigger.inherit_angle == DZ_TRUE;
+    bool inheritVelocity = trigger.inherit_velocity == DZ_TRUE;
+
+    if( triggerUsesInherit == DZ_TRUE )
+    {
+        triggerChanged |= ImGui::Checkbox( ER_WINDOW_COMPOSER_TRIGGER_INHERIT_POSITION_LABEL, &inheritPosition );
+        triggerChanged |= ImGui::Checkbox( ER_WINDOW_COMPOSER_TRIGGER_INHERIT_ANGLE_LABEL, &inheritAngle );
+        triggerChanged |= ImGui::Checkbox( ER_WINDOW_COMPOSER_TRIGGER_INHERIT_VELOCITY_LABEL, &inheritVelocity );
+    }
+
+    triggerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_TRIGGER_OFFSET_X_LABEL, &trigger.offset_x, 1.f, 10.f, "%.2f", ImGuiInputTextFlags_None );
+    triggerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_TRIGGER_OFFSET_Y_LABEL, &trigger.offset_y, 1.f, 10.f, "%.2f", ImGuiInputTextFlags_None );
+    triggerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_TRIGGER_ANGLE_OFFSET_LABEL, &trigger.angle_offset, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
+
+    if( triggerChanged == true )
+    {
+        if( triggerUsesSourceLayer == DZ_FALSE )
+        {
+            trigger.source_layer_index = DZ_EFFECT_LAYER_NONE;
+        }
+
+        trigger.target_layer_index = m_layerIndex;
+
+        spawnMin = DZ_MAX( 0, spawnMin );
+        spawnMax = DZ_MAX( spawnMin, spawnMax );
+        trigger.spawn_count_min = (dz_uint32_t)spawnMin;
+        trigger.spawn_count_max = (dz_uint32_t)spawnMax;
+
+        if( trigger.delay_max < trigger.delay_min )
+        {
+            trigger.delay_max = trigger.delay_min;
+        }
+
+        trigger.inherit_position = inheritPosition == true ? DZ_TRUE : DZ_FALSE;
+        trigger.inherit_angle = inheritAngle == true ? DZ_TRUE : DZ_FALSE;
+        trigger.inherit_velocity = inheritVelocity == true ? DZ_TRUE : DZ_FALSE;
+
+        if( triggerUsesInherit == DZ_FALSE )
+        {
+            trigger.inherit_position = DZ_FALSE;
+            trigger.inherit_angle = DZ_FALSE;
+            trigger.inherit_velocity = DZ_FALSE;
+        }
+
+        if( dz_effect_set_trigger( m_effect, triggerIndex, &trigger ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        this->resetEffect();
+    }
+
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showShapeData()
 {
     static int selected_type = m_shapeType;
+
+    selected_type = m_shapeType;
+
+    if( m_shapeIndex < m_shapeCount )
+    {
+        __editor_name_input( ER_WINDOW_RESOURCE_NAME_LABEL, m_shapeInfos, m_shapeCount, m_shapeIndex, "Shape" );
+    }
 
     // ignore all shape types starts with DZ_SHAPE_POLYGON
     ImGui::Combo( ER_WINDOW_COMBO_SHAPE_TYPE_TEXT, &selected_type, ER_SHAPE_TYPE_NAMES, DZ_SHAPE_POLYGON, DZ_SHAPE_POLYGON );
@@ -2654,6 +4800,11 @@ dz_result_t editor::showShapeData()
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showAffectorData()
 {
+    if( m_affectorIndex < m_affectorCount )
+    {
+        __editor_name_input( ER_WINDOW_RESOURCE_NAME_LABEL, m_affectorInfos, m_affectorCount, m_affectorIndex, "Affector" );
+    }
+
     // timeline
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_AFFECTOR_TITLE );
@@ -2728,6 +4879,11 @@ dz_result_t editor::showAffectorData()
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showEmitterData()
 {
+    if( m_emitterIndex < m_emitterCount )
+    {
+        __editor_name_input( ER_WINDOW_RESOURCE_NAME_LABEL, m_emitterInfos, m_emitterCount, m_emitterIndex, "Emitter" );
+    }
+
     // timeline
     ImGui::Spacing();
     ImGui::Text( ER_WINDOW_EMITTER_TITLE );
@@ -2820,177 +4976,6 @@ dz_result_t editor::showEmitterData()
 
         ImGui::PopID();
     }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static void __normalize_texture_region_pixels( dz_float_t * const _region, int _atlasWidth, int _atlasHeight )
-{
-    if( _atlasWidth <= 0 || _atlasHeight <= 0 )
-    {
-        _region[0] = 0.f;
-        _region[1] = 0.f;
-        _region[2] = 0.f;
-        _region[3] = 0.f;
-
-        return;
-    }
-
-    dz_float_t x0 = _region[0];
-    dz_float_t y0 = _region[1];
-    dz_float_t x1 = _region[0] + _region[2];
-    dz_float_t y1 = _region[1] + _region[3];
-
-    if( x1 < x0 )
-    {
-        dz_float_t temp = x0;
-        x0 = x1;
-        x1 = temp;
-    }
-
-    if( y1 < y0 )
-    {
-        dz_float_t temp = y0;
-        y0 = y1;
-        y1 = temp;
-    }
-
-    x0 = DZ_MAX( 0.f, DZ_MIN( x0, (dz_float_t)_atlasWidth ) );
-    y0 = DZ_MAX( 0.f, DZ_MIN( y0, (dz_float_t)_atlasHeight ) );
-    x1 = DZ_MAX( 0.f, DZ_MIN( x1, (dz_float_t)_atlasWidth ) );
-    y1 = DZ_MAX( 0.f, DZ_MIN( y1, (dz_float_t)_atlasHeight ) );
-
-    if( x1 - x0 < 1.f )
-    {
-        if( x0 + 1.f <= (dz_float_t)_atlasWidth )
-        {
-            x1 = x0 + 1.f;
-        }
-        else
-        {
-            x0 = (dz_float_t)_atlasWidth - 1.f;
-            x1 = (dz_float_t)_atlasWidth;
-        }
-    }
-
-    if( y1 - y0 < 1.f )
-    {
-        if( y0 + 1.f <= (dz_float_t)_atlasHeight )
-        {
-            y1 = y0 + 1.f;
-        }
-        else
-        {
-            y0 = (dz_float_t)_atlasHeight - 1.f;
-            y1 = (dz_float_t)_atlasHeight;
-        }
-    }
-
-    _region[0] = x0;
-    _region[1] = y0;
-    _region[2] = x1 - x0;
-    _region[3] = y1 - y0;
-}
-//////////////////////////////////////////////////////////////////////////
-static void __get_texture_region_pixels( const dz_texture_t * _texture, int _atlasWidth, int _atlasHeight, dz_float_t * const _region )
-{
-    dz_float_t u[4];
-    dz_float_t v[4];
-    dz_texture_get_uv( _texture, u, v );
-
-    _region[0] = u[0] * (dz_float_t)_atlasWidth;
-    _region[1] = v[0] * (dz_float_t)_atlasHeight;
-    _region[2] = (u[2] - u[0]) * (dz_float_t)_atlasWidth;
-    _region[3] = (v[2] - v[0]) * (dz_float_t)_atlasHeight;
-
-    __normalize_texture_region_pixels( _region, _atlasWidth, _atlasHeight );
-}
-//////////////////////////////////////////////////////////////////////////
-static void __set_texture_region_pixels( dz_texture_t * const _texture, int _atlasWidth, int _atlasHeight, dz_float_t * const _region )
-{
-    __normalize_texture_region_pixels( _region, _atlasWidth, _atlasHeight );
-
-    if( _atlasWidth <= 0 || _atlasHeight <= 0 )
-    {
-        dz_texture_set_width( _texture, 0.f );
-        dz_texture_set_height( _texture, 0.f );
-        dz_texture_set_trim_offset( _texture, 0.f, 0.f );
-        dz_texture_set_trim_size( _texture, 0.f, 0.f );
-
-        return;
-    }
-
-    const dz_float_t x0 = _region[0];
-    const dz_float_t y0 = _region[1];
-    const dz_float_t x1 = _region[0] + _region[2];
-    const dz_float_t y1 = _region[1] + _region[3];
-
-    const dz_float_t invWidth = 1.f / (dz_float_t)_atlasWidth;
-    const dz_float_t invHeight = 1.f / (dz_float_t)_atlasHeight;
-
-    const dz_float_t u[4] = {x0 * invWidth, x1 * invWidth, x1 * invWidth, x0 * invWidth};
-    const dz_float_t v[4] = {y0 * invHeight, y0 * invHeight, y1 * invHeight, y1 * invHeight};
-
-    dz_texture_set_uv( _texture, u, v );
-    dz_texture_set_width( _texture, _region[2] );
-    dz_texture_set_height( _texture, _region[3] );
-    dz_texture_set_trim_offset( _texture, 0.f, 0.f );
-    dz_texture_set_trim_size( _texture, _region[2], _region[3] );
-}
-//////////////////////////////////////////////////////////////////////////
-static void __copy_texture_data( dz_texture_t * const _target, const dz_texture_t * _source )
-{
-    dz_float_t u[4];
-    dz_float_t v[4];
-    dz_texture_get_uv( _source, u, v );
-    dz_texture_set_uv( _target, u, v );
-
-    dz_texture_set_width( _target, dz_texture_get_width( _source ) );
-    dz_texture_set_height( _target, dz_texture_get_height( _source ) );
-
-    dz_float_t trim_offset_x;
-    dz_float_t trim_offset_y;
-    dz_texture_get_trim_offset( _source, &trim_offset_x, &trim_offset_y );
-    dz_texture_set_trim_offset( _target, trim_offset_x, trim_offset_y );
-
-    dz_float_t trim_width;
-    dz_float_t trim_height;
-    dz_texture_get_trim_size( _source, &trim_width, &trim_height );
-    dz_texture_set_trim_size( _target, trim_width, trim_height );
-
-    dz_texture_set_sequence_delay( _target, dz_texture_get_sequence_delay( _source ) );
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __select_atlas_texture( dz_atlas_t * const _atlas, int * const _index, dz_texture_t ** const _texture )
-{
-    const dz_uint32_t textureCount = dz_atlas_get_texture_count( _atlas );
-
-    if( textureCount == 0 )
-    {
-        *_index = 0;
-        *_texture = DZ_NULLPTR;
-
-        return DZ_FAILURE;
-    }
-
-    if( *_index < 0 )
-    {
-        *_index = 0;
-    }
-    else if( (dz_uint32_t)*_index >= textureCount )
-    {
-        *_index = (int)textureCount - 1;
-    }
-
-    const dz_texture_t * texture = DZ_NULLPTR;
-    if( dz_atlas_get_texture( _atlas, (dz_uint32_t)*_index, &texture ) == DZ_FAILURE )
-    {
-        *_texture = DZ_NULLPTR;
-
-        return DZ_FAILURE;
-    }
-
-    *_texture = const_cast<dz_texture_t *>(texture);
 
     return DZ_SUCCESSFUL;
 }
@@ -3258,23 +5243,37 @@ dz_result_t editor::optimizeAtlas()
 
     DZ_UNUSED( sourceComp );
 
-    const dz_uint32_t textureCount = dz_atlas_get_texture_count( m_atlas );
+    std::vector<dz_texture_t *> materialTextures;
+    for( dz_uint32_t materialIndex = 0; materialIndex != m_materialCount; ++materialIndex )
+    {
+        dz_material_t * material = m_materials[materialIndex];
+        const dz_uint32_t textureCount = dz_material_get_texture_slot_count( material );
+
+        for( dz_uint32_t textureIndex = 0; textureIndex != textureCount; ++textureIndex )
+        {
+            const dz_texture_t * texture = DZ_NULLPTR;
+            if( dz_material_get_texture( material, textureIndex, &texture ) == DZ_FAILURE )
+            {
+                stbi_image_free( sourcePixels );
+
+                return DZ_FAILURE;
+            }
+
+            dz_texture_t * mutableTexture = const_cast<dz_texture_t *>(texture);
+            if( std::find( materialTextures.begin(), materialTextures.end(), mutableTexture ) == materialTextures.end() )
+            {
+                materialTextures.push_back( mutableTexture );
+            }
+        }
+    }
 
     std::vector<er_atlas_pack_region_t> regions;
-    regions.reserve( textureCount );
+    regions.reserve( materialTextures.size() );
 
-    for( dz_uint32_t index = 0; index != textureCount; ++index )
+    for( dz_texture_t * texture : materialTextures )
     {
-        const dz_texture_t * texture = DZ_NULLPTR;
-        if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
-        {
-            stbi_image_free( sourcePixels );
-
-            return DZ_FAILURE;
-        }
-
         er_atlas_pack_region_t region;
-        region.texture = const_cast<dz_texture_t *>(texture);
+        region.texture = texture;
 
         if( __get_texture_region_pixels_int( texture, sourceWidth, sourceHeight, &region ) == DZ_FAILURE )
         {
@@ -3284,6 +5283,13 @@ dz_result_t editor::optimizeAtlas()
         }
 
         regions.push_back( region );
+    }
+
+    if( regions.empty() == true )
+    {
+        stbi_image_free( sourcePixels );
+
+        return DZ_FAILURE;
     }
 
     dz_int32_t packedWidth;
@@ -3342,7 +5348,7 @@ dz_result_t editor::optimizeAtlas()
 
     dz_atlas_set_surface( m_atlas, &m_textureId );
 
-    if( __select_atlas_texture( m_atlas, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+    if( __select_material_texture( m_material, &m_textureIndex, &m_texture ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -3358,8 +5364,6 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
     {
         return DZ_FAILURE;
     }
-
-    const dz_uint32_t textureCount = dz_atlas_get_texture_count( m_atlas );
 
     dz_int32_t atlasWidth;
     dz_int32_t atlasHeight;
@@ -3433,22 +5437,38 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
         dz_float_t region[4];
     } er_existing_texture_region_t;
 
-    std::vector<er_existing_texture_region_t> existingRegions;
-    existingRegions.reserve( textureCount );
-
-    for( dz_uint32_t index = 0; index != textureCount; ++index )
+    std::vector<dz_texture_t *> materialTextures;
+    for( dz_uint32_t materialIndex = 0; materialIndex != m_materialCount; ++materialIndex )
     {
-        const dz_texture_t * texture = DZ_NULLPTR;
-        if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+        dz_material_t * material = m_materials[materialIndex];
+        const dz_uint32_t textureCount = dz_material_get_texture_slot_count( material );
+
+        for( dz_uint32_t textureIndex = 0; textureIndex != textureCount; ++textureIndex )
         {
-            stbi_image_free( appendPixels );
-            stbi_image_free( atlasPixels );
+            const dz_texture_t * texture = DZ_NULLPTR;
+            if( dz_material_get_texture( material, textureIndex, &texture ) == DZ_FAILURE )
+            {
+                stbi_image_free( appendPixels );
+                stbi_image_free( atlasPixels );
 
-            return DZ_FAILURE;
+                return DZ_FAILURE;
+            }
+
+            dz_texture_t * mutableTexture = const_cast<dz_texture_t *>(texture);
+            if( std::find( materialTextures.begin(), materialTextures.end(), mutableTexture ) == materialTextures.end() )
+            {
+                materialTextures.push_back( mutableTexture );
+            }
         }
+    }
 
+    std::vector<er_existing_texture_region_t> existingRegions;
+    existingRegions.reserve( materialTextures.size() );
+
+    for( dz_texture_t * texture : materialTextures )
+    {
         er_existing_texture_region_t textureRegion;
-        textureRegion.texture = const_cast<dz_texture_t *>(texture);
+        textureRegion.texture = texture;
         __get_texture_region_pixels( texture, atlasWidth, atlasHeight, textureRegion.region );
 
         existingRegions.push_back( textureRegion );
@@ -3507,6 +5527,14 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
 
     m_textureRegionSelecting = false;
 
+    if( dz_material_get_texture_slot_count( m_material ) != 0 )
+    {
+        if( __select_material_texture( m_material, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
     return this->resetEffect();
 }
 //////////////////////////////////////////////////////////////////////////
@@ -3528,85 +5556,160 @@ static ImVec2 __screen_to_atlas_pixel( const ImVec2 & _screenPosition, const ImV
     return point;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t editor::showMaterialData()
+dz_result_t editor::loadAtlasImage( const char * _path )
 {
-    ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_MATERIAL_TITLE );
-    ImGui::Separator();
-
-    static int blend_current = dz_material_get_blend( m_material );
-    if( ImGui::Combo( ER_WINDOW_MATERIAL_COMBO_BLEND_MODE_TEXT, &blend_current, ER_BLEND_MODE_NAMES, IM_ARRAYSIZE( ER_BLEND_MODE_NAMES ) ) == true )
+    if( _path == DZ_NULLPTR )
     {
-        dz_material_set_blend( m_material, (dz_blend_type_e)blend_current );
+        return DZ_FAILURE;
     }
 
+    dz_int32_t textureWidth;
+    dz_int32_t textureHeight;
+    GLuint textureId = dz_render_make_texture( _path, &textureWidth, &textureHeight );
+
+    if( textureId == 0 )
+    {
+        return DZ_FAILURE;
+    }
+
+    FILE * f = fopen( _path, "rb" );
+    if( f == DZ_NULLPTR )
+    {
+        dz_render_delete_texture( textureId );
+
+        return DZ_FAILURE;
+    }
+
+    fseek( f, 0L, SEEK_END );
+    size_t sz = ftell( f );
+    rewind( f );
+
+    std::vector<dz_uint8_t> atlasBuffer;
+    atlasBuffer.resize( sz );
+    fread( atlasBuffer.data(), sz, 1, f );
+    fclose( f );
+
+    dz_render_delete_texture( m_textureId );
+
+    m_textureId = textureId;
+    m_textureWidth = textureWidth;
+    m_textureHeight = textureHeight;
+    m_atlasBuffer.swap( atlasBuffer );
+
+    dz_atlas_set_surface( m_atlas, &m_textureId );
+
+    for( dz_uint32_t materialIndex = 0; materialIndex != m_materialCount; ++materialIndex )
+    {
+        dz_material_t * material = m_materials[materialIndex];
+        const dz_uint32_t textureCount = dz_material_get_texture_slot_count( material );
+
+        for( dz_uint32_t textureIndex = 0; textureIndex != textureCount; ++textureIndex )
+        {
+            const dz_texture_t * texture = DZ_NULLPTR;
+            if( dz_material_get_texture( material, textureIndex, &texture ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            dz_float_t region[4];
+            __get_texture_region_pixels( texture, m_textureWidth, m_textureHeight, region );
+
+            if( region[2] == 0.f || region[3] == 0.f )
+            {
+                region[0] = 0.f;
+                region[1] = 0.f;
+                region[2] = (dz_float_t)m_textureWidth;
+                region[3] = (dz_float_t)m_textureHeight;
+
+                __set_texture_region_pixels( const_cast<dz_texture_t *>(texture), m_textureWidth, m_textureHeight, region );
+            }
+        }
+    }
+
+    m_textureRegionSelecting = false;
+
+    if( dz_material_get_texture_slot_count( m_material ) != 0 )
+    {
+        if( __select_material_texture( m_material, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    return this->resetEffect();
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::clearAtlas()
+{
+    // Drop all texture slots from every material since their UVs reference the atlas image we are removing.
+    for( dz_uint32_t materialIndex = 0; materialIndex != m_materialCount; ++materialIndex )
+    {
+        dz_material_t * material = m_materials[materialIndex];
+
+        const dz_texture_t * popTexture = DZ_NULLPTR;
+        while( dz_material_pop_texture( material, &popTexture ) == DZ_SUCCESSFUL )
+        {
+            dz_texture_destroy( m_service, popTexture );
+        }
+
+        dz_material_set_texture_index( material, 0 );
+        dz_material_set_texture_count( material, 1 );
+        dz_material_set_mode( material, dz_material_get_default_mode() );
+    }
+
+    dz_render_delete_texture( m_textureId );
+
+    m_textureId = 0;
+    m_textureWidth = 0;
+    m_textureHeight = 0;
+    m_atlasBuffer.clear();
+
+    dz_atlas_set_surface( m_atlas, &m_textureId );
+
+    m_textureIndex = 0;
+    m_texture = DZ_NULLPTR;
+    m_textureRegionSelecting = false;
+
+    return this->resetEffect();
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::showAtlasData()
+{
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_TITLE );
+    ImGui::Text( ER_WINDOW_ATLAS_TITLE );
     ImGui::Separator();
 
     ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL );
     ImGui::SameLine();
     ImGui::Text( "%d x %d", m_textureWidth, m_textureHeight );
 
-    ImGui::SameLine();
-
-    if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_BROWSE ) == true )
+    if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_APPEND ) == true )
     {
         nfdchar_t * texturePath = NULL;
         nfdresult_t result = NFD_OpenDialog( NULL, NULL, &texturePath );
 
         if( result == NFD_OKAY )
         {
-            puts( "Success!" );
-            puts( texturePath );
-
-            dz_render_delete_texture( m_textureId );
-
-            m_textureId = dz_render_make_texture( texturePath, &m_textureWidth, &m_textureHeight );
-
-            dz_atlas_set_surface( m_atlas, &m_textureId );
-
-            const dz_texture_t * texture = DZ_NULLPTR;
-            while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
+            if( m_textureId == 0 || m_atlasBuffer.empty() == true )
             {
-                dz_texture_destroy( m_service, texture );
-            }
+                if( this->loadAtlasImage( texturePath ) == DZ_FAILURE )
+                {
+                    free( texturePath );
 
-            dz_texture_t * tempTexture;
-            if( dz_texture_create( m_service, &tempTexture, DZ_NULLPTR ) == DZ_FAILURE )
+                    return DZ_FAILURE;
+                }
+            }
+            else
             {
-                return DZ_FAILURE;
+                if( this->appendTextureToAtlas( texturePath ) == DZ_FAILURE )
+                {
+                    free( texturePath );
+
+                    return DZ_FAILURE;
+                }
             }
-
-            m_texture = tempTexture;
-            m_textureIndex = 0;
-
-            dz_float_t region[4] = {0.f, 0.f, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight};
-            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
-
-            if( dz_atlas_add_texture( m_atlas, tempTexture ) == DZ_FAILURE )
-            {
-                dz_texture_destroy( m_service, tempTexture );
-
-                return DZ_FAILURE;
-            }
-
-            dz_material_set_mode( m_material, DZ_MATERIAL_MODE_TEXTURE );
-
-            m_textureRegionSelecting = false;
-
-            FILE * f = fopen( texturePath, "rb" );
-            fseek( f, 0L, SEEK_END );
-            size_t sz = ftell( f );
-            rewind( f );
-
-            m_atlasBuffer.resize( sz );
-            fread( m_atlasBuffer.data(), sz, 1, f );
-            fclose( f );
 
             free( texturePath );
-
-            this->resetEffect();
         }
         else if( result == NFD_CANCEL )
         {
@@ -3618,177 +5721,8 @@ dz_result_t editor::showMaterialData()
         }
     }
 
-    if( m_textureId != 0 )
+    if( m_textureId != 0 && m_atlasBuffer.empty() == false )
     {
-        ImGui::SameLine();
-
-        if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_APPEND ) == true )
-        {
-            nfdchar_t * texturePath = NULL;
-            nfdresult_t result = NFD_OpenDialog( NULL, NULL, &texturePath );
-
-            if( result == NFD_OKAY )
-            {
-                puts( "Success!" );
-                puts( texturePath );
-
-                if( this->appendTextureToAtlas( texturePath ) == DZ_FAILURE )
-                {
-                    free( texturePath );
-
-                    return DZ_FAILURE;
-                }
-
-                free( texturePath );
-            }
-            else if( result == NFD_CANCEL )
-            {
-                puts( "User pressed cancel." );
-            }
-            else
-            {
-                printf( "Error: %s\n", NFD_GetError() );
-            }
-        }
-    }
-
-    if( m_textureId != 0 && m_textureWidth > 0 && m_textureHeight > 0 )
-    {
-        dz_uint32_t textureCount = dz_atlas_get_texture_count( m_atlas );
-
-        if( textureCount == 0 )
-        {
-            return DZ_SUCCESSFUL;
-        }
-
-        if( __select_atlas_texture( m_atlas, &m_textureIndex, &m_texture ) == DZ_FAILURE )
-        {
-            return DZ_SUCCESSFUL;
-        }
-
-        ImGui::Text( "%s %u", ER_WINDOW_MATERIAL_TEXTURE_REGIONS_LABEL, textureCount );
-
-        if( textureCount < ER_ATLAS_TEXTURE_MAX && ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_ADD_REGION ) == true )
-        {
-            dz_float_t textureWeight = 1.f;
-            if( dz_atlas_get_texture_random_weight( m_atlas, (dz_uint32_t)m_textureIndex, &textureWeight ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
-
-            dz_texture_t * texture;
-            if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
-
-            __copy_texture_data( texture, m_texture );
-
-            if( dz_atlas_add_texture( m_atlas, texture ) == DZ_FAILURE )
-            {
-                dz_texture_destroy( m_service, texture );
-
-                return DZ_FAILURE;
-            }
-
-            if( dz_atlas_set_texture_random_weight( m_atlas, textureCount, textureWeight ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
-
-            m_textureIndex = (int)textureCount;
-            m_texture = texture;
-            m_textureRegionSelecting = false;
-
-            dz_material_set_mode( m_material, DZ_MATERIAL_MODE_TEXTURE );
-            this->resetEffect();
-
-            textureCount = dz_atlas_get_texture_count( m_atlas );
-        }
-
-        if( textureCount > 1 )
-        {
-            ImGui::SameLine();
-
-            if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_REMOVE_REGION ) == true )
-            {
-                typedef struct er_atlas_texture_data_t
-                {
-                    const dz_texture_t * texture;
-                    dz_float_t random_weight;
-                } er_atlas_texture_data_t;
-
-                std::vector<er_atlas_texture_data_t> textures;
-                textures.reserve( textureCount - 1 );
-
-                const dz_texture_t * removeTexture = DZ_NULLPTR;
-
-                for( dz_uint32_t index = 0; index != textureCount; ++index )
-                {
-                    const dz_texture_t * texture = DZ_NULLPTR;
-                    if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
-                    {
-                        return DZ_FAILURE;
-                    }
-
-                    dz_float_t randomWeight;
-                    if( dz_atlas_get_texture_random_weight( m_atlas, index, &randomWeight ) == DZ_FAILURE )
-                    {
-                        return DZ_FAILURE;
-                    }
-
-                    if( (int)index == m_textureIndex )
-                    {
-                        removeTexture = texture;
-                    }
-                    else
-                    {
-                        er_atlas_texture_data_t textureData = {texture, randomWeight};
-                        textures.push_back( textureData );
-                    }
-                }
-
-                const dz_texture_t * popTexture = DZ_NULLPTR;
-                while( dz_atlas_pop_texture( m_atlas, &popTexture ) == DZ_SUCCESSFUL )
-                {
-                }
-
-                if( removeTexture != DZ_NULLPTR )
-                {
-                    dz_texture_destroy( m_service, removeTexture );
-                }
-
-                for( const er_atlas_texture_data_t & textureData : textures )
-                {
-                    if( dz_atlas_add_texture( m_atlas, textureData.texture ) == DZ_FAILURE )
-                    {
-                        return DZ_FAILURE;
-                    }
-
-                    const dz_uint32_t textureIndex = dz_atlas_get_texture_count( m_atlas ) - 1;
-                    if( dz_atlas_set_texture_random_weight( m_atlas, textureIndex, textureData.random_weight ) == DZ_FAILURE )
-                    {
-                        return DZ_FAILURE;
-                    }
-                }
-
-                textureCount = dz_atlas_get_texture_count( m_atlas );
-
-                if( m_textureIndex >= (int)textureCount )
-                {
-                    m_textureIndex = (int)textureCount - 1;
-                }
-
-                if( __select_atlas_texture( m_atlas, &m_textureIndex, &m_texture ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
-
-                m_textureRegionSelecting = false;
-                this->resetEffect();
-            }
-        }
-
         ImGui::SameLine();
 
         if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_OPTIMIZE_ATLAS ) == true )
@@ -3797,88 +5731,21 @@ dz_result_t editor::showMaterialData()
             {
                 return DZ_FAILURE;
             }
-
-            textureCount = dz_atlas_get_texture_count( m_atlas );
         }
 
-        bool weightChanged = false;
+        ImGui::SameLine();
 
-        for( dz_uint32_t index = 0; index != textureCount; ++index )
+        if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_CLEAR_ATLAS ) == true )
         {
-            const dz_texture_t * texture = DZ_NULLPTR;
-            if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+            if( this->clearAtlas() == DZ_FAILURE )
             {
                 return DZ_FAILURE;
             }
-
-            char label[32];
-            snprintf( label, sizeof( label ), "Region %u", index + 1 );
-
-            ImGui::PushID( (int)index );
-
-            if( ImGui::Selectable( label, (int)index == m_textureIndex, 0, ImVec2( 100.f, 0.f ) ) == true )
-            {
-                m_textureIndex = (int)index;
-                m_texture = const_cast<dz_texture_t *>(texture);
-                m_textureRegionSelecting = false;
-            }
-
-            ImGui::SameLine();
-
-            dz_float_t weight;
-            if( dz_atlas_get_texture_random_weight( m_atlas, index, &weight ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
-
-            const dz_float_t weightMax = DZ_MAX( 10.f, weight );
-
-            ImGui::SetNextItemWidth( 180.f );
-            if( ImGui::SliderFloat( ER_WINDOW_MATERIAL_TEXTURE_WEIGHT_LABEL, &weight, 0.f, weightMax, "%.2f" ) == true )
-            {
-                if( dz_atlas_set_texture_random_weight( m_atlas, index, weight ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
-
-                weightChanged = true;
-            }
-
-            ImGui::PopID();
         }
+    }
 
-        if( weightChanged == true )
-        {
-            this->resetEffect();
-        }
-
-        dz_float_t region[4];
-        __get_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
-
-        bool regionChanged = false;
-
-        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_X_LABEL, &region[0], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
-        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_Y_LABEL, &region[1], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
-        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_WIDTH_LABEL, &region[2], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
-        regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_HEIGHT_LABEL, &region[3], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
-
-        if( regionChanged == true )
-        {
-            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
-        }
-
-        if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_RESET_UV ) == true )
-        {
-            region[0] = 0.f;
-            region[1] = 0.f;
-            region[2] = (dz_float_t)m_textureWidth;
-            region[3] = (dz_float_t)m_textureHeight;
-
-            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
-
-            m_textureRegionSelecting = false;
-        }
-
+    if( m_textureId != 0 && m_textureWidth > 0 && m_textureHeight > 0 )
+    {
         dz_float_t previewWidth = (dz_float_t)m_textureWidth;
         const dz_float_t availableWidth = ImGui::GetContentRegionAvail().x;
 
@@ -3890,90 +5757,487 @@ dz_result_t editor::showMaterialData()
         const dz_float_t previewHeight = previewWidth * (dz_float_t)m_textureHeight / (dz_float_t)m_textureWidth;
 
         ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( previewWidth, previewHeight ) );
+    }
 
-        const ImVec2 imageMin = ImGui::GetItemRectMin();
-        const ImVec2 imageMax = ImGui::GetItemRectMax();
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::showMaterialData()
+{
+    ImGui::Spacing();
+    ImGui::Text( ER_WINDOW_MATERIAL_TITLE );
+    ImGui::Separator();
 
-        const dz_float_t imageWidth = imageMax.x - imageMin.x;
-        const dz_float_t imageHeight = imageMax.y - imageMin.y;
+    if( m_materialIndex < m_materialCount )
+    {
+        __editor_name_input( ER_WINDOW_RESOURCE_NAME_LABEL, m_materialInfos, m_materialCount, m_materialIndex, "Material" );
+    }
 
-        if( ImGui::IsItemHovered() == true && ImGui::IsMouseDoubleClicked( 0 ) == true )
+    if( dz_material_get_atlas( m_material ) != m_atlas )
+    {
+        dz_material_set_atlas( m_material, m_atlas );
+    }
+
+    if( dz_effect_get_atlas( m_effect ) != m_atlas )
+    {
+        dz_effect_set_atlas( m_effect, m_atlas );
+    }
+
+    int blend_current = (int)dz_material_get_blend( m_material );
+    if( ImGui::Combo( ER_WINDOW_MATERIAL_COMBO_BLEND_MODE_TEXT, &blend_current, ER_BLEND_MODE_NAMES, IM_ARRAYSIZE( ER_BLEND_MODE_NAMES ) ) == true )
+    {
+        dz_material_set_blend( m_material, (dz_blend_type_e)blend_current );
+    }
+
+    int mode_current = (int)dz_material_get_mode( m_material );
+    if( ImGui::Combo( ER_WINDOW_MATERIAL_COMBO_MODE_TEXT, &mode_current, ER_MATERIAL_MODE_NAMES, IM_ARRAYSIZE( ER_MATERIAL_MODE_NAMES ) ) == true )
+    {
+        dz_material_set_mode( m_material, (dz_material_mode_e)mode_current );
+
+        if( mode_current == DZ_MATERIAL_MODE_TEXTURE )
         {
-            const ImVec2 click = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
+            dz_material_set_texture_count( m_material, 1 );
+        }
 
-            dz_int32_t alpha_x;
-            dz_int32_t alpha_y;
-            dz_int32_t alpha_width;
-            dz_int32_t alpha_height;
+        this->resetEffect();
+    }
 
-            if( dz_render_find_alpha_bounds_near_from_memory( m_atlasBuffer.data(), m_atlasBuffer.size(), (dz_int32_t)click.x, (dz_int32_t)click.y, 1, &alpha_x, &alpha_y, &alpha_width, &alpha_height ) == DZ_SUCCESSFUL )
+    const dz_material_mode_e materialMode = dz_material_get_mode( m_material );
+
+    bool materialTextureChanged = false;
+
+    if( materialMode == DZ_MATERIAL_MODE_SOLID )
+    {
+        return DZ_SUCCESSFUL;
+    }
+
+    ImGui::Spacing();
+    ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_TITLE );
+    ImGui::Separator();
+
+    if( m_textureId == 0 || m_textureWidth <= 0 || m_textureHeight <= 0 )
+    {
+        return DZ_SUCCESSFUL;
+    }
+
+    dz_uint32_t textureCount = dz_material_get_texture_slot_count( m_material );
+
+    if( textureCount == 0 )
+    {
+        dz_texture_t * texture;
+        if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        dz_float_t region[4] = {0.f, 0.f, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight};
+        __set_texture_region_pixels( texture, m_textureWidth, m_textureHeight, region );
+
+        if( dz_material_add_texture( m_material, texture ) == DZ_FAILURE )
+        {
+            dz_texture_destroy( m_service, texture );
+
+            return DZ_FAILURE;
+        }
+
+        dz_material_set_texture_index( m_material, 0 );
+        dz_material_set_texture_count( m_material, 1 );
+
+        m_textureIndex = 0;
+        m_texture = texture;
+        textureCount = 1;
+        materialTextureChanged = true;
+    }
+
+    dz_uint32_t textureIndex = dz_material_get_texture_index( m_material );
+    if( textureIndex >= textureCount )
+    {
+        textureIndex = textureCount - 1;
+        dz_material_set_texture_index( m_material, textureIndex );
+        m_textureIndex = (int)textureIndex;
+        __select_material_texture( m_material, &m_textureIndex, &m_texture );
+    }
+
+    m_textureIndex = (int)textureIndex;
+    if( __select_material_texture( m_material, &m_textureIndex, &m_texture ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    ImGui::Text( "%s %u", ER_WINDOW_MATERIAL_TEXTURE_REGIONS_LABEL, textureCount );
+
+    if( textureCount < ER_ATLAS_TEXTURE_MAX && ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_ADD_REGION ) == true )
+    {
+        dz_float_t textureWeight = 1.f;
+        dz_material_get_texture_random_weight( m_material, (dz_uint32_t)m_textureIndex, &textureWeight );
+
+        dz_texture_t * texture;
+        if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        __copy_texture_data( texture, m_texture );
+
+        if( dz_material_add_texture( m_material, texture ) == DZ_FAILURE )
+        {
+            dz_texture_destroy( m_service, texture );
+
+            return DZ_FAILURE;
+        }
+
+        if( dz_material_set_texture_random_weight( m_material, textureCount, textureWeight ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        m_textureIndex = (int)textureCount;
+        m_texture = texture;
+        dz_material_set_texture_index( m_material, textureCount );
+        m_textureRegionSelecting = false;
+        materialTextureChanged = true;
+        textureCount = dz_material_get_texture_slot_count( m_material );
+    }
+
+    if( textureCount > 1 )
+    {
+        ImGui::SameLine();
+
+        if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_REMOVE_REGION ) == true )
+        {
+            typedef struct er_material_texture_data_t
             {
-                region[0] = (dz_float_t)alpha_x;
-                region[1] = (dz_float_t)alpha_y;
-                region[2] = (dz_float_t)alpha_width;
-                region[3] = (dz_float_t)alpha_height;
+                const dz_texture_t * texture;
+                dz_float_t random_weight;
+            } er_material_texture_data_t;
 
-                __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+            std::vector<er_material_texture_data_t> textures;
+            textures.reserve( textureCount - 1 );
+
+            const dz_texture_t * removeTexture = DZ_NULLPTR;
+
+            for( dz_uint32_t index = 0; index != textureCount; ++index )
+            {
+                const dz_texture_t * texture = DZ_NULLPTR;
+                if( dz_material_get_texture( m_material, index, &texture ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                dz_float_t randomWeight;
+                if( dz_material_get_texture_random_weight( m_material, index, &randomWeight ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                if( (int)index == m_textureIndex )
+                {
+                    removeTexture = texture;
+                }
+                else
+                {
+                    er_material_texture_data_t textureData = {texture, randomWeight};
+                    textures.push_back( textureData );
+                }
             }
 
-            m_textureRegionSelecting = false;
-        }
-        else if( ImGui::IsItemHovered() == true && ImGui::IsMouseClicked( 0 ) == true )
-        {
-            m_textureRegionSelecting = true;
-            m_textureRegionSelectStart = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
-        }
-
-        if( m_textureRegionSelecting == true )
-        {
-            const ImVec2 current = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
-
-            region[0] = m_textureRegionSelectStart.x;
-            region[1] = m_textureRegionSelectStart.y;
-            region[2] = current.x - m_textureRegionSelectStart.x;
-            region[3] = current.y - m_textureRegionSelectStart.y;
-
-            m_textureRegionSelecting = ImGui::IsMouseDown( 0 );
-
-            if( region[2] != 0.f || region[3] != 0.f )
+            const dz_texture_t * popTexture = DZ_NULLPTR;
+            while( dz_material_pop_texture( m_material, &popTexture ) == DZ_SUCCESSFUL )
             {
-                __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
             }
-        }
 
-        const dz_float_t scaleX = imageWidth / (dz_float_t)m_textureWidth;
-        const dz_float_t scaleY = imageHeight / (dz_float_t)m_textureHeight;
+            if( removeTexture != DZ_NULLPTR )
+            {
+                dz_texture_destroy( m_service, removeTexture );
+            }
 
-        for( dz_uint32_t index = 0; index != textureCount; ++index )
-        {
-            const dz_texture_t * texture = DZ_NULLPTR;
-            if( dz_atlas_get_texture( m_atlas, index, &texture ) == DZ_FAILURE )
+            for( const er_material_texture_data_t & textureData : textures )
+            {
+                if( dz_material_add_texture( m_material, textureData.texture ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+
+                const dz_uint32_t index = dz_material_get_texture_slot_count( m_material ) - 1;
+                if( dz_material_set_texture_random_weight( m_material, index, textureData.random_weight ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            textureCount = dz_material_get_texture_slot_count( m_material );
+
+            if( m_textureIndex >= (int)textureCount )
+            {
+                m_textureIndex = (int)textureCount - 1;
+            }
+
+            dz_material_set_texture_index( m_material, (dz_uint32_t)m_textureIndex );
+
+            if( __select_material_texture( m_material, &m_textureIndex, &m_texture ) == DZ_FAILURE )
             {
                 return DZ_FAILURE;
             }
 
-            dz_float_t textureRegion[4];
-            __get_texture_region_pixels( texture, m_textureWidth, m_textureHeight, textureRegion );
+            m_textureRegionSelecting = false;
+            materialTextureChanged = true;
+        }
+    }
 
-            const ImVec2 selectionMin( imageMin.x + textureRegion[0] * scaleX, imageMin.y + textureRegion[1] * scaleY );
-            const ImVec2 selectionMax( imageMin.x + (textureRegion[0] + textureRegion[2]) * scaleX, imageMin.y + (textureRegion[1] + textureRegion[3]) * scaleY );
 
-            if( (int)index == m_textureIndex )
+    for( dz_uint32_t index = 0; index != textureCount; ++index )
+    {
+        const dz_texture_t * texture = DZ_NULLPTR;
+        if( dz_material_get_texture( m_material, index, &texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        char label[32];
+        snprintf( label, sizeof( label ), "Region %u", index + 1 );
+
+        ImGui::PushID( (int)index );
+
+        if( ImGui::Selectable( label, (int)index == m_textureIndex, 0, ImVec2( 100.f, 0.f ) ) == true )
+        {
+            m_textureIndex = (int)index;
+            m_texture = const_cast<dz_texture_t *>(texture);
+            dz_material_set_texture_index( m_material, index );
+            m_textureRegionSelecting = false;
+            materialTextureChanged = true;
+        }
+
+        ImGui::PopID();
+    }
+
+    textureIndex = (dz_uint32_t)m_textureIndex;
+
+    char preview[32];
+    snprintf( preview, sizeof( preview ), "Region %u", textureIndex + 1 );
+
+    if( ImGui::BeginCombo( ER_WINDOW_MATERIAL_UV_INDEX_LABEL, preview ) == true )
+    {
+        for( dz_uint32_t index = 0; index != textureCount; ++index )
+        {
+            char label[32];
+            snprintf( label, sizeof( label ), "Region %u", index + 1 );
+
+            const bool selected = index == textureIndex;
+            if( ImGui::Selectable( label, selected ) == true )
             {
-                ImGui::GetWindowDrawList()->AddRectFilled( selectionMin, selectionMax, IM_COL32( 255, 216, 64, 48 ) );
-                ImGui::GetWindowDrawList()->AddRect( selectionMin, selectionMax, IM_COL32( 255, 216, 64, 255 ) );
+                textureIndex = index;
+                dz_material_set_texture_index( m_material, textureIndex );
+                m_textureIndex = (int)textureIndex;
+                __select_material_texture( m_material, &m_textureIndex, &m_texture );
+                materialTextureChanged = true;
             }
-            else
+
+            if( selected == true )
             {
-                ImGui::GetWindowDrawList()->AddRect( selectionMin, selectionMax, IM_COL32( 64, 192, 255, 192 ) );
+                ImGui::SetItemDefaultFocus();
             }
         }
 
-        dz_float_t u[4];
-        dz_float_t v[4];
-        dz_texture_get_uv( m_texture, u, v );
+        ImGui::EndCombo();
+    }
 
-        ImGui::Text( "UV: %.4f %.4f - %.4f %.4f", u[0], v[0], u[2], v[2] );
+    if( materialMode == DZ_MATERIAL_MODE_TEXTURE )
+    {
+        if( dz_material_get_texture_count( m_material ) != 1 )
+        {
+            dz_material_set_texture_count( m_material, 1 );
+            materialTextureChanged = true;
+        }
+    }
+    else if( materialMode == DZ_MATERIAL_MODE_SEQUENCE )
+    {
+        dz_uint32_t uvCount = dz_material_get_texture_count( m_material );
+        if( uvCount == 0 )
+        {
+            uvCount = 1;
+        }
+
+        const dz_uint32_t maxCount = textureCount - textureIndex;
+        if( uvCount > maxCount )
+        {
+            uvCount = maxCount;
+        }
+
+        int uvCountInput = (int)uvCount;
+        if( ImGui::InputInt( ER_WINDOW_MATERIAL_UV_COUNT_LABEL, &uvCountInput, 1, 1, ImGuiInputTextFlags_None ) == true )
+        {
+            if( uvCountInput < 1 )
+            {
+                uvCountInput = 1;
+            }
+            else if( uvCountInput > (int)maxCount )
+            {
+                uvCountInput = (int)maxCount;
+            }
+
+            uvCount = (dz_uint32_t)uvCountInput;
+            dz_material_set_texture_count( m_material, uvCount );
+            materialTextureChanged = true;
+        }
+
+        if( dz_material_get_texture_count( m_material ) != uvCount )
+        {
+            dz_material_set_texture_count( m_material, uvCount );
+            materialTextureChanged = true;
+        }
+    }
+
+    dz_float_t randomWeight;
+    if( dz_material_get_texture_random_weight( m_material, (dz_uint32_t)m_textureIndex, &randomWeight ) == DZ_SUCCESSFUL )
+    {
+        if( ImGui::InputFloat( "Random Weight", &randomWeight, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None ) == true )
+        {
+            if( randomWeight < 0.f )
+            {
+                randomWeight = 0.f;
+            }
+
+            dz_material_set_texture_random_weight( m_material, (dz_uint32_t)m_textureIndex, randomWeight );
+            materialTextureChanged = true;
+        }
+    }
+
+    dz_float_t region[4];
+    __get_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+
+    if( region[2] == 0.f || region[3] == 0.f )
+    {
+        region[0] = 0.f;
+        region[1] = 0.f;
+        region[2] = (dz_float_t)m_textureWidth;
+        region[3] = (dz_float_t)m_textureHeight;
+
+        __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+    }
+
+    bool regionChanged = false;
+
+    regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_X_LABEL, &region[0], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+    regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_Y_LABEL, &region[1], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+    regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_WIDTH_LABEL, &region[2], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+    regionChanged |= ImGui::InputFloat( ER_WINDOW_MATERIAL_TEXTURE_REGION_HEIGHT_LABEL, &region[3], 1.f, 10.f, "%.1f", ImGuiInputTextFlags_None );
+
+    if( regionChanged == true )
+    {
+        __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+    }
+
+    if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_RESET_UV ) == true )
+    {
+        region[0] = 0.f;
+        region[1] = 0.f;
+        region[2] = (dz_float_t)m_textureWidth;
+        region[3] = (dz_float_t)m_textureHeight;
+
+        __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+
+        m_textureRegionSelecting = false;
+    }
+
+    dz_float_t previewWidth = (dz_float_t)m_textureWidth;
+    const dz_float_t availableWidth = ImGui::GetContentRegionAvail().x;
+
+    if( availableWidth > 0.f && previewWidth > availableWidth )
+    {
+        previewWidth = availableWidth;
+    }
+
+    const dz_float_t previewHeight = previewWidth * (dz_float_t)m_textureHeight / (dz_float_t)m_textureWidth;
+
+    ImGui::Image( (void *)(intptr_t)m_textureId, ImVec2( previewWidth, previewHeight ) );
+
+    const ImVec2 imageMin = ImGui::GetItemRectMin();
+    const ImVec2 imageMax = ImGui::GetItemRectMax();
+
+    const dz_float_t imageWidth = imageMax.x - imageMin.x;
+    const dz_float_t imageHeight = imageMax.y - imageMin.y;
+
+    if( ImGui::IsItemHovered() == true && ImGui::IsMouseDoubleClicked( 0 ) == true )
+    {
+        const ImVec2 click = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
+
+        dz_int32_t alpha_x;
+        dz_int32_t alpha_y;
+        dz_int32_t alpha_width;
+        dz_int32_t alpha_height;
+
+        if( dz_render_find_alpha_bounds_near_from_memory( m_atlasBuffer.data(), m_atlasBuffer.size(), (dz_int32_t)click.x, (dz_int32_t)click.y, 1, &alpha_x, &alpha_y, &alpha_width, &alpha_height ) == DZ_SUCCESSFUL )
+        {
+            region[0] = (dz_float_t)alpha_x;
+            region[1] = (dz_float_t)alpha_y;
+            region[2] = (dz_float_t)alpha_width;
+            region[3] = (dz_float_t)alpha_height;
+
+            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+        }
+
+        m_textureRegionSelecting = false;
+    }
+    else if( ImGui::IsItemHovered() == true && ImGui::IsMouseClicked( 0 ) == true )
+    {
+        m_textureRegionSelecting = true;
+        m_textureRegionSelectStart = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
+    }
+
+    if( m_textureRegionSelecting == true )
+    {
+        const ImVec2 current = __screen_to_atlas_pixel( ImGui::GetIO().MousePos, imageMin, imageWidth, imageHeight, m_textureWidth, m_textureHeight );
+
+        region[0] = m_textureRegionSelectStart.x;
+        region[1] = m_textureRegionSelectStart.y;
+        region[2] = current.x - m_textureRegionSelectStart.x;
+        region[3] = current.y - m_textureRegionSelectStart.y;
+
+        m_textureRegionSelecting = ImGui::IsMouseDown( 0 );
+
+        if( region[2] != 0.f || region[3] != 0.f )
+        {
+            __set_texture_region_pixels( m_texture, m_textureWidth, m_textureHeight, region );
+        }
+    }
+
+    const dz_float_t scaleX = imageWidth / (dz_float_t)m_textureWidth;
+    const dz_float_t scaleY = imageHeight / (dz_float_t)m_textureHeight;
+
+    for( dz_uint32_t index = 0; index != textureCount; ++index )
+    {
+        const dz_texture_t * texture = DZ_NULLPTR;
+        if( dz_material_get_texture( m_material, index, &texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        dz_float_t textureRegion[4];
+        __get_texture_region_pixels( texture, m_textureWidth, m_textureHeight, textureRegion );
+
+        const ImVec2 selectionMin( imageMin.x + textureRegion[0] * scaleX, imageMin.y + textureRegion[1] * scaleY );
+        const ImVec2 selectionMax( imageMin.x + (textureRegion[0] + textureRegion[2]) * scaleX, imageMin.y + (textureRegion[1] + textureRegion[3]) * scaleY );
+
+        if( (int)index == m_textureIndex )
+        {
+            ImGui::GetWindowDrawList()->AddRectFilled( selectionMin, selectionMax, IM_COL32( 255, 216, 64, 48 ) );
+            ImGui::GetWindowDrawList()->AddRect( selectionMin, selectionMax, IM_COL32( 255, 216, 64, 255 ) );
+        }
+        else
+        {
+            ImGui::GetWindowDrawList()->AddRect( selectionMin, selectionMax, IM_COL32( 64, 192, 255, 192 ) );
+        }
+    }
+
+    dz_float_t u[4];
+    dz_float_t v[4];
+    dz_texture_get_uv( m_texture, u, v );
+
+    ImGui::Text( "UV: %.4f %.4f - %.4f %.4f", u[0], v[0], u[2], v[2] );
+
+    if( materialTextureChanged == true )
+    {
+        this->resetEffect();
     }
 
     return DZ_SUCCESSFUL;
@@ -3993,14 +6257,9 @@ void editor::showDazzleCanvas()
     // render dazzle
     dz_render_set_proj( &m_openglDesc, -(dz_float_t)m_dzWindowSize.x * 0.5f, (dz_float_t)m_dzWindowSize.x * 0.5f, -(dz_float_t)m_dzWindowSize.y * 0.5f, (dz_float_t)m_dzWindowSize.y * 0.5f );
 
-    if( m_textureId != 0 )
-    {
-        dz_render_use_texture_program( &m_openglDesc );
-    }
-    else
-    {
-        dz_render_use_color_program( &m_openglDesc );
-    }
+    // Always use the texture program; chunks without a real surface fall back to a 1x1 white texture in the renderer,
+    // which makes the fragment color equal to the vertex color (correct rendering for SOLID materials too).
+    dz_render_use_texture_program( &m_openglDesc );
 
     GLint oldViewport[4];
     GLCALL( glGetIntegerv, (GL_VIEWPORT, oldViewport) );
@@ -4012,13 +6271,41 @@ void editor::showDazzleCanvas()
     GLCALL( glViewport, (oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]) );
 }
 //////////////////////////////////////////////////////////////////////////
-bool editor::dumpJSON_( const jpp::object & _json, std::string * _out, bool _needCompactDump )
+bool editor::dumpJSON_( const jpp::object & _json, er_memory_buffer_t * const _out, bool _needCompactDump )
 {
     auto my_jpp_dump_callback = []( const char * _buffer, size_t _size, dz_userdata_t _ud )
     {
-        std::string * p_str = static_cast<std::string *>(_ud);
+        er_memory_buffer_t * memoryBuffer = static_cast<er_memory_buffer_t *>(_ud);
 
-        p_str->append( _buffer, _size );
+        if( _size == 0 )
+        {
+            return 0;
+        }
+
+        const dz_size_t requiredSize = memoryBuffer->size + (dz_size_t)_size;
+
+        if( requiredSize > memoryBuffer->capacity )
+        {
+            dz_size_t newCapacity = memoryBuffer->capacity != 0 ? memoryBuffer->capacity * 2 : 4096;
+
+            while( newCapacity < requiredSize )
+            {
+                newCapacity *= 2;
+            }
+
+            void * newData = realloc( memoryBuffer->data, newCapacity );
+
+            if( newData == DZ_NULLPTR )
+            {
+                return -1;
+            }
+
+            memoryBuffer->data = static_cast<dz_uint8_t *>(newData);
+            memoryBuffer->capacity = newCapacity;
+        }
+
+        std::memcpy( memoryBuffer->data + memoryBuffer->size, _buffer, _size );
+        memoryBuffer->size = requiredSize;
 
         return 0;
     };
@@ -4084,8 +6371,31 @@ void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out )
     {
         return;
     }
-
     *_out = json;
+}
+//////////////////////////////////////////////////////////////////////////
+static ImVec2 __canvas_world_to_screen( const ImVec2 & _world, const ImVec2 & _canvasMin, const ImVec2 & _canvasSize )
+{
+    return ImVec2(
+        _canvasMin.x + _canvasSize.x * 0.5f + (_world.x + camera_offset_x) * camera_scale,
+        _canvasMin.y + _canvasSize.y * 0.5f - (_world.y + camera_offset_y) * camera_scale
+    );
+}
+//////////////////////////////////////////////////////////////////////////
+static ImVec2 __canvas_screen_to_world( const ImVec2 & _screen, const ImVec2 & _canvasMin, const ImVec2 & _canvasSize )
+{
+    return ImVec2(
+        (_screen.x - _canvasMin.x - _canvasSize.x * 0.5f) / camera_scale - camera_offset_x,
+        -(_screen.y - _canvasMin.y - _canvasSize.y * 0.5f) / camera_scale - camera_offset_y
+    );
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_float_t __screen_distance_pow_2( const ImVec2 & _a, const ImVec2 & _b )
+{
+    const dz_float_t dx = _a.x - _b.x;
+    const dz_float_t dy = _a.y - _b.y;
+
+    return dx * dx + dy * dy;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showContentPane()
@@ -4098,9 +6408,9 @@ dz_result_t editor::showContentPane()
     m_dzWindowSize.y = columnHeight;
 
     ImGuiWindow * window = ImGui::GetCurrentWindow();
-    
+
     ImGuiID id = window->GetID( "DAZZLE_RENDER_CANVAS" );
-    
+
     if( window->SkipItems == true )
     {
         return DZ_FAILURE;
@@ -4121,11 +6431,10 @@ dz_result_t editor::showContentPane()
         const dz_float_t upperBound = cursorPos.y;
         const dz_float_t downBound = cursorPos.y + columnHeight;
 
-        const dz_float_t halfWidth = columnWidth / 2.f;
-        const dz_float_t halfHeight = columnHeight / 2.f;
+        const ImVec2 originScreen = __canvas_world_to_screen( ImVec2( 0.f, 0.f ), cursorPos, m_dzWindowSize );
 
-        ImVec2 verticalLineStartPos( cursorPos.x + halfWidth + camera_offset_x, cursorPos.y );
-        ImVec2 verticalLineEndPos( cursorPos.x + halfWidth + camera_offset_x, cursorPos.y + columnHeight );
+        ImVec2 verticalLineStartPos( originScreen.x, cursorPos.y );
+        ImVec2 verticalLineEndPos( originScreen.x, cursorPos.y + columnHeight );
 
         if( verticalLineStartPos.x > leftBound
             && verticalLineStartPos.x < rightBound
@@ -4135,8 +6444,8 @@ dz_result_t editor::showContentPane()
             window->DrawList->AddLine( verticalLineStartPos, verticalLineEndPos, ImGui::GetColorU32( ImGuiCol_TextDisabled ) );
         }
 
-        ImVec2 horizontalLineStartPos( cursorPos.x, cursorPos.y + halfHeight + camera_offset_y );
-        ImVec2 horizontalLineEndPos( cursorPos.x + columnWidth, cursorPos.y + halfHeight + camera_offset_y );
+        ImVec2 horizontalLineStartPos( cursorPos.x, originScreen.y );
+        ImVec2 horizontalLineEndPos( cursorPos.x + columnWidth, originScreen.y );
 
         if( horizontalLineStartPos.y > upperBound
             && horizontalLineStartPos.y < downBound
@@ -4168,8 +6477,150 @@ dz_result_t editor::showContentPane()
         //}
     }
 
+    ImGui::SetCursorScreenPos( cursorPos );
+    ImGui::InvisibleButton( "DAZZLE_CANVAS_HITBOX", m_dzWindowSize );
+
+    const bool canvasHovered = ImGui::IsItemHovered();
+    const bool spacePressed = glfwGetKey( m_fwWindow, GLFW_KEY_SPACE ) == GLFW_PRESS;
+    const ImVec2 mouseWorld = __canvas_screen_to_world( ImGui::GetIO().MousePos, cursorPos, m_dzWindowSize );
+    const dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
+
+    if( m_showLayerGizmos == false )
+    {
+        m_layerGizmoDragging = false;
+    }
+
+    if( ImGui::IsMouseReleased( 0 ) == true )
+    {
+        m_layerGizmoDragging = false;
+    }
+
+    if( m_showLayerGizmos == true && canvasHovered == true && spacePressed == false && ImGui::IsMouseClicked( 0 ) == true )
+    {
+        dz_uint32_t hitLayerIndex = DZ_EFFECT_LAYER_NONE;
+        dz_float_t bestDistance = ER_LAYER_GIZMO_HIT_RADIUS_POW_2;
+
+        for( dz_uint32_t index = 0; index != layerCount; ++index )
+        {
+            dz_effect_layer_desc_t layer;
+            if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            const ImVec2 layerScreen = __canvas_world_to_screen( ImVec2( layer.x, layer.y ), cursorPos, m_dzWindowSize );
+            const dz_float_t distance = __screen_distance_pow_2( ImGui::GetIO().MousePos, layerScreen );
+
+            if( distance <= bestDistance )
+            {
+                bestDistance = distance;
+                hitLayerIndex = index;
+            }
+        }
+
+        if( hitLayerIndex != DZ_EFFECT_LAYER_NONE )
+        {
+            dz_effect_layer_desc_t layer;
+            if( dz_effect_get_layer( m_effect, hitLayerIndex, &layer ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            if( hitLayerIndex != m_layerIndex )
+            {
+                if( this->selectLayer( hitLayerIndex ) == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            m_layerGizmoDragging = true;
+            m_layerGizmoDragIndex = hitLayerIndex;
+            m_layerGizmoDragOffset = ImVec2( layer.x - mouseWorld.x, layer.y - mouseWorld.y );
+        }
+    }
+
+    if( m_layerGizmoDragging == true )
+    {
+        if( ImGui::IsMouseDown( 0 ) == false || spacePressed == true || m_layerGizmoDragIndex >= layerCount || m_showLayerGizmos == false )
+        {
+            m_layerGizmoDragging = false;
+        }
+        else
+        {
+            dz_effect_layer_desc_t layer;
+            if( dz_effect_get_layer( m_effect, m_layerGizmoDragIndex, &layer ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            layer.x = mouseWorld.x + m_layerGizmoDragOffset.x;
+            layer.y = mouseWorld.y + m_layerGizmoDragOffset.y;
+
+            if( dz_effect_set_layer( m_effect, m_layerGizmoDragIndex, &layer ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+        }
+    }
+
     ImGui::GetWindowDrawList()->AddCallback( &__draw_callback, this );
     ImGui::GetWindowDrawList()->AddCallback( ImDrawCallback_ResetRenderState, nullptr );
+
+    ImDrawList * drawList = ImGui::GetWindowDrawList();
+    drawList->PushClipRect( cursorPos, cursorPos + m_dzWindowSize, true );
+
+    if( m_showEffectCenter == true )
+    {
+        dz_float_t effectX;
+        dz_float_t effectY;
+        dz_instance_get_position( m_instance, &effectX, &effectY );
+
+        const ImVec2 effectScreen = __canvas_world_to_screen( ImVec2( effectX, effectY ), cursorPos, m_dzWindowSize );
+        const ImU32 effectColor = IM_COL32( 255, 255, 255, 230 );
+        const ImU32 effectFillColor = IM_COL32( 255, 255, 255, 42 );
+
+        drawList->AddCircleFilled( effectScreen, 12.f, effectFillColor, 24 );
+        drawList->AddCircle( effectScreen, 8.f, effectColor, 24, 2.f );
+        drawList->AddLine( ImVec2( effectScreen.x - 16.f, effectScreen.y ), ImVec2( effectScreen.x + 16.f, effectScreen.y ), effectColor, 2.f );
+        drawList->AddLine( ImVec2( effectScreen.x, effectScreen.y - 16.f ), ImVec2( effectScreen.x, effectScreen.y + 16.f ), effectColor, 2.f );
+    }
+
+    if( m_showLayerGizmos == true )
+    {
+        for( dz_uint32_t index = 0; index != layerCount; ++index )
+        {
+            dz_effect_layer_desc_t layer;
+            if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
+            {
+                return DZ_FAILURE;
+            }
+
+            const bool selected = index == m_layerIndex;
+            const ImVec2 layerScreen = __canvas_world_to_screen( ImVec2( layer.x, layer.y ), cursorPos, m_dzWindowSize );
+            const ImU32 color = selected == true ? IM_COL32( 255, 216, 64, 255 ) : IM_COL32( 64, 192, 255, 220 );
+            const ImU32 fillColor = selected == true ? IM_COL32( 255, 216, 64, 72 ) : IM_COL32( 64, 192, 255, 48 );
+            const dz_float_t radius = selected == true ? ER_LAYER_GIZMO_SELECTED_RADIUS : ER_LAYER_GIZMO_RADIUS;
+
+            const ImVec2 rotationEnd(
+                layerScreen.x + cosf( layer.angle ) * 26.f,
+                layerScreen.y + sinf( layer.angle ) * 26.f
+            );
+
+            drawList->AddCircleFilled( layerScreen, ER_LAYER_GIZMO_HIT_RADIUS, fillColor, 24 );
+            drawList->AddLine( layerScreen, rotationEnd, color, 2.f );
+            drawList->AddCircleFilled( rotationEnd, 3.f, color, 12 );
+            drawList->AddCircle( layerScreen, radius, color, 16, 2.f );
+            drawList->AddLine( ImVec2( layerScreen.x - 10.f, layerScreen.y ), ImVec2( layerScreen.x + 10.f, layerScreen.y ), color, 2.f );
+            drawList->AddLine( ImVec2( layerScreen.x, layerScreen.y - 10.f ), ImVec2( layerScreen.x, layerScreen.y + 10.f ), color, 2.f );
+
+            char label[32];
+            snprintf( label, sizeof( label ), "L%u", index + 1 );
+            drawList->AddText( ImVec2( layerScreen.x + 12.f, layerScreen.y - 16.f ), color, label );
+        }
+    }
+
+    drawList->PopClipRect();
 
     if( m_showDebugInfo == true )
     {
@@ -4306,6 +6757,12 @@ dz_result_t editor::showContentPaneControls()
     }
     ImGui::SameLine();
 
+    ImGui::Checkbox( ER_WINDOW_CONTROLS_SHOW_LAYER_GIZMOS_TEXT, &m_showLayerGizmos );
+    ImGui::SameLine();
+
+    ImGui::Checkbox( ER_WINDOW_CONTROLS_SHOW_EFFECT_CENTER_TEXT, &m_showEffectCenter );
+    ImGui::SameLine();
+
     ImGui::Text( ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT );
 
     // emitter states
@@ -4337,21 +6794,7 @@ void editor::finalize()
 {
     // finalize emitter
     {
-        dz_instance_destroy( m_service, m_instance );
-        dz_effect_destroy( m_service, m_effect );
-        dz_affector_destroy( m_service, m_affector );
-        dz_emitter_destroy( m_service, m_emitter );
-        dz_shape_destroy( m_service, m_shape );
-
-        dz_material_destroy( m_service, m_material );
-
-        const dz_texture_t * texture;
-        while( dz_atlas_pop_texture( m_atlas, &texture ) == DZ_SUCCESSFUL )
-        {
-            dz_texture_destroy( m_service, texture );
-        }
-
-        dz_atlas_destroy( m_service, m_atlas );
+        this->destroyEffectResources();
 
         dz_service_destroy( m_service );
     }

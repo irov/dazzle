@@ -3,6 +3,12 @@
 
 #include "dazzle/dazzle.h"
 
+typedef struct dz_material_texture_t
+{
+    const dz_texture_t * texture;
+    dz_float_t random_weight;
+} dz_material_texture_t;
+
 typedef struct dz_material_t
 {
     dz_blend_type_e blend_type;
@@ -15,6 +21,14 @@ typedef struct dz_material_t
     dz_material_mode_e mode;
 
     const dz_atlas_t * atlas;
+
+    dz_material_texture_t textures[64];
+    dz_uint32_t textures_count;
+    dz_float_t textures_time;
+    dz_float_t textures_random_weight;
+
+    dz_uint32_t texture_index;
+    dz_uint32_t texture_count;
 
     dz_userdata_t ud;
 } dz_material_t;

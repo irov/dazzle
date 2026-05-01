@@ -53,9 +53,6 @@ void dz_texture_get_trim_offset( const dz_texture_t * _texture, dz_float_t * con
 void dz_texture_set_trim_size( dz_texture_t * _texture, dz_float_t _width, dz_float_t _height );
 void dz_texture_get_trim_size( const dz_texture_t * _texture, dz_float_t * const _width, dz_float_t * const _height );
 
-void dz_texture_set_random_weight( dz_texture_t * const _texture, dz_float_t _weight );
-dz_float_t dz_texture_get_random_weight( const dz_texture_t * _texture );
-
 void dz_texture_set_sequence_delay( dz_texture_t * const _texture, dz_float_t _delay );
 dz_float_t dz_texture_get_sequence_delay( const dz_texture_t * _texture );
 
@@ -69,12 +66,6 @@ dz_userdata_t dz_atlas_get_ud( const dz_atlas_t * _atlas );
 
 void dz_atlas_set_surface( dz_atlas_t * const _atlas, dz_userdata_t _surface );
 dz_userdata_t dz_atlas_get_surface( const dz_atlas_t * _atlas );
-
-dz_uint32_t dz_atlas_get_texture_count( const dz_atlas_t * _atlas );
-
-dz_result_t dz_atlas_add_texture( dz_atlas_t * const _atlas, const dz_texture_t * _texture );
-dz_result_t dz_atlas_get_texture( const dz_atlas_t * _atlas, dz_uint32_t _index, const dz_texture_t ** _texture );
-dz_result_t dz_atlas_pop_texture( dz_atlas_t * const _atlas, const dz_texture_t ** _texture );
 
 typedef enum dz_blend_type_e
 {
@@ -115,6 +106,19 @@ void dz_material_get_color( const dz_material_t * _material, dz_float_t * const 
 
 void dz_material_set_atlas( dz_material_t * const _material, const dz_atlas_t * _atlas );
 const dz_atlas_t * dz_material_get_atlas( const dz_material_t * _material );
+
+dz_uint32_t dz_material_get_texture_slot_count( const dz_material_t * _material );
+dz_result_t dz_material_add_texture( dz_material_t * const _material, const dz_texture_t * _texture );
+dz_result_t dz_material_get_texture( const dz_material_t * _material, dz_uint32_t _index, const dz_texture_t ** _texture );
+dz_result_t dz_material_set_texture_random_weight( dz_material_t * const _material, dz_uint32_t _index, dz_float_t _weight );
+dz_result_t dz_material_get_texture_random_weight( const dz_material_t * _material, dz_uint32_t _index, dz_float_t * const _weight );
+dz_result_t dz_material_pop_texture( dz_material_t * const _material, const dz_texture_t ** _texture );
+
+void dz_material_set_texture_index( dz_material_t * const _material, dz_uint32_t _index );
+dz_uint32_t dz_material_get_texture_index( const dz_material_t * _material );
+
+void dz_material_set_texture_count( dz_material_t * const _material, dz_uint32_t _count );
+dz_uint32_t dz_material_get_texture_count( const dz_material_t * _material );
 
 
 
@@ -309,23 +313,83 @@ void dz_emitter_timeline_get_limit( dz_emitter_timeline_type_e _timeline, dz_tim
 
 typedef struct dz_effect_t dz_effect_t;
 
-dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, const dz_material_t * _material, const dz_shape_t * _shape, const dz_emitter_t * _emitter, const dz_affector_t * _affector, dz_float_t _life, dz_uint32_t _seed, dz_userdata_t _ud );
+#define DZ_EFFECT_LAYER_MAX 64
+#define DZ_EFFECT_TRIGGER_MAX 128
+#define DZ_EFFECT_EMITTER_INSTANCE_MAX 128
+#define DZ_EFFECT_LAYER_NONE (~0U)
+
+typedef enum dz_effect_event_type_e
+{
+    DZ_EFFECT_EVENT_EFFECT_START,
+    DZ_EFFECT_EVENT_TIME,
+    DZ_EFFECT_EVENT_LAYER_EMIT_COMPLETE,
+    DZ_EFFECT_EVENT_LAYER_PARTICLE_COMPLETE,
+    DZ_EFFECT_EVENT_PARTICLE_DEATH,
+    DZ_EFFECT_EVENT_CUSTOM,
+
+    __DZ_EFFECT_EVENT_MAX__
+} dz_effect_event_type_e;
+
+typedef struct dz_effect_layer_desc_t
+{
+    const dz_material_t * material;
+    const dz_shape_t * shape;
+    const dz_emitter_t * emitter;
+    const dz_affector_t * affector;
+
+    dz_float_t x;
+    dz_float_t y;
+    dz_float_t angle;
+
+    dz_float_t life;
+    dz_uint32_t seed;
+} dz_effect_layer_desc_t;
+
+typedef struct dz_effect_trigger_desc_t
+{
+    dz_effect_event_type_e event_type;
+
+    dz_uint32_t source_layer_index;
+    dz_uint32_t target_layer_index;
+
+    dz_float_t time;
+    dz_float_t probability;
+
+    dz_uint32_t spawn_count_min;
+    dz_uint32_t spawn_count_max;
+
+    dz_float_t delay_min;
+    dz_float_t delay_max;
+
+    dz_bool_t inherit_position;
+    dz_bool_t inherit_angle;
+    dz_bool_t inherit_velocity;
+
+    dz_float_t offset_x;
+    dz_float_t offset_y;
+    dz_float_t angle_offset;
+} dz_effect_trigger_desc_t;
+
+dz_result_t dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, dz_float_t _life, dz_uint32_t _seed, dz_userdata_t _ud );
 void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effect );
 
 void dz_effect_set_ud( dz_effect_t * const _effect, dz_userdata_t _ud );
 dz_userdata_t dz_effect_get_ud( const dz_effect_t * _effect );
 
-void dz_effect_set_material( dz_effect_t * const _effect, const dz_material_t * _material );
-const dz_material_t * dz_effect_get_material( const dz_effect_t * _effect );
+void dz_effect_set_atlas( dz_effect_t * const _effect, const dz_atlas_t * _atlas );
+const dz_atlas_t * dz_effect_get_atlas( const dz_effect_t * _effect );
 
-void dz_effect_set_shape( dz_effect_t * const _effect, const dz_shape_t * _shape );
-const dz_shape_t * dz_effect_get_shape( const dz_effect_t * _effect );
+dz_uint32_t dz_effect_get_layer_count( const dz_effect_t * _effect );
+dz_result_t dz_effect_add_layer( dz_effect_t * const _effect, const dz_effect_layer_desc_t * _layer, dz_uint32_t * const _index );
+dz_result_t dz_effect_remove_layer( dz_effect_t * const _effect, dz_uint32_t _index, dz_effect_layer_desc_t * const _layer );
+dz_result_t dz_effect_set_layer( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_layer_desc_t * _layer );
+dz_result_t dz_effect_get_layer( const dz_effect_t * _effect, dz_uint32_t _index, dz_effect_layer_desc_t * const _layer );
 
-void dz_effect_set_emitter( dz_effect_t * const _effect, const dz_emitter_t * _emitter );
-const dz_emitter_t * dz_effect_get_emitter( const dz_effect_t * _effect );
-
-void dz_effect_set_affector( dz_effect_t * const _effect, const dz_affector_t * _affector );
-const dz_affector_t * dz_effect_get_affector( const dz_effect_t * _effect );
+dz_uint32_t dz_effect_get_trigger_count( const dz_effect_t * _effect );
+dz_result_t dz_effect_add_trigger( dz_effect_t * const _effect, const dz_effect_trigger_desc_t * _trigger, dz_uint32_t * const _index );
+dz_result_t dz_effect_remove_trigger( dz_effect_t * const _effect, dz_uint32_t _index, dz_effect_trigger_desc_t * const _trigger );
+dz_result_t dz_effect_set_trigger( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_trigger_desc_t * _trigger );
+dz_result_t dz_effect_get_trigger( const dz_effect_t * _effect, dz_uint32_t _index, dz_effect_trigger_desc_t * const _trigger );
 
 void dz_effect_set_life( dz_effect_t * const _effect, dz_float_t _life );
 dz_float_t dz_effect_get_life( const dz_effect_t * _effect );
@@ -400,7 +464,7 @@ typedef struct dz_instance_mesh_chunk_t
 
     dz_blend_type_e blend_type;
 
-    const dz_userdata_t * surface;
+    dz_userdata_t surface;
 } dz_instance_mesh_chunk_t;
 
 typedef struct dz_instance_mesh_t

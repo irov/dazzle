@@ -6,6 +6,25 @@
 #include "effect.h"
 #include "particle.h"
 
+typedef struct dz_effect_emitter_instance_t
+{
+    dz_uint32_t layer_index;
+    dz_uint32_t seed;
+
+    dz_float_t time;
+    dz_float_t emitter_time;
+
+    dz_float_t x;
+    dz_float_t y;
+
+    dz_float_t angle;
+
+    dz_float_t sx;
+    dz_float_t sy;
+
+    dz_bool_t active;
+} dz_effect_emitter_instance_t;
+
 typedef struct dz_instance_t
 {
     const dz_effect_t * effect;
@@ -20,9 +39,12 @@ typedef struct dz_instance_t
 
     dz_bool_t loop;
     dz_bool_t emit_pause;
+    dz_bool_t started;
 
     dz_float_t time;
-    dz_float_t emitter_time;
+
+    dz_effect_emitter_instance_t emitter_instances[DZ_EFFECT_EMITTER_INSTANCE_MAX];
+    dz_uint32_t emitter_instance_count;
 
     dz_float_t x;
     dz_float_t y;

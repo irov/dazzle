@@ -8,6 +8,7 @@
 #include "shape.h"
 #include "emitter.h"
 #include "affector.h"
+#include "effect.h"
 
 //////////////////////////////////////////////////////////////////////////
 #define DZ_READ(L, U, V) if( (*L)(&V, sizeof(V), U) == DZ_FAILURE ) return DZ_FAILURE
@@ -56,7 +57,7 @@ dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_texture( const dz_service_t * _service, dz_texture_t ** _texture, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_texture( const dz_service_t * _service, dz_texture_t ** _texture, dz_float_t * const _random_weight, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_texture_t * texture;
     if( dz_texture_create( _service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
@@ -76,8 +77,11 @@ static dz_result_t __read_texture( const dz_service_t * _service, dz_texture_t *
     DZ_READ( _read, _ud, texture->trim_width );
     DZ_READ( _read, _ud, texture->trim_height );
 
-    DZ_READ( _read, _ud, texture->random_weight );
+    dz_float_t random_weight;
+    DZ_READ( _read, _ud, random_weight );
     DZ_READ( _read, _ud, texture->sequence_delay );
+
+    *_random_weight = DZ_MAX( random_weight, 0.f );
 
     *_texture = texture;
 
@@ -86,25 +90,13 @@ static dz_result_t __read_texture( const dz_service_t * _service, dz_texture_t *
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __read_atlas( const dz_service_t * _service, dz_atlas_t ** _atlas, dz_stream_read_t _read, dz_userdata_t _ud )
 {
+    DZ_UNUSED( _read );
+    DZ_UNUSED( _ud );
+
     dz_atlas_t * atlas;
     if( dz_atlas_create( _service, &atlas, DZ_NULLPTR, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
-    }
-
-    DZ_READ( _read, _ud, atlas->texture_count );
-
-    DZ_READ( _read, _ud, atlas->textures_time );
-
-    for( dz_uint32_t index = 0; index != atlas->texture_count; ++index )
-    {
-        dz_texture_t * texture;
-        if( __read_texture( _service, &texture, _read, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        atlas->textures[index] = texture;
     }
 
     *_atlas = atlas;
@@ -112,7 +104,7 @@ static dz_result_t __read_atlas( const dz_service_t * _service, dz_atlas_t ** _a
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __read_material( const dz_service_t * _service, dz_material_t ** _material, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_material( const dz_service_t * _service, dz_material_t ** _material, const dz_atlas_t * _atlas, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_material_t * material;
     if( dz_material_create( _service, &material, DZ_NULLPTR ) == DZ_FAILURE )
@@ -128,20 +120,38 @@ static dz_result_t __read_material( const dz_service_t * _service, dz_material_t
     DZ_READ( _read, _ud, material->a );
 
     DZ_READ( _read, _ud, material->mode );
+    DZ_READ( _read, _ud, material->texture_index );
+    DZ_READ( _read, _ud, material->texture_count );
 
-    dz_bool_t has_atlas;
-    DZ_READB( _read, _ud, has_atlas );
+    dz_uint32_t material_texture_count;
+    DZ_READ( _read, _ud, material_texture_count );
 
-    if( has_atlas == DZ_TRUE )
+    if( material_texture_count > 64 )
     {
-        dz_atlas_t * atlas;
-        if( __read_atlas( _service, &atlas, _read, _ud ) == DZ_FAILURE )
+        return DZ_FAILURE;
+    }
+
+    for( dz_uint32_t index = 0; index != material_texture_count; ++index )
+    {
+        dz_texture_t * texture;
+        dz_float_t random_weight;
+        if( __read_texture( _service, &texture, &random_weight, _read, _ud ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
 
-        material->atlas = atlas;
+        if( dz_material_add_texture( material, texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        if( dz_material_set_texture_random_weight( material, index, random_weight ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
     }
+
+    material->atlas = _atlas;
 
     *_material = material;
 
@@ -322,10 +332,10 @@ static dz_result_t __read_affector( const dz_service_t * _service, dz_affector_t
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effect, dz_stream_read_t _read, dz_userdata_t _ud )
+static dz_result_t __read_effect_layer( const dz_service_t * _service, dz_effect_layer_desc_t * const _layer, const dz_atlas_t * _atlas, dz_stream_read_t _read, dz_userdata_t _ud )
 {
     dz_material_t * material;
-    if( __read_material( _service, &material, _read, _ud ) == DZ_FAILURE )
+    if( __read_material( _service, &material, _atlas, _read, _ud ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -348,6 +358,91 @@ dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effec
         return DZ_FAILURE;
     }
 
+    _layer->material = material;
+    _layer->shape = shape;
+    _layer->emitter = emitter;
+    _layer->affector = affector;
+
+    DZ_READ( _read, _ud, _layer->x );
+    DZ_READ( _read, _ud, _layer->y );
+    DZ_READ( _read, _ud, _layer->angle );
+    DZ_READ( _read, _ud, _layer->life );
+    DZ_READ( _read, _ud, _layer->seed );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __read_effect_trigger( dz_effect_trigger_desc_t * const _trigger, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    DZ_READ( _read, _ud, _trigger->event_type );
+    DZ_READ( _read, _ud, _trigger->source_layer_index );
+    DZ_READ( _read, _ud, _trigger->target_layer_index );
+    DZ_READ( _read, _ud, _trigger->time );
+    DZ_READ( _read, _ud, _trigger->probability );
+    DZ_READ( _read, _ud, _trigger->spawn_count_min );
+    DZ_READ( _read, _ud, _trigger->spawn_count_max );
+    DZ_READ( _read, _ud, _trigger->delay_min );
+    DZ_READ( _read, _ud, _trigger->delay_max );
+    DZ_READB( _read, _ud, _trigger->inherit_position );
+    DZ_READB( _read, _ud, _trigger->inherit_angle );
+    DZ_READB( _read, _ud, _trigger->inherit_velocity );
+    DZ_READ( _read, _ud, _trigger->offset_x );
+    DZ_READ( _read, _ud, _trigger->offset_y );
+    DZ_READ( _read, _ud, _trigger->angle_offset );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effect, dz_stream_read_t _read, dz_userdata_t _ud )
+{
+    dz_bool_t has_atlas;
+    DZ_READB( _read, _ud, has_atlas );
+
+    dz_atlas_t * atlas = DZ_NULLPTR;
+    if( has_atlas == DZ_TRUE )
+    {
+        if( __read_atlas( _service, &atlas, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    dz_uint32_t layer_count;
+    DZ_READ( _read, _ud, layer_count );
+
+    if( layer_count > DZ_EFFECT_LAYER_MAX )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_effect_layer_desc_t layers[DZ_EFFECT_LAYER_MAX];
+
+    for( dz_uint32_t index = 0; index != layer_count; ++index )
+    {
+        if( __read_effect_layer( _service, layers + index, atlas, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    dz_uint32_t trigger_count;
+    DZ_READ( _read, _ud, trigger_count );
+
+    if( trigger_count > DZ_EFFECT_TRIGGER_MAX )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_effect_trigger_desc_t triggers[DZ_EFFECT_TRIGGER_MAX];
+
+    for( dz_uint32_t index = 0; index != trigger_count; ++index )
+    {
+        if( __read_effect_trigger( triggers + index, _read, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
     dz_float_t life;
     DZ_READ( _read, _ud, life );
 
@@ -355,9 +450,27 @@ dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effec
     DZ_READ( _read, _ud, seed );
 
     dz_effect_t * effect;
-    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, seed, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( _service, &effect, life, seed, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
+    }
+
+    dz_effect_set_atlas( effect, atlas );
+
+    for( dz_uint32_t index = 0; index != layer_count; ++index )
+    {
+        if( dz_effect_add_layer( effect, layers + index, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    for( dz_uint32_t index = 0; index != trigger_count; ++index )
+    {
+        if( dz_effect_add_trigger( effect, triggers + index, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
     }
 
     *_effect = effect;

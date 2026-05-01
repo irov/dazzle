@@ -38,7 +38,7 @@ dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud )
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_texture( const dz_texture_t * _texture, dz_stream_write_t _write, dz_userdata_t _ud )
+static dz_result_t __write_texture( const dz_texture_t * _texture, dz_float_t _random_weight, dz_stream_write_t _write, dz_userdata_t _ud )
 {
     DZ_WRITEN( _write, _ud, _texture->u, 4 );
     DZ_WRITEN( _write, _ud, _texture->v, 4 );
@@ -52,7 +52,7 @@ static dz_result_t __write_texture( const dz_texture_t * _texture, dz_stream_wri
     DZ_WRITE( _write, _ud, _texture->trim_width );
     DZ_WRITE( _write, _ud, _texture->trim_height );
 
-    DZ_WRITE( _write, _ud, _texture->random_weight );
+    DZ_WRITE( _write, _ud, _random_weight );
     DZ_WRITE( _write, _ud, _texture->sequence_delay );
 
     return DZ_SUCCESSFUL;
@@ -60,19 +60,9 @@ static dz_result_t __write_texture( const dz_texture_t * _texture, dz_stream_wri
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    DZ_WRITE( _write, _ud, _atlas->texture_count );
-
-    DZ_WRITE( _write, _ud, _atlas->textures_time );
-
-    for( dz_uint32_t index = 0; index != _atlas->texture_count; ++index )
-    {
-        const dz_texture_t * texture = _atlas->textures[index];
-
-        if( __write_texture( texture, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-    }
+    DZ_UNUSED( _atlas );
+    DZ_UNUSED( _write );
+    DZ_UNUSED( _ud );
 
     return DZ_SUCCESSFUL;
 }
@@ -87,16 +77,15 @@ static dz_result_t __write_material( const dz_material_t * _material, dz_stream_
     DZ_WRITE( _write, _ud, _material->a );
 
     DZ_WRITE( _write, _ud, _material->mode );
+    DZ_WRITE( _write, _ud, _material->texture_index );
+    DZ_WRITE( _write, _ud, _material->texture_count );
+    DZ_WRITE( _write, _ud, _material->textures_count );
 
-    if( _material->atlas == DZ_NULLPTR )
+    for( dz_uint32_t index = 0; index != _material->textures_count; ++index )
     {
-        DZ_WRITEB( _write, _ud, DZ_FALSE );
-    }
-    else
-    {
-        DZ_WRITEB( _write, _ud, DZ_TRUE );
+        const dz_material_texture_t * material_texture = &_material->textures[index];
 
-        if( __write_atlas( _material->atlas, _write, _ud ) == DZ_FAILURE )
+        if( __write_texture( material_texture->texture, material_texture->random_weight, _write, _ud ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
         }
@@ -235,26 +224,114 @@ static dz_result_t __write_affector( const dz_affector_t * _affector, dz_stream_
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_effect_layer( const dz_effect_layer_desc_t * _layer, dz_stream_write_t _write, dz_userdata_t _ud )
+{
+    if( __write_material( _layer->material, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( __write_shape( _layer->shape, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( __write_emitter( _layer->emitter, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    if( __write_affector( _layer->affector, _write, _ud ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
+    DZ_WRITE( _write, _ud, _layer->x );
+    DZ_WRITE( _write, _ud, _layer->y );
+    DZ_WRITE( _write, _ud, _layer->angle );
+    DZ_WRITE( _write, _ud, _layer->life );
+    DZ_WRITE( _write, _ud, _layer->seed );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __write_effect_trigger( const dz_effect_trigger_desc_t * _trigger, dz_stream_write_t _write, dz_userdata_t _ud )
+{
+    DZ_WRITE( _write, _ud, _trigger->event_type );
+    DZ_WRITE( _write, _ud, _trigger->source_layer_index );
+    DZ_WRITE( _write, _ud, _trigger->target_layer_index );
+    DZ_WRITE( _write, _ud, _trigger->time );
+    DZ_WRITE( _write, _ud, _trigger->probability );
+    DZ_WRITE( _write, _ud, _trigger->spawn_count_min );
+    DZ_WRITE( _write, _ud, _trigger->spawn_count_max );
+    DZ_WRITE( _write, _ud, _trigger->delay_min );
+    DZ_WRITE( _write, _ud, _trigger->delay_max );
+    DZ_WRITEB( _write, _ud, _trigger->inherit_position );
+    DZ_WRITEB( _write, _ud, _trigger->inherit_angle );
+    DZ_WRITEB( _write, _ud, _trigger->inherit_velocity );
+    DZ_WRITE( _write, _ud, _trigger->offset_x );
+    DZ_WRITE( _write, _ud, _trigger->offset_y );
+    DZ_WRITE( _write, _ud, _trigger->angle_offset );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static const dz_atlas_t * __effect_find_atlas( const dz_effect_t * _effect )
+{
+    for( dz_uint32_t index = 0; index != _effect->layer_count; ++index )
+    {
+        const dz_material_t * material = _effect->layers[index].material;
+
+        if( material != DZ_NULLPTR && material->atlas != DZ_NULLPTR )
+        {
+            return material->atlas;
+        }
+    }
+
+    return DZ_NULLPTR;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    if( __write_material( _effect->material, _write, _ud ) == DZ_FAILURE )
+    const dz_atlas_t * atlas = _effect->atlas;
+
+    if( atlas == DZ_NULLPTR )
     {
-        return DZ_FAILURE;
+        atlas = __effect_find_atlas( _effect );
     }
 
-    if( __write_shape( _effect->shape, _write, _ud ) == DZ_FAILURE )
+    if( atlas == DZ_NULLPTR )
     {
-        return DZ_FAILURE;
+        DZ_WRITEB( _write, _ud, DZ_FALSE );
+    }
+    else
+    {
+        DZ_WRITEB( _write, _ud, DZ_TRUE );
+
+        if( __write_atlas( atlas, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
     }
 
-    if( __write_emitter( _effect->emitter, _write, _ud ) == DZ_FAILURE )
+    DZ_WRITE( _write, _ud, _effect->layer_count );
+
+    for( dz_uint32_t index = 0; index != _effect->layer_count; ++index )
     {
-        return DZ_FAILURE;
+        if( __write_effect_layer( _effect->layers + index, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
     }
 
-    if( __write_affector( _effect->affector, _write, _ud ) == DZ_FAILURE )
+    DZ_WRITE( _write, _ud, _effect->trigger_count );
+
+    for( dz_uint32_t index = 0; index != _effect->trigger_count; ++index )
     {
-        return DZ_FAILURE;
+        if( __write_effect_trigger( _effect->triggers + index, _write, _ud ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
     }
 
     DZ_WRITE( _write, _ud, _effect->life );

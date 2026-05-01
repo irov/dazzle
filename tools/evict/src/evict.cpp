@@ -3,7 +3,7 @@
 #include "dazzle/dazzle_aux.hpp"
 
 //////////////////////////////////////////////////////////////////////////
-static jpp::object __evict_texture_write( const dz_texture_t * _texture )
+static jpp::object __evict_texture_write( const dz_texture_t * _texture, dz_float_t _random_weight )
 {
     jpp::object obj = jpp::make_object();
 
@@ -30,9 +30,7 @@ static jpp::object __evict_texture_write( const dz_texture_t * _texture )
 
     obj.set( "trim_size", jpp::make_tuple( trime_width, trime_height ) );
 
-    dz_float_t random_weight = dz_texture_get_random_weight( _texture );
-
-    obj.set( "random_weight", random_weight );
+    obj.set( "random_weight", _random_weight );
 
     dz_float_t sequence_delay = dz_texture_get_sequence_delay( _texture );
 
@@ -45,21 +43,7 @@ static jpp::object __evict_atlas_write( const dz_atlas_t * _atlas )
 {
     jpp::object obj = jpp::make_object();
 
-    jpp::array array_textures = jpp::make_array();
-
-    dz_uint32_t texture_count = dz_atlas_get_texture_count( _atlas );
-
-    for( dz_uint32_t index = 0; index != texture_count; ++index )
-    {
-        const dz_texture_t * texture;
-        dz_atlas_get_texture( _atlas, index, &texture );
-
-        jpp::object obj_texture = __evict_texture_write( texture );
-
-        array_textures.push_back( obj_texture );
-    }
-
-    obj.set( "textures", array_textures );
+    DZ_UNUSED( _atlas );
 
     return obj;
 }
@@ -87,12 +71,27 @@ static jpp::object __evict_material_write( const dz_material_t * _material )
     const char * mode_str = dz_material_mode_stringize( mode );
 
     obj.set( "mode", mode_str );
+    obj.set( "texture_index", dz_material_get_texture_index( _material ) );
+    obj.set( "texture_count", dz_material_get_texture_count( _material ) );
 
-    const dz_atlas_t * atlas = dz_material_get_atlas( _material );
+    jpp::array array_textures = jpp::make_array();
 
-    jpp::object obj_atlas = __evict_atlas_write( atlas );
+    dz_uint32_t texture_count = dz_material_get_texture_slot_count( _material );
 
-    obj.set( "atlas", obj_atlas );
+    for( dz_uint32_t index = 0; index != texture_count; ++index )
+    {
+        const dz_texture_t * texture;
+        dz_material_get_texture( _material, index, &texture );
+
+        dz_float_t random_weight = 1.f;
+        dz_material_get_texture_random_weight( _material, index, &random_weight );
+
+        jpp::object obj_texture = __evict_texture_write( texture, random_weight );
+
+        array_textures.push_back( obj_texture );
+    }
+
+    obj.set( "textures", array_textures );
 
     return obj;
 }
@@ -267,6 +266,115 @@ static jpp::object __evict_affector_write( const dz_affector_t * _affector )
     return obj;
 }
 //////////////////////////////////////////////////////////////////////////
+static const char * __evict_effect_event_type_stringize( dz_effect_event_type_e _type )
+{
+    switch( _type )
+    {
+    case DZ_EFFECT_EVENT_EFFECT_START:
+        return "effect_start";
+    case DZ_EFFECT_EVENT_TIME:
+        return "time";
+    case DZ_EFFECT_EVENT_LAYER_EMIT_COMPLETE:
+        return "layer_emit_complete";
+    case DZ_EFFECT_EVENT_LAYER_PARTICLE_COMPLETE:
+        return "layer_particle_complete";
+    case DZ_EFFECT_EVENT_PARTICLE_DEATH:
+        return "particle_death";
+    case DZ_EFFECT_EVENT_CUSTOM:
+        return "custom";
+    case __DZ_EFFECT_EVENT_MAX__:
+    default:
+        break;
+    }
+
+    return "effect_start";
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_effect_event_type_e __evict_effect_event_type_load( const char * _type )
+{
+    if( strcmp( _type, "effect_start" ) == 0 )
+    {
+        return DZ_EFFECT_EVENT_EFFECT_START;
+    }
+    else if( strcmp( _type, "time" ) == 0 )
+    {
+        return DZ_EFFECT_EVENT_TIME;
+    }
+    else if( strcmp( _type, "layer_emit_complete" ) == 0 )
+    {
+        return DZ_EFFECT_EVENT_LAYER_EMIT_COMPLETE;
+    }
+    else if( strcmp( _type, "layer_particle_complete" ) == 0 )
+    {
+        return DZ_EFFECT_EVENT_LAYER_PARTICLE_COMPLETE;
+    }
+    else if( strcmp( _type, "particle_death" ) == 0 )
+    {
+        return DZ_EFFECT_EVENT_PARTICLE_DEATH;
+    }
+    else if( strcmp( _type, "custom" ) == 0 )
+    {
+        return DZ_EFFECT_EVENT_CUSTOM;
+    }
+
+    return __DZ_EFFECT_EVENT_MAX__;
+}
+//////////////////////////////////////////////////////////////////////////
+static jpp::object __evict_effect_layer_write( const dz_effect_layer_desc_t * _layer )
+{
+    jpp::object obj = jpp::make_object();
+
+    obj.set( "material", __evict_material_write( _layer->material ) );
+    obj.set( "shape", __evict_shape_write( _layer->shape ) );
+    obj.set( "emitter", __evict_emitter_write( _layer->emitter ) );
+    obj.set( "affector", __evict_affector_write( _layer->affector ) );
+    obj.set( "position", jpp::make_tuple( _layer->x, _layer->y ) );
+    obj.set( "angle", _layer->angle );
+    obj.set( "life", _layer->life );
+    obj.set( "seed", _layer->seed );
+
+    return obj;
+}
+//////////////////////////////////////////////////////////////////////////
+static jpp::object __evict_effect_trigger_write( const dz_effect_trigger_desc_t * _trigger )
+{
+    jpp::object obj = jpp::make_object();
+
+    obj.set( "event", __evict_effect_event_type_stringize( _trigger->event_type ) );
+    obj.set( "source_layer", _trigger->source_layer_index );
+    obj.set( "target_layer", _trigger->target_layer_index );
+    obj.set( "time", _trigger->time );
+    obj.set( "probability", _trigger->probability );
+    obj.set( "spawn_count", jpp::make_tuple( _trigger->spawn_count_min, _trigger->spawn_count_max ) );
+    obj.set( "delay", jpp::make_tuple( _trigger->delay_min, _trigger->delay_max ) );
+    obj.set( "inherit_position", _trigger->inherit_position == DZ_TRUE );
+    obj.set( "inherit_angle", _trigger->inherit_angle == DZ_TRUE );
+    obj.set( "inherit_velocity", _trigger->inherit_velocity == DZ_TRUE );
+    obj.set( "offset", jpp::make_tuple( _trigger->offset_x, _trigger->offset_y ) );
+    obj.set( "angle_offset", _trigger->angle_offset );
+
+    return obj;
+}
+//////////////////////////////////////////////////////////////////////////
+static const dz_atlas_t * __evict_effect_find_atlas( const dz_effect_t * _effect )
+{
+    const dz_uint32_t layer_count = dz_effect_get_layer_count( _effect );
+
+    for( dz_uint32_t index = 0; index != layer_count; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        dz_effect_get_layer( _effect, index, &layer );
+
+        const dz_atlas_t * atlas = dz_material_get_atlas( layer.material );
+        if( atlas != DZ_NULLPTR )
+        {
+            return atlas;
+        }
+    }
+
+    return DZ_NULLPTR;
+}
+//////////////////////////////////////////////////////////////////////////
 jpp::object dz_evict_write( const dz_effect_t * _effect )
 {
     jpp::object obj = jpp::make_object();
@@ -279,34 +387,49 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 
     obj.set( "seed", seed );
 
-    const dz_material_t * material = dz_effect_get_material( _effect );
+    const dz_atlas_t * atlas = dz_effect_get_atlas( _effect );
 
-    jpp::object obj_material = __evict_material_write( material );
+    if( atlas == DZ_NULLPTR )
+    {
+        atlas = __evict_effect_find_atlas( _effect );
+    }
+    if( atlas != DZ_NULLPTR )
+    {
+        obj.set( "atlas", __evict_atlas_write( atlas ) );
+    }
 
-    obj.set( "material", obj_material );
+    jpp::array layers = jpp::make_array();
 
-    const dz_shape_t * shape = dz_effect_get_shape( _effect );
+    const dz_uint32_t layer_count = dz_effect_get_layer_count( _effect );
 
-    jpp::object obj_shape = __evict_shape_write( shape );
+    for( dz_uint32_t index = 0; index != layer_count; ++index )
+    {
+        dz_effect_layer_desc_t layer;
+        dz_effect_get_layer( _effect, index, &layer );
 
-    obj.set( "shape", obj_shape );
+        layers.push_back( __evict_effect_layer_write( &layer ) );
+    }
 
-    const dz_emitter_t * emitter = dz_effect_get_emitter( _effect );
+    obj.set( "layers", layers );
 
-    jpp::object obj_emitter = __evict_emitter_write( emitter );
+    jpp::array triggers = jpp::make_array();
 
-    obj.set( "emitter", obj_emitter );
+    const dz_uint32_t trigger_count = dz_effect_get_trigger_count( _effect );
 
-    const dz_affector_t * affector = dz_effect_get_affector( _effect );
+    for( dz_uint32_t index = 0; index != trigger_count; ++index )
+    {
+        dz_effect_trigger_desc_t trigger;
+        dz_effect_get_trigger( _effect, index, &trigger );
 
-    jpp::object obj_affector = __evict_affector_write( affector );
+        triggers.push_back( __evict_effect_trigger_write( &trigger ) );
+    }
 
-    obj.set( "affector", obj_affector );
+    obj.set( "triggers", triggers );
 
     return obj;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t ** _texture, const jpp::object & _data )
+static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t ** _texture, dz_float_t * const _random_weight, const jpp::object & _data )
 {
     dz_texture_t * texture;
     if( dz_texture_create( _service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
@@ -326,7 +449,7 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
 
     dz_float_t width = j_size[0];
     dz_float_t height = j_size[1];
-    
+
     dz_texture_set_width( texture, width );
     dz_texture_set_height( texture, height );
 
@@ -346,7 +469,7 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
 
     dz_float_t random_weight = _data["random_weight"];
 
-    dz_texture_set_random_weight( texture, random_weight );
+    *_random_weight = DZ_MAX( random_weight, 0.f );
 
     dz_float_t sequence_delay = _data["sequence_delay"];
 
@@ -359,23 +482,12 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __evict_atlas_load( dz_service_t * _service, dz_atlas_t ** _atlas, const jpp::object & _data )
 {
+    DZ_UNUSED( _data );
+
     dz_atlas_t * atlas;
     if( dz_atlas_create( _service, &atlas, DZ_NULLPTR, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
-    }
-
-    jpp::array array_data = _data["textures"];
-
-    for( const jpp::object & texture_data : array_data )
-    {
-        dz_texture_t * texture;
-        if( __evict_texture_load( _service, &texture, texture_data ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        dz_atlas_add_texture( atlas, texture );
     }
 
     *_atlas = atlas;
@@ -383,7 +495,7 @@ static dz_result_t __evict_atlas_load( dz_service_t * _service, dz_atlas_t ** _a
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t ** _material, const jpp::object & _data )
+static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t ** _material, const dz_atlas_t * _atlas, const jpp::object & _data )
 {
     dz_material_t * material;
     if( dz_material_create( _service, &material, DZ_NULLPTR ) == DZ_FAILURE )
@@ -442,16 +554,32 @@ static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t
     }
 
     dz_material_set_mode( material, mode );
+    dz_material_set_atlas( material, _atlas );
+    dz_material_set_texture_index( material, _data.get( "texture_index", 0 ) );
+    dz_material_set_texture_count( material, _data.get( "texture_count", 1 ) );
 
-    jpp::object j_atlas = _data["atlas"];
+    jpp::array array_textures = _data.get( "textures", jpp::make_array() );
 
-    dz_atlas_t * atlas;
-    if( __evict_atlas_load( _service, &atlas, j_atlas ) == DZ_FAILURE )
+    for( const jpp::object & texture_data : array_textures )
     {
-        return DZ_FAILURE;
-    }
+        dz_texture_t * texture;
+        dz_float_t random_weight;
+        if( __evict_texture_load( _service, &texture, &random_weight, texture_data ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
 
-    dz_material_set_atlas( material, atlas );
+        if( dz_material_add_texture( material, texture ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        const dz_uint32_t texture_index = dz_material_get_texture_slot_count( material ) - 1;
+        if( dz_material_set_texture_random_weight( material, texture_index, random_weight ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
 
     *_material = material;
 
@@ -726,12 +854,12 @@ dz_result_t __evict_affector_load( dz_service_t * _service, dz_affector_t ** _af
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data )
+static dz_result_t __evict_effect_layer_load( dz_service_t * _service, dz_effect_layer_desc_t * const _layer, const dz_atlas_t * _atlas, const jpp::object & _data )
 {
     jpp::object j_material = _data["material"];
 
     dz_material_t * material;
-    if( __evict_material_load( _service, &material, j_material ) == DZ_FAILURE )
+    if( __evict_material_load( _service, &material, _atlas, j_material ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
     }
@@ -760,14 +888,109 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
         return DZ_FAILURE;
     }
 
+    _layer->material = material;
+    _layer->shape = shape;
+    _layer->emitter = emitter;
+    _layer->affector = affector;
+
+    jpp::array j_position = _data.get( "position", jpp::make_tuple( 0.f, 0.f ) );
+    _layer->x = j_position[0];
+    _layer->y = j_position[1];
+    _layer->angle = _data.get( "angle", 0.f );
+    _layer->life = _data.get( "life", 0.f );
+    _layer->seed = _data.get( "seed", 0 );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __evict_effect_trigger_load( dz_effect_trigger_desc_t * const _trigger, const jpp::object & _data )
+{
+    const char * event_type = _data["event"];
+
+    _trigger->event_type = __evict_effect_event_type_load( event_type );
+
+    if( _trigger->event_type == __DZ_EFFECT_EVENT_MAX__ )
+    {
+        return DZ_FAILURE;
+    }
+
+    _trigger->source_layer_index = _data.get( "source_layer", DZ_EFFECT_LAYER_NONE );
+    _trigger->target_layer_index = _data["target_layer"];
+    _trigger->time = _data.get( "time", 0.f );
+    _trigger->probability = _data.get( "probability", 1.f );
+
+    jpp::array spawn_count = _data.get( "spawn_count", jpp::make_tuple( 1, 1 ) );
+    _trigger->spawn_count_min = spawn_count[0];
+    _trigger->spawn_count_max = spawn_count[1];
+
+    jpp::array delay = _data.get( "delay", jpp::make_tuple( 0.f, 0.f ) );
+    _trigger->delay_min = delay[0];
+    _trigger->delay_max = delay[1];
+
+    _trigger->inherit_position = _data.get( "inherit_position", false ) == true ? DZ_TRUE : DZ_FALSE;
+    _trigger->inherit_angle = _data.get( "inherit_angle", false ) == true ? DZ_TRUE : DZ_FALSE;
+    _trigger->inherit_velocity = _data.get( "inherit_velocity", false ) == true ? DZ_TRUE : DZ_FALSE;
+
+    jpp::array offset = _data.get( "offset", jpp::make_tuple( 0.f, 0.f ) );
+    _trigger->offset_x = offset[0];
+    _trigger->offset_y = offset[1];
+    _trigger->angle_offset = _data.get( "angle_offset", 0.f );
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data )
+{
+    dz_atlas_t * atlas = DZ_NULLPTR;
+
+    jpp::object j_atlas;
+    if( _data.exist( "atlas", &j_atlas ) == true && __evict_atlas_load( _service, &atlas, j_atlas ) == DZ_FAILURE )
+    {
+        return DZ_FAILURE;
+    }
+
     dz_float_t life = _data.get( "life", 0.f );
 
     dz_uint32_t seed = _data.get( "seed", 0 );
 
     dz_effect_t * effect;
-    if( dz_effect_create( _service, &effect, material, shape, emitter, affector, life, seed, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( _service, &effect, life, seed, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
+    }
+
+    dz_effect_set_atlas( effect, atlas );
+
+    jpp::array j_layers = _data["layers"];
+
+    for( const jpp::object & j_layer : j_layers )
+    {
+        dz_effect_layer_desc_t layer;
+        if( __evict_effect_layer_load( _service, &layer, atlas, j_layer ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        if( dz_effect_add_layer( effect, &layer, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+    }
+
+    jpp::array j_triggers = _data.get( "triggers", jpp::make_array() );
+
+    for( const jpp::object & j_trigger : j_triggers )
+    {
+        dz_effect_trigger_desc_t trigger;
+        if( __evict_effect_trigger_load( &trigger, j_trigger ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
+
+        if( dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR ) == DZ_FAILURE )
+        {
+            return DZ_FAILURE;
+        }
     }
 
     *_effect = effect;

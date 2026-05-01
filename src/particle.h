@@ -5,6 +5,8 @@
 
 typedef struct dz_particle_t
 {
+    dz_uint32_t layer_index;
+
     dz_float_t rands[__DZ_AFFECTOR_TIMELINE_MAX__];
 
     dz_float_t life;

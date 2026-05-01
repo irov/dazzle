@@ -137,7 +137,7 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
     dz_timeline_key_set_const_value( key1, _value1 );
 
     dz_timeline_interpolate_set_key( interpolate0, key1 );
-    
+
     if( dz_timeline_key_set_interpolate( key0, interpolate0 ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
@@ -158,7 +158,7 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
     dz_timeline_key_set_const_value( key2, _value2 );
 
     dz_timeline_interpolate_set_key( interpolate1, key2 );
-    
+
     if( dz_timeline_key_set_interpolate( key1, interpolate1 ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
@@ -329,7 +329,14 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
-    dz_atlas_add_texture( atlas, texture );
+    dz_float_t u[4] = {0.f, 1.f, 1.f, 0.f};
+    dz_float_t v[4] = {0.f, 0.f, 1.f, 1.f};
+
+    dz_texture_set_uv( texture, u, v );
+    dz_texture_set_width( texture, (dz_float_t)width );
+    dz_texture_set_height( texture, (dz_float_t)height );
+    dz_texture_set_trim_offset( texture, 0.f, 0.f );
+    dz_texture_set_trim_size( texture, (dz_float_t)width, (dz_float_t)height );
 
     dz_material_t * material;
     if( dz_material_create( service, &material, DZ_NULLPTR ) == DZ_FAILURE )
@@ -338,7 +345,15 @@ int main( int argc, char ** argv )
     }
 
     dz_material_set_blend( material, DZ_BLEND_ADD );
+    dz_material_set_mode( material, DZ_MATERIAL_MODE_TEXTURE );
     dz_material_set_atlas( material, atlas );
+    dz_material_set_texture_index( material, 0 );
+    dz_material_set_texture_count( material, 1 );
+
+    if( dz_material_add_texture( material, texture ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
 
     dz_shape_t * shape;
     if( dz_shape_create( service, &shape, DZ_SHAPE_POINT, DZ_NULLPTR ) == DZ_FAILURE )
@@ -423,7 +438,48 @@ int main( int argc, char ** argv )
     }
 
     dz_effect_t * effect;
-    if( dz_effect_create( service, &effect, material, shape, emitter, affector, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
+    if( dz_effect_create( service, &effect, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_effect_set_atlas( effect, atlas );
+
+    dz_effect_layer_desc_t layer;
+    layer.material = material;
+    layer.shape = shape;
+    layer.emitter = emitter;
+    layer.affector = affector;
+    layer.x = 0.f;
+    layer.y = 0.f;
+    layer.angle = 0.f;
+    layer.life = 5.f;
+    layer.seed = 0;
+
+    dz_uint32_t layer_index;
+    if( dz_effect_add_layer( effect, &layer, &layer_index ) == DZ_FAILURE )
+    {
+        return EXIT_FAILURE;
+    }
+
+    dz_effect_trigger_desc_t trigger;
+    trigger.event_type = DZ_EFFECT_EVENT_EFFECT_START;
+    trigger.source_layer_index = DZ_EFFECT_LAYER_NONE;
+    trigger.target_layer_index = layer_index;
+    trigger.time = 0.f;
+    trigger.probability = 1.f;
+    trigger.spawn_count_min = 1;
+    trigger.spawn_count_max = 1;
+    trigger.delay_min = 0.f;
+    trigger.delay_max = 0.f;
+    trigger.inherit_position = DZ_FALSE;
+    trigger.inherit_angle = DZ_FALSE;
+    trigger.inherit_velocity = DZ_FALSE;
+    trigger.offset_x = 0.f;
+    trigger.offset_y = 0.f;
+    trigger.angle_offset = 0.f;
+
+    if( dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR ) == DZ_FAILURE )
     {
         return EXIT_FAILURE;
     }

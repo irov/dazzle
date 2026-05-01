@@ -17,7 +17,6 @@ typedef struct dz_texture_t
     dz_float_t trim_width;
     dz_float_t trim_height;
 
-    dz_float_t random_weight;
     dz_float_t sequence_delay;
 
     dz_userdata_t ud;

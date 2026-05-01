@@ -12,13 +12,14 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include <string>
 #include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 // prefix ER_ means editor
 //////////////////////////////////////////////////////////////////////////
 static constexpr dz_uint32_t ER_CURVE_MAX_POINTS = 100;
+static constexpr dz_uint32_t ER_EDITOR_RESOURCE_MAX = 128;
+static constexpr dz_uint32_t ER_EDITOR_NAME_MAX = 64;
 static constexpr dz_float_t ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO = 0.4f;
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_curve_point_mode_e
@@ -42,6 +43,19 @@ typedef struct er_curve_point_t
 //////////////////////////////////////////////////////////////////////////
 typedef er_curve_point_t PointsArray[ER_CURVE_MAX_POINTS];
 //////////////////////////////////////////////////////////////////////////
+typedef struct er_memory_buffer_t
+{
+    dz_uint8_t * data;
+    dz_size_t size;
+    dz_size_t capacity;
+} er_memory_buffer_t;
+//////////////////////////////////////////////////////////////////////////
+typedef struct er_editor_instance_info_t
+{
+    dz_uint32_t id;
+    char name[ER_EDITOR_NAME_MAX];
+} er_editor_instance_info_t;
+//////////////////////////////////////////////////////////////////////////
 class editor
 {
 public:
@@ -64,6 +78,20 @@ public:
 
 protected:
     dz_result_t resetEffect();
+    dz_result_t createDefaultMaterial( dz_material_t ** const _material );
+    dz_result_t createDefaultShape( dz_shape_t ** const _shape );
+    dz_result_t createDefaultEmitter( dz_emitter_t ** const _emitter );
+    dz_result_t createDefaultAffector( dz_affector_t ** const _affector );
+    dz_result_t selectLayer( dz_uint32_t _index );
+    dz_result_t ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * const _triggerIndex );
+    dz_result_t selectMaterialResource( dz_uint32_t _index );
+    dz_result_t selectShapeResource( dz_uint32_t _index );
+    dz_result_t selectEmitterResource( dz_uint32_t _index );
+    dz_result_t selectAffectorResource( dz_uint32_t _index );
+    void rebuildResourceLists();
+    void syncSelectedResourceIndices();
+    void destroyEffectResources();
+    void setEffectAtlasesSurface();
 
     dz_result_t saveEffect();
     dz_result_t loadEffect();
@@ -77,13 +105,18 @@ protected:
     dz_result_t showMenuBar();
 
     dz_result_t showEffectData();
+    dz_result_t showResourceList( int _selected );
+    dz_result_t showComposerData();
     dz_result_t showShapeData();
     dz_result_t showAffectorData();
     dz_result_t showEmitterData();
+    dz_result_t showAtlasData();
     dz_result_t showMaterialData();
 
     dz_result_t optimizeAtlas();
     dz_result_t appendTextureToAtlas( const char * _path );
+    dz_result_t loadAtlasImage( const char * _path );
+    dz_result_t clearAtlas();
 
     dz_result_t showContentPane();
     dz_result_t showContentPaneControls();
@@ -92,7 +125,7 @@ public:
     void showDazzleCanvas();
 
 protected:
-    bool dumpJSON_( const jpp::object & _json, std::string * _out, bool _needCompactDump );
+    bool dumpJSON_( const jpp::object & _json, er_memory_buffer_t * const _out, bool _needCompactDump );
     void loadJSON_( const void * _buffer, size_t _size, jpp::object * _out ) const;
 
 public:
@@ -106,8 +139,11 @@ public:
 
     bool m_showDebugInfo;
     bool m_showCanvasLines;
+    bool m_showLayerGizmos;
+    bool m_showEffectCenter;
 
     bool m_pause;
+    int m_windowType;
 
     dz_service_t * m_service;
 
@@ -118,7 +154,36 @@ public:
     dz_shape_t * m_shape;
     dz_emitter_t * m_emitter;
     dz_affector_t * m_affector;
+
+    dz_material_t * m_materials[ER_EDITOR_RESOURCE_MAX];
+    dz_shape_t * m_shapes[ER_EDITOR_RESOURCE_MAX];
+    dz_emitter_t * m_emitters[ER_EDITOR_RESOURCE_MAX];
+    dz_affector_t * m_affectors[ER_EDITOR_RESOURCE_MAX];
+
+    er_editor_instance_info_t m_materialInfos[ER_EDITOR_RESOURCE_MAX];
+    er_editor_instance_info_t m_shapeInfos[ER_EDITOR_RESOURCE_MAX];
+    er_editor_instance_info_t m_emitterInfos[ER_EDITOR_RESOURCE_MAX];
+    er_editor_instance_info_t m_affectorInfos[ER_EDITOR_RESOURCE_MAX];
+    er_editor_instance_info_t m_layerInfos[DZ_EFFECT_LAYER_MAX];
+    er_editor_instance_info_t m_triggerInfos[DZ_EFFECT_TRIGGER_MAX];
+
+    dz_uint32_t m_materialCount;
+    dz_uint32_t m_shapeCount;
+    dz_uint32_t m_emitterCount;
+    dz_uint32_t m_affectorCount;
+
+    dz_uint32_t m_materialIndex;
+    dz_uint32_t m_shapeIndex;
+    dz_uint32_t m_emitterIndex;
+    dz_uint32_t m_affectorIndex;
+
     dz_effect_t * m_effect;
+    dz_uint32_t m_layerIndex;
+    dz_uint32_t m_triggerIndex;
+    dz_uint32_t m_nextEditorInstanceId;
+    bool m_layerGizmoDragging;
+    dz_uint32_t m_layerGizmoDragIndex;
+    ImVec2 m_layerGizmoDragOffset;
 
     dz_instance_t * m_instance;
 

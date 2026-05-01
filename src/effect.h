@@ -10,10 +10,13 @@
 
 typedef struct dz_effect_t
 {
-    const dz_material_t * material;
-    const dz_shape_t * shape;
-    const dz_emitter_t * emitter;
-    const dz_affector_t * affector;
+    const dz_atlas_t * atlas;
+
+    dz_effect_layer_desc_t layers[DZ_EFFECT_LAYER_MAX];
+    dz_uint32_t layer_count;
+
+    dz_effect_trigger_desc_t triggers[DZ_EFFECT_TRIGGER_MAX];
+    dz_uint32_t trigger_count;
 
     dz_uint32_t seed;
 

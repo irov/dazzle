@@ -612,12 +612,25 @@ dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_ver
     GLCALL( glBufferData, (GL_ARRAY_BUFFER, _max_vertex_count * sizeof( gl_vertex_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW) );
     GLCALL( glBufferData, (GL_ELEMENT_ARRAY_BUFFER, _max_index_count * sizeof( gl_index_t ), DZ_NULLPTR, GL_DYNAMIC_DRAW) );
 
+    // 1x1 white texture used as a fallback when a chunk has no surface bound (e.g. SOLID materials).
+    GLuint whiteTextureId;
+    GLCALL( glGenTextures, (1, &whiteTextureId) );
+    GLCALL( glBindTexture, (GL_TEXTURE_2D, whiteTextureId) );
+    static const dz_uint8_t whitePixel[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    GLCALL( glTexImage2D, (GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
+    GLCALL( glTexParameteri, (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
+    GLCALL( glBindTexture, (GL_TEXTURE_2D, 0) );
+
     _desc->VAO = VAO;
     _desc->VBO = VBO;
     _desc->IBO = IBO;
-    _desc->shaderCurrentProgram = shaderColorProgram;
+    _desc->shaderCurrentProgram = shaderTextureProgram;
     _desc->shaderColorProgram = shaderColorProgram;
     _desc->shaderTextureProgram = shaderTextureProgram;
+    _desc->whiteTextureId = whiteTextureId;
 
     return DZ_SUCCESSFUL;
 }
@@ -630,6 +643,12 @@ void dz_render_finalize( dz_render_desc_t * _desc )
 
     GLCALL( glDeleteProgram, (_desc->shaderColorProgram) );
     GLCALL( glDeleteProgram, (_desc->shaderTextureProgram) );
+
+    if( _desc->whiteTextureId != 0 )
+    {
+        GLCALL( glDeleteTextures, (1, &_desc->whiteTextureId) );
+        _desc->whiteTextureId = 0;
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_render_set_proj( const dz_render_desc_t * _desc, dz_float_t _left, dz_float_t _right, dz_float_t _top, dz_float_t _bottom )
@@ -738,7 +757,14 @@ dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instanc
     {
         dz_instance_mesh_chunk_t * chunk = chunks + index;
 
-        GLuint textureId = *(GLuint *)chunk->surface;
+        GLuint textureId = chunk->surface != DZ_NULLPTR ? *(GLuint *)chunk->surface : 0;
+
+        if( textureId == 0 )
+        {
+            // SOLID material (or atlas without an image) — bind the 1x1 white texture so the fragment shader
+            // multiplies by white and produces the vertex color unchanged.
+            textureId = _desc->whiteTextureId;
+        }
 
         GLCALL( glActiveTexture, (GL_TEXTURE0) );
         GLCALL( glBindTexture, (GL_TEXTURE_2D, textureId) );
@@ -768,7 +794,7 @@ dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instanc
             return DZ_FAILURE;
         }
 
-        GLCALL( glDrawElements, (GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_SHORT, DZ_NULLPTR) );
+        GLCALL( glDrawElements, (GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_SHORT, (const void *)((dz_size_t)chunk->index_offset * sizeof( dz_uint16_t ))) );
     }
 
     GLCALL( glBindBuffer, (GL_ARRAY_BUFFER, 0) );
