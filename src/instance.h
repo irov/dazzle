@@ -16,8 +16,10 @@ typedef struct dz_effect_emitter_instance_t
 
     dz_float_t x;
     dz_float_t y;
+    dz_float_t z;
 
     dz_float_t angle;
+    dz_transform_t transform;
 
     dz_float_t sx;
     dz_float_t sy;
@@ -40,16 +42,25 @@ typedef struct dz_instance_t
     dz_bool_t loop;
     dz_bool_t emit_pause;
     dz_bool_t started;
+    dz_bool_t stopped;
+    dz_bool_t paused;
 
     dz_float_t time;
+    dz_float_t fixed_step;
+    double fixed_step_accumulator;
 
     dz_effect_emitter_instance_t emitter_instances[DZ_EFFECT_EMITTER_INSTANCE_MAX];
     dz_uint32_t emitter_instance_count;
 
     dz_float_t x;
     dz_float_t y;
+    dz_float_t z;
 
     dz_float_t angle;
+    dz_transform_t transform;
+
+    dz_uint32_t birth_order;
+    dz_transform_t physics_transforms[DZ_EFFECT_PHYSICS_OBJECT_MAX];
 
     dz_float_t r;
     dz_float_t g;

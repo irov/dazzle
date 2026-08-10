@@ -20,7 +20,11 @@ set(DAZZLE_RENDER_SOURCES
 add_library(${PROJECT_NAME} STATIC ${DAZZLE_RENDER_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} dazzle)
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glad_gl_core_33${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(${PROJECT_NAME} glad_gl_core_33)
+
+if(COMMAND dazzle_configure_target)
+    dazzle_configure_target(${PROJECT_NAME})
+endif()
 
 set_target_properties (${PROJECT_NAME} PROPERTIES
     FOLDER render

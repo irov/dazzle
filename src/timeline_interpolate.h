@@ -11,6 +11,8 @@ typedef struct dz_timeline_interpolate_t
 
     dz_float_t p0;
     dz_float_t p1;
+    dz_float_t out_tangent;
+    dz_float_t in_tangent;
 
     const struct dz_timeline_key_t * key;
 

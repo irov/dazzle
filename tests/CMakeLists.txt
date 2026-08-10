@@ -1,26 +1,32 @@
-cmake_minimum_required(VERSION 3.10)
+function(dazzle_add_test name)
+    add_executable(dazzle_${name}_test ${ARGN})
+    target_link_libraries(dazzle_${name}_test PRIVATE dazzle)
+    target_compile_features(dazzle_${name}_test PRIVATE c_std_99)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+    dazzle_configure_target(dazzle_${name}_test)
 
-macro(ADD_DAZZLE_TEST testname)
-    ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-    
-    include_directories(${DAZZLE_INCLUDE_DIR})
-    
-    ADD_EXECUTABLE(test_${testname} test_${testname}.c)
-    TARGET_LINK_LIBRARIES(test_${testname} dazzle)
-    
-    if(UNIX AND NOT ANDROID AND NOT APPLE)
-        target_link_libraries(test_${testname} m)
-        target_link_libraries(test_${testname} c)
-        target_link_libraries(test_${testname} dl)
+    if(UNIX)
+        target_link_libraries(dazzle_${name}_test PRIVATE m)
     endif()
 
-    set_target_properties (test_${testname} PROPERTIES
-        FOLDER tests
-    )
+    add_test(NAME dazzle_${name} COMMAND dazzle_${name}_test)
+endfunction()
 
-    ADD_TEST(NAME ${testname} COMMAND ${DAZZLE_REPOSITORY}/bin/${CMAKE_GENERATOR}/test_${testname} ${DAZZLE_REPOSITORY}/bin/${CMAKE_GENERATOR})
-endmacro()
+dazzle_add_test(memory test_memory_leak.c)
 
-ADD_DAZZLE_TEST(memory_leak)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_runtime.c")
+    dazzle_add_test(runtime test_runtime.c)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_serialization.c")
+    dazzle_add_test(serialization test_serialization.c)
+    target_link_libraries(dazzle_serialization_test PRIVATE dazzle_read dazzle_write)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_geometry.c")
+    dazzle_add_test(geometry test_geometry.c)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_physics.c")
+    dazzle_add_test(physics test_physics.c)
+endif()

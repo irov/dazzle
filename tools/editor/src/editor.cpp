@@ -27,6 +27,9 @@
 
 #include <algorithm>
 #include <cstring>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 //////////////////////////////////////////////////////////////////////////
 typedef enum er_window_type_e
@@ -59,15 +62,25 @@ static constexpr dz_float_t ER_LAYER_GIZMO_HIT_RADIUS_POW_2 = ER_LAYER_GIZMO_HIT
 static constexpr dz_float_t ER_LAYER_GIZMO_SELECTED_RADIUS = 6.f;
 static constexpr dz_float_t ER_LAYER_GIZMO_RADIUS = 4.f;
 //////////////////////////////////////////////////////////////////////////
-static const char * ER_DEFAULT_PARTICLE_TEXTURE_FILE_NAME = "particle.png";
+typedef std::vector<const dz_texture_t *> er_const_texture_list_t;
+typedef std::vector<dz_texture_t *> er_texture_list_t;
+typedef std::vector<dz_vec3_t> er_obj_position_list_t;
+typedef std::vector<dz_vec3_t> er_obj_normal_list_t;
+typedef std::vector<dz_vec2_t> er_obj_uv_list_t;
+typedef std::vector<dz_mesh_vertex_t> er_obj_vertex_list_t;
+typedef std::vector<dz_uint32_t> er_obj_index_list_t;
+typedef std::vector<dz_uint32_t> er_obj_face_t;
+typedef std::vector<dz_uint32_t> er_atlas_region_order_t;
 //////////////////////////////////////////////////////////////////////////
 // All texts
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_TITLE = "Dazzle particle editor";
 static const char * ER_MENU_FILE = "File";
+static const char * ER_MENU_FILE_ITEM_NEW = "New Project";
 static const char * ER_MENU_FILE_ITEM_OPEN = "Open";
 static const char * ER_MENU_FILE_ITEM_SAVE = "Save";
 static const char * ER_MENU_FILE_ITEM_EXPORT = "Export";
+static const char * ER_MENU_FILE_ITEM_IMPORT_OBJ = "Import OBJ Mesh";
 static const char * ER_MENU_EDIT = "Edit";
 static const char * ER_MENU_EDIT_ITEM_UNDO = "Undo";
 static const char * ER_MENU_EDIT_ITEM_REDO = "Redo";
@@ -136,7 +149,6 @@ static const char * ER_WINDOW_CONTROLS_BTN_RESUME_TEXT = "Resume";
 static const char * ER_WINDOW_CONTROLS_BTN_LOOP_TEXT = "Loop";
 static const char * ER_WINDOW_CONTROLS_FACTOR_PREFIX_TEXT = "Factor:";
 static const char * ER_WINDOW_CONTROLS_TIME_PREFIX_TEXT = "Time:";
-static const char * ER_WINDOW_CONTROLS_INPUT_LIFE_TEXT = "Life";
 static const char * ER_WINDOW_CONTROLS_BTN_RESET_CAMERA_TEXT = "Reset camera";
 static const char * ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT = "Camera move/scroll: <Space> + Mouse";
 static const char * ER_WINDOW_CONTROLS_SHOW_LAYER_GIZMOS_TEXT = "Layer Gizmos";
@@ -183,56 +195,64 @@ static const char * ER_BLEND_MODE_NAMES[] = {
 };
 //////////////////////////////////////////////////////////////////////////
 static const char * ER_SHAPE_DATA_NAMES[] = {
-    "Segment angle min", //DZ_SHAPE_SEGMENT_ANGLE_MIN
-    "Segment angle max", //DZ_SHAPE_SEGMENT_ANGLE_MAX
-    "Circle radius min", //DZ_SHAPE_CIRCLE_RADIUS_MIN
-    "Circle radius max", //DZ_SHAPE_CIRCLE_RADIUS_MAX
-    "Circle angle min",  //DZ_SHAPE_CIRCLE_ANGLE_MIN
-    "Circle angle max",  //DZ_SHAPE_CIRCLE_ANGLE_MAX
-    "Line angle",        //DZ_SHAPE_LINE_ANGLE
-    "Line size",         //DZ_SHAPE_LINE_SIZE
-    "Line offset",       //DZ_SHAPE_LINE_OFFSET
-    "Rect width min",    //DZ_SHAPE_RECT_WIDTH_MIN
-    "Rect width max",    //DZ_SHAPE_RECT_WIDTH_MAX
-    "Rect height min",   //DZ_SHAPE_RECT_HEIGHT_MIN
-    "Rect height max",   //DZ_SHAPE_RECT_HEIGHT_MAX
+    "Segment angle min", // DZ_SHAPE_SEGMENT_ANGLE_MIN
+    "Segment angle max", // DZ_SHAPE_SEGMENT_ANGLE_MAX
+    "Circle radius min", // DZ_SHAPE_CIRCLE_RADIUS_MIN
+    "Circle radius max", // DZ_SHAPE_CIRCLE_RADIUS_MAX
+    "Circle angle min",  // DZ_SHAPE_CIRCLE_ANGLE_MIN
+    "Circle angle max",  // DZ_SHAPE_CIRCLE_ANGLE_MAX
+    "Line angle",        // DZ_SHAPE_LINE_ANGLE
+    "Line size",         // DZ_SHAPE_LINE_SIZE
+    "Line offset",       // DZ_SHAPE_LINE_OFFSET
+    "Rect width min",    // DZ_SHAPE_RECT_WIDTH_MIN
+    "Rect width max",    // DZ_SHAPE_RECT_WIDTH_MAX
+    "Rect height min",   // DZ_SHAPE_RECT_HEIGHT_MIN
+    "Rect height max",   // DZ_SHAPE_RECT_HEIGHT_MAX
+    "Sphere radius min", "Sphere radius max", "Box width", "Box height", "Box depth", "Cone radius", "Cone height", "Cylinder radius", "Cylinder height",
 };
 //////////////////////////////////////////////////////////////////////////
 const char * ER_SHAPE_TYPE_NAMES[] = {
-    "Point",             //DZ_SHAPE_POINT
-    "Segment",           //DZ_SHAPE_SEGMENT
-    "Circle",            //DZ_SHAPE_CIRCLE
-    "Line",              //DZ_SHAPE_LINE
-    "Rect",              //DZ_SHAPE_RECT
-    "Polygon",           //DZ_SHAPE_POLYGON
-    "Mask",              //DZ_SHAPE_MASK
+    "Point",   // DZ_SHAPE_POINT
+    "Segment", // DZ_SHAPE_SEGMENT
+    "Circle",  // DZ_SHAPE_CIRCLE
+    "Line",    // DZ_SHAPE_LINE
+    "Rect",    // DZ_SHAPE_RECT
+    "Polygon", // DZ_SHAPE_POLYGON
+    "Mask",    // DZ_SHAPE_MASK
+    "Sphere",  "Box", "Cone", "Cylinder", "Mesh surface", "Mesh volume",
 };
 //////////////////////////////////////////////////////////////////////////
 const char * ER_EMITTER_DATA_NAMES[] = {
-    "Spawn delay (inv)", //DZ_EMITTER_SPAWN_DELAY inverted, means value = 1 / DZ_EMITTER_SPAWN_DELAY
-    "Spawn count",       //DZ_EMITTER_SPAWN_COUNT
-    "Spawn spin min",    //DZ_EMITTER_SPAWN_SPIN_MIN
-    "Spawn spin max",    //DZ_EMITTER_SPAWN_SPIN_MAX
+    "Spawn delay (inv)", // DZ_EMITTER_SPAWN_DELAY inverted, means value = 1 / DZ_EMITTER_SPAWN_DELAY
+    "Spawn count",       // DZ_EMITTER_SPAWN_COUNT
+    "Spawn spin min",    // DZ_EMITTER_SPAWN_SPIN_MIN
+    "Spawn spin max",    // DZ_EMITTER_SPAWN_SPIN_MAX
+    "Spawn elevation min", "Spawn elevation max",
 };
 //////////////////////////////////////////////////////////////////////////
 const char * ER_AFFECTOR_DATA_NAMES[] = {
-    "Life",              //DZ_AFFECTOR_TIMELINE_LIFE
-    "Move speed",        //DZ_AFFECTOR_TIMELINE_MOVE_SPEED
-    "Move accelerate",   //DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE
-    "Rotate speed",      //DZ_AFFECTOR_TIMELINE_ROTATE_SPEED
-    "Rotate accelerate", //DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE
-    "Spin speed",        //DZ_AFFECTOR_TIMELINE_SPIN_SPEED
-    "Spin accelerate",   //DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE
-    "Strafe speed",      //DZ_AFFECTOR_TIMELINE_STRAFE_SPEED
-    "Strafe frequence",  //DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
-    "Strafe size",       //DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
-    "Strafe shift",      //DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
-    "Scale",             //DZ_AFFECTOR_TIMELINE_SCALE
-    "Aspect",            //DZ_AFFECTOR_TIMELINE_ASPECT
-    "Color Red",         //DZ_AFFECTOR_TIMELINE_COLOR_R
-    "Color Green",       //DZ_AFFECTOR_TIMELINE_COLOR_G
-    "Color Blue",        //DZ_AFFECTOR_TIMELINE_COLOR_B
-    "Color Alpha",       //DZ_AFFECTOR_TIMELINE_COLOR_A
+    "Life",              // DZ_AFFECTOR_TIMELINE_LIFE
+    "Move speed",        // DZ_AFFECTOR_TIMELINE_MOVE_SPEED
+    "Move accelerate",   // DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE
+    "Rotate speed",      // DZ_AFFECTOR_TIMELINE_ROTATE_SPEED
+    "Rotate accelerate", // DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE
+    "Spin speed",        // DZ_AFFECTOR_TIMELINE_SPIN_SPEED
+    "Spin accelerate",   // DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE
+    "Strafe speed",      // DZ_AFFECTOR_TIMELINE_STRAFE_SPEED
+    "Strafe frequence",  // DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE
+    "Strafe size",       // DZ_AFFECTOR_TIMELINE_STRAFE_SIZE
+    "Strafe shift",      // DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT
+    "Scale",             // DZ_AFFECTOR_TIMELINE_SCALE
+    "Aspect",            // DZ_AFFECTOR_TIMELINE_ASPECT
+    "Color Red",         // DZ_AFFECTOR_TIMELINE_COLOR_R
+    "Color Green",       // DZ_AFFECTOR_TIMELINE_COLOR_G
+    "Color Blue",        // DZ_AFFECTOR_TIMELINE_COLOR_B
+    "Color Alpha",       // DZ_AFFECTOR_TIMELINE_COLOR_A
+    "Direction Z",
+    "Gravity X",
+    "Gravity Y",
+    "Gravity Z",
+    "Drag",
 };
 //////////////////////////////////////////////////////////////////////////
 struct my_json_load_data_t
@@ -329,7 +349,7 @@ static dz_result_t addZipFile( zipFile _zf, const char * _file, const void * _bu
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t openZipFile( unzFile _uf, const char * _file, std::vector<dz_uint8_t> * _buffer )
+static dz_result_t openZipFile( unzFile _uf, const char * _file, er_byte_buffer_t * _buffer )
 {
     unz_global_info64 gi;
     if( unzGetGlobalInfo64( _uf, &gi ) != UNZ_OK )
@@ -423,10 +443,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
     for( int32_t i = 1; i < max; i++ )
     {
         dz_timeline_interpolate_t * interpolate;
-        if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR );
 
         dz_timeline_key_t * nextKey;
 
@@ -527,10 +544,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
     for( int32_t i = 1; i < max; i++ )
     {
         dz_timeline_interpolate_t * interpolate;
-        if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR );
 
         dz_timeline_key_t * nextKey;
 
@@ -628,10 +642,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
     for( int32_t i = 1; i < max; i++ )
     {
         dz_timeline_interpolate_t * interpolate;
-        if( dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_interpolate_create( _service, &interpolate, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR );
 
         dz_timeline_key_t * nextKey;
 
@@ -711,6 +722,23 @@ static void __glfw_scrollCallback( GLFWwindow * _window, double _x, double _y )
 
     if( glfwGetKey( _window, GLFW_KEY_SPACE ) != GLFW_PRESS )
     {
+        if( p_editor->m_effect != DZ_NULLPTR )
+        {
+            dz_project_profile_t profile;
+            dz_effect_get_project_profile( p_editor->m_effect, &profile );
+            if( profile.projection == DZ_PROJECTION_ORTHOGRAPHIC )
+            {
+                profile.orthographic_height = std::max( 0.01f, profile.orthographic_height * ( 1.f - (dz_float_t)_y * 0.1f ) );
+            }
+            else
+            {
+                const dz_float_t amount = (dz_float_t)_y * 0.5f;
+                profile.position.x += profile.forward.x * amount;
+                profile.position.y += profile.forward.y * amount;
+                profile.position.z += profile.forward.z * amount;
+            }
+            dz_effect_set_camera_defaults( p_editor->m_effect, &profile );
+        }
         return;
     }
 
@@ -752,6 +780,55 @@ static void __glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y
         camera_offset_x += dx / camera_scale;
         camera_offset_y += dy / camera_scale;
     }
+    else if( glfwGetMouseButton( _window, GLFW_MOUSE_BUTTON_RIGHT ) == GLFW_PRESS )
+    {
+        editor * p_editor = reinterpret_cast<editor *>( glfwGetWindowUserPointer( _window ) );
+        if( p_editor->m_effect != DZ_NULLPTR )
+        {
+            const dz_float_t dx = (dz_float_t)_x - mouse_pos_x;
+            const dz_float_t dy = (dz_float_t)_y - mouse_pos_y;
+            dz_project_profile_t profile;
+            dz_effect_get_project_profile( p_editor->m_effect, &profile );
+            dz_vec3_t right = { profile.forward.y * profile.up.z - profile.forward.z * profile.up.y, profile.forward.z * profile.up.x - profile.forward.x * profile.up.z,
+                                profile.forward.x * profile.up.y - profile.forward.y * profile.up.x };
+            const dz_float_t rightLength = sqrtf( right.x * right.x + right.y * right.y + right.z * right.z );
+            if( rightLength > 0.000001f )
+            {
+                right.x /= rightLength;
+                right.y /= rightLength;
+                right.z /= rightLength;
+            }
+            if( profile.projection == DZ_PROJECTION_ORTHOGRAPHIC )
+            {
+                const dz_float_t scale = profile.orthographic_height / std::max( p_editor->m_dzWindowSize.y, 1.f );
+                profile.position.x -= ( right.x * dx - profile.up.x * dy ) * scale;
+                profile.position.y -= ( right.y * dx - profile.up.y * dy ) * scale;
+                profile.position.z -= ( right.z * dx - profile.up.z * dy ) * scale;
+            }
+            else
+            {
+                const dz_float_t yaw = -dx * 0.005f;
+                const dz_float_t pitch = -dy * 0.005f;
+                const dz_float_t yawCos = cosf( yaw ), yawSin = sinf( yaw );
+                dz_vec3_t forward = { profile.forward.x * yawCos + profile.forward.z * yawSin, profile.forward.y, -profile.forward.x * yawSin + profile.forward.z * yawCos };
+                const dz_float_t pitchCos = cosf( pitch ), pitchSin = sinf( pitch );
+                const dz_float_t dot = forward.x * right.x + forward.y * right.y + forward.z * right.z;
+                const dz_vec3_t cross = { right.y * forward.z - right.z * forward.y, right.z * forward.x - right.x * forward.z, right.x * forward.y - right.y * forward.x };
+                forward = { forward.x * pitchCos + cross.x * pitchSin + right.x * dot * ( 1.f - pitchCos ),
+                            forward.y * pitchCos + cross.y * pitchSin + right.y * dot * ( 1.f - pitchCos ),
+                            forward.z * pitchCos + cross.z * pitchSin + right.z * dot * ( 1.f - pitchCos ) };
+                const dz_float_t length = sqrtf( forward.x * forward.x + forward.y * forward.y + forward.z * forward.z );
+                if( length > 0.000001f )
+                {
+                    forward.x /= length;
+                    forward.y /= length;
+                    forward.z /= length;
+                    profile.forward = forward;
+                }
+            }
+            dz_effect_set_camera_defaults( p_editor->m_effect, &profile );
+        }
+    }
 
     mouse_pos_x = (dz_float_t)_x;
     mouse_pos_y = (dz_float_t)_y;
@@ -764,6 +841,44 @@ static void __glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, i
     DZ_UNUSED( _action );
     DZ_UNUSED( _mods );
 
+    editor * p_editor = reinterpret_cast<editor *>( glfwGetWindowUserPointer( _window ) );
+    if( ( _action == GLFW_PRESS || _action == GLFW_REPEAT ) && p_editor->m_effect != DZ_NULLPTR && ImGui::GetIO().WantCaptureKeyboard == false &&
+        ( _key == GLFW_KEY_W || _key == GLFW_KEY_A || _key == GLFW_KEY_S || _key == GLFW_KEY_D || _key == GLFW_KEY_Q || _key == GLFW_KEY_E ) )
+    {
+        dz_project_profile_t profile;
+        dz_effect_get_project_profile( p_editor->m_effect, &profile );
+        dz_vec3_t right = { profile.forward.y * profile.up.z - profile.forward.z * profile.up.y, profile.forward.z * profile.up.x - profile.forward.x * profile.up.z,
+                            profile.forward.x * profile.up.y - profile.forward.y * profile.up.x };
+        const dz_float_t length = sqrtf( right.x * right.x + right.y * right.y + right.z * right.z );
+        if( length > 0.000001f )
+        {
+            right.x /= length;
+            right.y /= length;
+            right.z /= length;
+        }
+        dz_vec3_t movement = { 0.f, 0.f, 0.f };
+        if( _key == GLFW_KEY_W || _key == GLFW_KEY_S )
+        {
+            const dz_float_t sign = _key == GLFW_KEY_W ? 1.f : -1.f;
+            movement = { profile.forward.x * sign, profile.forward.y * sign, profile.forward.z * sign };
+        }
+        else if( _key == GLFW_KEY_A || _key == GLFW_KEY_D )
+        {
+            const dz_float_t sign = _key == GLFW_KEY_D ? 1.f : -1.f;
+            movement = { right.x * sign, right.y * sign, right.z * sign };
+        }
+        else
+        {
+            const dz_float_t sign = _key == GLFW_KEY_E ? 1.f : -1.f;
+            movement = { profile.up.x * sign, profile.up.y * sign, profile.up.z * sign };
+        }
+        const dz_float_t speed = profile.projection == DZ_PROJECTION_ORTHOGRAPHIC ? profile.orthographic_height * 0.05f : 0.5f;
+        profile.position.x += movement.x * speed;
+        profile.position.y += movement.y * speed;
+        profile.position.z += movement.z * speed;
+        dz_effect_set_camera_defaults( p_editor->m_effect, &profile );
+    }
+
     if( glfwGetKey( _window, GLFW_KEY_ESCAPE ) == GLFW_PRESS )
     {
         camera_scale = 1.f;
@@ -772,8 +887,6 @@ static void __glfw_keyCallback( GLFWwindow * _window, int _key, int _scancode, i
     }
     else if( glfwGetKey( _window, GLFW_KEY_GRAVE_ACCENT ) == GLFW_PRESS )
     {
-        editor * p_editor = reinterpret_cast<editor *>(glfwGetWindowUserPointer( _window ));
-
         p_editor->m_showDebugInfo = !p_editor->m_showDebugInfo;
     }
 }
@@ -783,31 +896,22 @@ static void __editor_set_default_name( er_editor_instance_info_t * const _info, 
 editor::editor()
     : m_windowWidth( ER_WINDOW_WIDTH )
     , m_windowHeight( ER_WINDOW_HEIGHT )
-
     , m_dzWindowPos( 0.f, 0.f )
     , m_dzWindowSize( 500.f, 500.f )
-
     , m_backgroundColor( 0.f, 0.f, 0.f, 1.f )
-
     , m_showDebugInfo( false )
     , m_showCanvasLines( false )
     , m_showLayerGizmos( true )
     , m_showEffectCenter( true )
+    , m_openNewProjectDialog( true )
+    , m_fullAxisEditing( false )
     , m_pause( false )
     , m_windowType( ER_WINDOW_TYPE_COMPOSER_DATA )
-
-    , m_textureWidth( 0 )
-    , m_textureHeight( 0 )
-
-    , m_textureRegionSelecting( false )
-    , m_textureRegionSelectStart( 0.f, 0.f )
-
     , m_service( nullptr )
     , m_atlas( nullptr )
     , m_texture( nullptr )
     , m_textureIndex( 0 )
     , m_material( nullptr )
-
     , m_shape( nullptr )
     , m_emitter( nullptr )
     , m_affector( nullptr )
@@ -819,10 +923,6 @@ editor::editor()
     , m_shapeIndex( 0 )
     , m_emitterIndex( 0 )
     , m_affectorIndex( 0 )
-
-    , m_loop( DZ_TRUE )
-    , m_time_scale( 1.f )
-
     , m_effect( nullptr )
     , m_layerIndex( 0 )
     , m_triggerIndex( 0 )
@@ -831,8 +931,15 @@ editor::editor()
     , m_layerGizmoDragIndex( 0 )
     , m_layerGizmoDragOffset( 0.f, 0.f )
     , m_instance( nullptr )
+    , m_loop( DZ_TRUE )
+    , m_time_scale( 1.f )
+    , m_textureWidth( 0 )
+    , m_textureHeight( 0 )
+    , m_textureRegionSelecting( false )
+    , m_textureRegionSelectStart( 0.f, 0.f )
+    , m_textureId( 0 )
+    , m_openglDesc()
     , m_fwWindow( nullptr )
-
     , m_shapeType( DZ_SHAPE_RECT )
 {
 }
@@ -914,25 +1021,10 @@ dz_result_t editor::init()
         providers.f_cosf = &dz_cosf;
         providers.f_sinf = &dz_sinf;
 
-        if( dz_service_create( &m_service, &providers, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        if( dz_atlas_create( m_service, &m_atlas, &m_textureId, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        if( dz_texture_create( m_service, &m_texture, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-
-        if( dz_material_create( m_service, &m_material, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_service_create( &m_service, &providers, DZ_NULLPTR );
+        dz_atlas_create( m_service, &m_atlas, &m_textureId, DZ_NULLPTR );
+        dz_texture_create( m_service, &m_texture, DZ_NULLPTR );
+        dz_material_create( m_service, &m_material, DZ_NULLPTR );
 
         dz_blend_type_e blend_type = dz_material_get_default_blend();
 
@@ -945,10 +1037,7 @@ dz_result_t editor::init()
         }
 
         // shape data
-        if( dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_shape_create( m_service, &m_shape, m_shapeType, DZ_NULLPTR );
 
         for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
         {
@@ -977,10 +1066,7 @@ dz_result_t editor::init()
         }
 
         // emitter data
-        if( dz_emitter_create( m_service, &m_emitter, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_emitter_create( m_service, &m_emitter, DZ_NULLPTR );
 
         dz_emitter_set_life( m_emitter, 1000.f );
 
@@ -1011,10 +1097,7 @@ dz_result_t editor::init()
         }
 
         // affector data
-        if( dz_affector_create( m_service, &m_affector, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_affector_create( m_service, &m_affector, DZ_NULLPTR );
 
         for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
         {
@@ -1042,14 +1125,12 @@ dz_result_t editor::init()
             data.pointsData[1].x = -1.f; // init data so editor knows to take it from here
         }
 
-        if( dz_effect_create( m_service, &m_effect, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_create( m_service, &m_effect, 5.f, 0, DZ_NULLPTR );
 
         dz_effect_set_atlas( m_effect, m_atlas );
 
         dz_effect_layer_desc_t layer;
+        dz_effect_layer_desc_default( &layer );
         layer.material = m_material;
         layer.shape = m_shape;
         layer.emitter = m_emitter;
@@ -1093,10 +1174,7 @@ dz_result_t editor::init()
 
         __editor_set_default_name( m_triggerInfos + m_triggerIndex, &m_nextEditorInstanceId, "Trigger", m_triggerIndex );
 
-        if( dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR );
 
         dz_instance_set_loop( m_instance, m_loop );
     }
@@ -1162,6 +1240,11 @@ dz_result_t editor::update( double _time )
                 return DZ_FAILURE;
             }
 
+            if( this->showNewProjectDialog() != DZ_SUCCESSFUL )
+            {
+                return DZ_FAILURE;
+            }
+
             {
                 ImGui::BeginChild( "CATEGORY_BAR", ImVec2( 0.f, ImGui::GetFrameHeightWithSpacing() + 8.f ), false, ImGuiWindowFlags_NoScrollbar );
 
@@ -1206,10 +1289,7 @@ dz_result_t editor::update( double _time )
                 {
                 case ER_WINDOW_TYPE_EFFECT_DATA:
                     {
-                        if( this->showEffectData() == DZ_FAILURE )
-                        {
-                            return DZ_FAILURE;
-                        }
+                        this->showEffectData();
                     }
                     break;
                 case ER_WINDOW_TYPE_COMPOSER_DATA:
@@ -1310,7 +1390,7 @@ dz_result_t editor::update( double _time )
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t editor::render()
+void editor::render()
 {
     // render background
     GLCALL( glViewport, (0, 0, (GLsizei)m_windowWidth, (GLsizei)m_windowHeight) );
@@ -1322,7 +1402,6 @@ dz_result_t editor::render()
 
     glfwSwapBuffers( m_fwWindow );
 
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::run( int argc, char ** argv )
@@ -1349,10 +1428,7 @@ dz_result_t editor::run( int argc, char ** argv )
             return DZ_FAILURE; // maybe break loop?
         }
 
-        if( this->render() == DZ_FAILURE )
-        {
-            return DZ_FAILURE; // maybe break loop?
-        }
+        this->render();
     }
 
     this->finalize();
@@ -1581,8 +1657,20 @@ static dz_result_t __resource_push_unique( T ** const _resources, dz_uint32_t * 
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-template<class T>
-static void __resource_erase( T ** const _resources, er_editor_instance_info_t * const _infos, dz_uint32_t * const _count, dz_uint32_t _index )
+template <class T> static bool __resource_contains( T * const * _resources, dz_uint32_t _count, const T * _resource )
+{
+    for( dz_uint32_t index = 0; index != _count; ++index )
+    {
+        if( _resources[index] == _resource )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+//////////////////////////////////////////////////////////////////////////
+template <class T> static void __resource_erase( T ** const _resources, er_editor_instance_info_t * const _infos, dz_uint32_t * const _count, dz_uint32_t _index )
 {
     for( dz_uint32_t index = _index + 1; index != *_count; ++index )
     {
@@ -1600,7 +1688,8 @@ static dz_bool_t __effect_uses_material( const dz_effect_t * _effect, const dz_m
     for( dz_uint32_t index = 0; index != layerCount; ++index )
     {
         dz_effect_layer_desc_t layer;
-        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.material == _material )
+        dz_effect_get_layer( _effect, index, &layer );
+        if( layer.material == _material )
         {
             return DZ_TRUE;
         }
@@ -1616,7 +1705,8 @@ static dz_bool_t __effect_uses_shape( const dz_effect_t * _effect, const dz_shap
     for( dz_uint32_t index = 0; index != layerCount; ++index )
     {
         dz_effect_layer_desc_t layer;
-        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.shape == _shape )
+        dz_effect_get_layer( _effect, index, &layer );
+        if( layer.shape == _shape )
         {
             return DZ_TRUE;
         }
@@ -1632,7 +1722,8 @@ static dz_bool_t __effect_uses_emitter( const dz_effect_t * _effect, const dz_em
     for( dz_uint32_t index = 0; index != layerCount; ++index )
     {
         dz_effect_layer_desc_t layer;
-        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.emitter == _emitter )
+        dz_effect_get_layer( _effect, index, &layer );
+        if( layer.emitter == _emitter )
         {
             return DZ_TRUE;
         }
@@ -1648,7 +1739,8 @@ static dz_bool_t __effect_uses_affector( const dz_effect_t * _effect, const dz_a
     for( dz_uint32_t index = 0; index != layerCount; ++index )
     {
         dz_effect_layer_desc_t layer;
-        if( dz_effect_get_layer( _effect, index, &layer ) == DZ_SUCCESSFUL && layer.affector == _affector )
+        dz_effect_get_layer( _effect, index, &layer );
+        if( layer.affector == _affector )
         {
             return DZ_TRUE;
         }
@@ -1879,10 +1971,7 @@ static dz_bool_t __find_first_layer_trigger( const dz_effect_t * _effect, dz_uin
     for( dz_uint32_t index = 0; index != triggerCount; ++index )
     {
         dz_effect_trigger_desc_t trigger;
-        if( dz_effect_get_trigger( _effect, index, &trigger ) == DZ_FAILURE )
-        {
-            continue;
-        }
+        dz_effect_get_trigger( _effect, index, &trigger );
 
         if( trigger.target_layer_index == _layerIndex )
         {
@@ -1943,13 +2032,107 @@ static void __make_default_layer_trigger( dz_effect_trigger_desc_t * const _trig
     _trigger->angle_offset = 0.f;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t editor::resetEffect()
+void editor::resetEffect()
 {
     dz_shape_set_type( m_shape, m_shapeType );
 
     dz_instance_reset( m_instance );
 
     dz_instance_emit_resume( m_instance );
+
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::createNewProject( dz_projection_type_e _projection )
+{
+    this->destroyEffectResources();
+
+    dz_atlas_create( m_service, &m_atlas, &m_textureId, DZ_NULLPTR );
+    if( this->createDefaultMaterial( &m_material ) != DZ_SUCCESSFUL || this->createDefaultShape( &m_shape ) != DZ_SUCCESSFUL ||
+        this->createDefaultEmitter( &m_emitter ) != DZ_SUCCESSFUL || this->createDefaultAffector( &m_affector ) != DZ_SUCCESSFUL )
+    {
+        return DZ_FAILURE;
+    }
+
+    m_shapeType = _projection == DZ_PROJECTION_ORTHOGRAPHIC ? DZ_SHAPE_RECT : DZ_SHAPE_SPHERE;
+    dz_shape_set_type( m_shape, m_shapeType );
+
+    dz_project_profile_t profile;
+    dz_project_profile_default( &profile, _projection );
+    if( _projection == DZ_PROJECTION_ORTHOGRAPHIC )
+    {
+        profile.orthographic_height = (dz_float_t)m_dzWindowSize.y;
+    }
+    else
+    {
+        profile.position.z = 100.f;
+    }
+    dz_effect_create_with_profile( m_service, &m_effect, &profile, 5.f, 0, DZ_NULLPTR );
+    dz_effect_set_atlas( m_effect, m_atlas );
+
+    dz_effect_layer_desc_t layer;
+    dz_effect_layer_desc_default( &layer );
+    layer.material = m_material;
+    layer.shape = m_shape;
+    layer.emitter = m_emitter;
+    layer.affector = m_affector;
+    layer.life = 5.f;
+    if( dz_effect_add_layer( m_effect, &layer, &m_layerIndex ) != DZ_SUCCESSFUL )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_effect_trigger_desc_t trigger;
+    __make_default_layer_trigger( &trigger, m_layerIndex );
+    if( dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex ) != DZ_SUCCESSFUL )
+    {
+        return DZ_FAILURE;
+    }
+    dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR );
+    dz_instance_set_loop( m_instance, m_loop );
+
+    m_fullAxisEditing = _projection == DZ_PROJECTION_PERSPECTIVE;
+    __editor_set_default_name( m_layerInfos, &m_nextEditorInstanceId, "Layer", 0 );
+    __editor_set_default_name( m_triggerInfos, &m_nextEditorInstanceId, "Trigger", 0 );
+    this->rebuildResourceLists();
+    if( this->selectLayer( 0 ) != DZ_SUCCESSFUL || this->resetEffectData() != DZ_SUCCESSFUL )
+    {
+        return DZ_FAILURE;
+    }
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::showNewProjectDialog()
+{
+    if( m_openNewProjectDialog == true )
+    {
+        ImGui::OpenPopup( "New Dazzle Project" );
+        m_openNewProjectDialog = false;
+    }
+
+    if( ImGui::BeginPopupModal( "New Dazzle Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize ) == true )
+    {
+        ImGui::TextUnformatted( "Choose the immutable project camera projection:" );
+        ImGui::Spacing();
+        if( ImGui::Button( "Orthographic", ImVec2( 180.f, 48.f ) ) == true )
+        {
+            if( this->createNewProject( DZ_PROJECTION_ORTHOGRAPHIC ) != DZ_SUCCESSFUL )
+            {
+                return DZ_FAILURE;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if( ImGui::Button( "Perspective", ImVec2( 180.f, 48.f ) ) == true )
+        {
+            if( this->createNewProject( DZ_PROJECTION_PERSPECTIVE ) != DZ_SUCCESSFUL )
+            {
+                return DZ_FAILURE;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::TextWrapped( "Orthographic starts on the camera-aligned working plane. Perspective enables full-axis editing." );
+        ImGui::EndPopup();
+    }
 
     return DZ_SUCCESSFUL;
 }
@@ -1962,10 +2145,7 @@ dz_result_t editor::createDefaultMaterial( dz_material_t ** const _material )
     }
 
     dz_material_t * material;
-    if( dz_material_create( m_service, &material, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_material_create( m_service, &material, DZ_NULLPTR );
 
     dz_material_set_blend( material, dz_material_get_default_blend() );
     dz_material_set_mode( material, m_textureId != 0 ? DZ_MATERIAL_MODE_TEXTURE : dz_material_get_default_mode() );
@@ -1974,12 +2154,7 @@ dz_result_t editor::createDefaultMaterial( dz_material_t ** const _material )
     dz_material_set_texture_count( material, 1 );
 
     dz_texture_t * texture;
-    if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        dz_material_destroy( m_service, material );
-
-        return DZ_FAILURE;
-    }
+    dz_texture_create( m_service, &texture, DZ_NULLPTR );
 
     dz_float_t region[4] = {0.f, 0.f, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight};
     __set_texture_region_pixels( texture, m_textureWidth, m_textureHeight, region );
@@ -2005,10 +2180,7 @@ dz_result_t editor::createDefaultMaterial( dz_material_t ** const _material )
 dz_result_t editor::createDefaultShape( dz_shape_t ** const _shape )
 {
     dz_shape_t * shape;
-    if( dz_shape_create( m_service, &shape, DZ_SHAPE_RECT, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_shape_create( m_service, &shape, DZ_SHAPE_RECT, DZ_NULLPTR );
 
     for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
     {
@@ -2035,10 +2207,7 @@ dz_result_t editor::createDefaultShape( dz_shape_t ** const _shape )
 dz_result_t editor::createDefaultEmitter( dz_emitter_t ** const _emitter )
 {
     dz_emitter_t * emitter;
-    if( dz_emitter_create( m_service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_emitter_create( m_service, &emitter, DZ_NULLPTR );
 
     dz_emitter_set_life( emitter, 1000.f );
 
@@ -2067,10 +2236,7 @@ dz_result_t editor::createDefaultEmitter( dz_emitter_t ** const _emitter )
 dz_result_t editor::createDefaultAffector( dz_affector_t ** const _affector )
 {
     dz_affector_t * affector;
-    if( dz_affector_create( m_service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_affector_create( m_service, &affector, DZ_NULLPTR );
 
     for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
@@ -2198,10 +2364,7 @@ void editor::rebuildResourceLists()
     for( dz_uint32_t index = 0; index != layerCount; ++index )
     {
         dz_effect_layer_desc_t layer;
-        if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
-        {
-            continue;
-        }
+        dz_effect_get_layer( m_effect, index, &layer );
 
         if( __resource_push_unique( m_materials, &m_materialCount, const_cast<dz_material_t *>(layer.material) ) == DZ_FAILURE )
         {
@@ -2290,7 +2453,8 @@ dz_result_t editor::ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * c
     if( m_triggerIndex < triggerCount )
     {
         dz_effect_trigger_desc_t trigger;
-        if( dz_effect_get_trigger( m_effect, m_triggerIndex, &trigger ) == DZ_SUCCESSFUL && trigger.target_layer_index == _layerIndex )
+        dz_effect_get_trigger( m_effect, m_triggerIndex, &trigger );
+        if( trigger.target_layer_index == _layerIndex )
         {
             keepTriggerIndex = m_triggerIndex;
         }
@@ -2301,10 +2465,7 @@ dz_result_t editor::ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * c
         for( dz_uint32_t index = 0; index != triggerCount; ++index )
         {
             dz_effect_trigger_desc_t trigger;
-            if( dz_effect_get_trigger( m_effect, index, &trigger ) == DZ_FAILURE )
-            {
-                continue;
-            }
+            dz_effect_get_trigger( m_effect, index, &trigger );
 
             if( trigger.target_layer_index == _layerIndex && trigger.event_type != DZ_EFFECT_EVENT_TIME )
             {
@@ -2336,17 +2497,11 @@ dz_result_t editor::ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * c
     for( dz_uint32_t index = 0; index != triggerCount; )
     {
         dz_effect_trigger_desc_t trigger;
-        if( dz_effect_get_trigger( m_effect, index, &trigger ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_get_trigger( m_effect, index, &trigger );
 
         if( trigger.target_layer_index == _layerIndex && index != keepTriggerIndex )
         {
-            if( dz_effect_remove_trigger( m_effect, index, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_remove_trigger( m_effect, index, DZ_NULLPTR );
 
             for( dz_uint32_t shift = index + 1; shift != triggerCount; ++shift )
             {
@@ -2372,10 +2527,7 @@ dz_result_t editor::ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * c
 
     if( changed == DZ_TRUE && m_instance != DZ_NULLPTR )
     {
-        if( this->resetEffect() == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        this->resetEffect();
     }
 
     return DZ_SUCCESSFUL;
@@ -2384,10 +2536,7 @@ dz_result_t editor::ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * c
 dz_result_t editor::selectLayer( dz_uint32_t _index )
 {
     dz_effect_layer_desc_t layer;
-    if( dz_effect_get_layer( m_effect, _index, &layer ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_effect_get_layer( m_effect, _index, &layer );
 
     m_layerIndex = _index;
     m_material = const_cast<dz_material_t *>(layer.material);
@@ -2453,10 +2602,7 @@ void editor::setEffectAtlasesSurface()
     for( dz_uint32_t index = 0; index != layerCount; ++index )
     {
         dz_effect_layer_desc_t layer;
-        if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
-        {
-            continue;
-        }
+        dz_effect_get_layer( m_effect, index, &layer );
 
         dz_atlas_t * atlas = const_cast<dz_atlas_t *>(dz_material_get_atlas( layer.material ));
 
@@ -2485,6 +2631,17 @@ void editor::destroyEffectResources()
     dz_uint32_t emitterCount = 0;
     dz_uint32_t affectorCount = 0;
     dz_uint32_t atlasCount = 0;
+
+    dz_material_t * ownedMaterials[ER_EDITOR_RESOURCE_MAX];
+    dz_shape_t * ownedShapes[ER_EDITOR_RESOURCE_MAX];
+    dz_emitter_t * ownedEmitters[ER_EDITOR_RESOURCE_MAX];
+    dz_affector_t * ownedAffectors[ER_EDITOR_RESOURCE_MAX];
+    dz_atlas_t * ownedAtlases[ER_EDITOR_RESOURCE_MAX];
+    dz_uint32_t ownedMaterialCount = 0;
+    dz_uint32_t ownedShapeCount = 0;
+    dz_uint32_t ownedEmitterCount = 0;
+    dz_uint32_t ownedAffectorCount = 0;
+    dz_uint32_t ownedAtlasCount = 0;
 
     for( dz_uint32_t index = 0; index != m_materialCount; ++index )
     {
@@ -2522,6 +2679,7 @@ void editor::destroyEffectResources()
         if( effectAtlas != nullptr )
         {
             __resource_push_unique( atlases, &atlasCount, const_cast<dz_atlas_t *>(effectAtlas) );
+            __resource_push_unique( ownedAtlases, &ownedAtlasCount, const_cast<dz_atlas_t *>( effectAtlas ) );
         }
 
         const dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
@@ -2529,20 +2687,22 @@ void editor::destroyEffectResources()
         for( dz_uint32_t index = 0; index != layerCount; ++index )
         {
             dz_effect_layer_desc_t layer;
-            if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
-            {
-                continue;
-            }
+            dz_effect_get_layer( m_effect, index, &layer );
 
             __resource_push_unique( materials, &materialCount, const_cast<dz_material_t *>(layer.material) );
             __resource_push_unique( shapes, &shapeCount, const_cast<dz_shape_t *>(layer.shape) );
             __resource_push_unique( emitters, &emitterCount, const_cast<dz_emitter_t *>(layer.emitter) );
             __resource_push_unique( affectors, &affectorCount, const_cast<dz_affector_t *>(layer.affector) );
+            __resource_push_unique( ownedMaterials, &ownedMaterialCount, const_cast<dz_material_t *>( layer.material ) );
+            __resource_push_unique( ownedShapes, &ownedShapeCount, const_cast<dz_shape_t *>( layer.shape ) );
+            __resource_push_unique( ownedEmitters, &ownedEmitterCount, const_cast<dz_emitter_t *>( layer.emitter ) );
+            __resource_push_unique( ownedAffectors, &ownedAffectorCount, const_cast<dz_affector_t *>( layer.affector ) );
 
             const dz_atlas_t * atlas = dz_material_get_atlas( layer.material );
             if( atlas != nullptr )
             {
                 __resource_push_unique( atlases, &atlasCount, const_cast<dz_atlas_t *>(atlas) );
+                __resource_push_unique( ownedAtlases, &ownedAtlasCount, const_cast<dz_atlas_t *>( atlas ) );
             }
         }
 
@@ -2552,22 +2712,38 @@ void editor::destroyEffectResources()
 
     for( dz_uint32_t index = 0; index != affectorCount; ++index )
     {
+        if( __resource_contains( ownedAffectors, ownedAffectorCount, affectors[index] ) == true )
+        {
+            continue;
+        }
         dz_affector_destroy( m_service, affectors[index] );
     }
 
     for( dz_uint32_t index = 0; index != emitterCount; ++index )
     {
+        if( __resource_contains( ownedEmitters, ownedEmitterCount, emitters[index] ) == true )
+        {
+            continue;
+        }
         dz_emitter_destroy( m_service, emitters[index] );
     }
 
     for( dz_uint32_t index = 0; index != shapeCount; ++index )
     {
+        if( __resource_contains( ownedShapes, ownedShapeCount, shapes[index] ) == true )
+        {
+            continue;
+        }
         dz_shape_destroy( m_service, shapes[index] );
     }
 
-    std::vector<const dz_texture_t *> materialTextures;
+    er_const_texture_list_t materialTextures;
     for( dz_uint32_t index = 0; index != materialCount; ++index )
     {
+        if( __resource_contains( ownedMaterials, ownedMaterialCount, materials[index] ) == true )
+        {
+            continue;
+        }
         const dz_texture_t * texture;
         while( dz_material_pop_texture( materials[index], &texture ) == DZ_SUCCESSFUL )
         {
@@ -2585,11 +2761,19 @@ void editor::destroyEffectResources()
 
     for( dz_uint32_t index = 0; index != materialCount; ++index )
     {
+        if( __resource_contains( ownedMaterials, ownedMaterialCount, materials[index] ) == true )
+        {
+            continue;
+        }
         dz_material_destroy( m_service, materials[index] );
     }
 
     for( dz_uint32_t index = 0; index != atlasCount; ++index )
     {
+        if( __resource_contains( ownedAtlases, ownedAtlasCount, atlases[index] ) == true )
+        {
+            continue;
+        }
         dz_atlas_t * mutableAtlas = atlases[index];
         dz_atlas_destroy( m_service, mutableAtlas );
     }
@@ -2619,7 +2803,7 @@ void editor::destroyEffectResources()
 dz_result_t editor::saveEffect()
 {
     nfdchar_t * outPath = NULL;
-    nfdresult_t result = NFD_SaveDialog( "dz", nullptr, &outPath );
+    nfdresult_t result = NFD_SaveDialog( "dzz", nullptr, &outPath );
 
     if( result == NFD_OKAY )
     {
@@ -2631,7 +2815,6 @@ dz_result_t editor::saveEffect()
         jpp::object json = dz_evict_write( m_effect );
 
         jpp::object editorMetadata = jpp::make_object();
-        editorMetadata.set( "version", 1 );
         editorMetadata.set( "next_id", m_nextEditorInstanceId );
         editorMetadata.set( "layers", __editor_instance_infos_write( m_layerInfos, dz_effect_get_layer_count( m_effect ) ) );
         editorMetadata.set( "materials", __editor_instance_infos_write( m_materialInfos, m_materialCount ) );
@@ -2706,7 +2889,7 @@ dz_result_t editor::loadEffect()
             return DZ_FAILURE;
         }
 
-        std::vector<dz_uint8_t> data_buffer;
+        er_byte_buffer_t data_buffer;
         openZipFile( uf, "data.json", &data_buffer );
 
         jpp::object data;
@@ -2725,10 +2908,7 @@ dz_result_t editor::loadEffect()
         if( sharedAtlas == DZ_NULLPTR && layerCount != 0 )
         {
             dz_effect_layer_desc_t baseLayer;
-            if( dz_effect_get_layer( m_effect, 0, &baseLayer ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_get_layer( m_effect, 0, &baseLayer );
 
             sharedAtlas = dz_material_get_atlas( baseLayer.material );
             dz_effect_set_atlas( m_effect, sharedAtlas );
@@ -2741,19 +2921,13 @@ dz_result_t editor::loadEffect()
             for( dz_uint32_t index = 0; index != layerCount; ++index )
             {
                 dz_effect_layer_desc_t layer;
-                if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
+                dz_effect_get_layer( m_effect, index, &layer );
 
                 dz_material_set_atlas( const_cast<dz_material_t *>(layer.material), sharedAtlas );
             }
         }
 
-        if( dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR );
 
         dz_uint32_t seed = dz_effect_get_seed( m_effect );
 
@@ -2831,30 +3005,39 @@ dz_result_t editor::loadEffect()
 dz_result_t editor::exportEffect()
 {
     nfdchar_t * outPath = NULL;
-    nfdresult_t result = NFD_SaveDialog( NULL, NULL, &outPath );
+    nfdresult_t result = NFD_SaveDialog( "daz", NULL, &outPath );
 
     if( result == NFD_OKAY )
     {
         puts( "Success!" );
         puts( outPath );
 
-        FILE * f = fopen( outPath, "wb" );
-
-        auto lambda_write = []( const void * _data, dz_size_t _size, dz_userdata_t _ud )
-        {
-            FILE * f = (FILE *)(_ud);
-
-            fwrite( _data, _size, 1, f );
-
-            return DZ_SUCCESSFUL;
-        };
-
         dz_effect_set_atlas( m_effect, m_atlas );
 
-        dz_header_write( lambda_write, (dz_userdata_t)f );
+        dz_size_t exportSize = 0;
+        if( dz_effect_write_memory( m_effect, DZ_NULLPTR, 0, &exportSize ) != DZ_FAILURE_BUFFER_TOO_SMALL )
+        {
+            free( outPath );
+            return DZ_FAILURE;
+        }
 
-        dz_effect_write( m_effect, lambda_write, (dz_userdata_t)f );
+        er_byte_buffer_t exportData( exportSize );
+        if( dz_effect_write_memory( m_effect, exportData.data(), exportData.size(), &exportSize ) != DZ_SUCCESSFUL )
+        {
+            free( outPath );
+            return DZ_FAILURE;
+        }
 
+        FILE * f = fopen( outPath, "wb" );
+        if( f == nullptr || fwrite( exportData.data(), 1, exportSize, f ) != exportSize )
+        {
+            if( f != nullptr )
+            {
+                fclose( f );
+            }
+            free( outPath );
+            return DZ_FAILURE;
+        }
         fclose( f );
 
         free( outPath );
@@ -2871,12 +3054,213 @@ dz_result_t editor::exportEffect()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
+static dz_int32_t __obj_resolve_index( dz_int32_t _index, size_t _count )
+{
+    if( _index > 0 )
+    {
+        return _index - 1;
+    }
+    if( _index < 0 )
+    {
+        return (dz_int32_t)_count + _index;
+    }
+    return -1;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_bool_t __obj_parse_vertex( const std::string & _token, size_t _positionCount, size_t _uvCount, size_t _normalCount, dz_int32_t * _position, dz_int32_t * _uv,
+                                     dz_int32_t * _normal )
+{
+    *_position = *_uv = *_normal = -1;
+    const size_t first = _token.find( '/' );
+    const size_t second = first == std::string::npos ? std::string::npos : _token.find( '/', first + 1U );
+    try
+    {
+        *_position = __obj_resolve_index( std::stoi( _token.substr( 0, first ) ), _positionCount );
+        if( first != std::string::npos && second != first + 1U )
+        {
+            const size_t length = second == std::string::npos ? std::string::npos : second - first - 1U;
+            *_uv = __obj_resolve_index( std::stoi( _token.substr( first + 1U, length ) ), _uvCount );
+        }
+        if( second != std::string::npos && second + 1U < _token.size() )
+        {
+            *_normal = __obj_resolve_index( std::stoi( _token.substr( second + 1U ) ), _normalCount );
+        }
+    }
+    catch( ... )
+    {
+        return DZ_FALSE;
+    }
+
+    return *_position >= 0 && (size_t)*_position < _positionCount && ( *_uv < 0 || (size_t)*_uv < _uvCount ) && ( *_normal < 0 || (size_t)*_normal < _normalCount ) ? DZ_TRUE
+                                                                                                                                                                    : DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t editor::importObjMesh()
+{
+    char * path = nullptr;
+    const nfdresult_t dialogResult = NFD_OpenDialog( "obj", nullptr, &path );
+    if( dialogResult == NFD_CANCEL )
+    {
+        return DZ_SUCCESSFUL;
+    }
+    if( dialogResult != NFD_OKAY )
+    {
+        printf( "Error: %s\n", NFD_GetError() );
+        return DZ_FAILURE;
+    }
+
+    std::ifstream stream( path );
+    free( path );
+    if( stream.is_open() == false )
+    {
+        return DZ_FAILURE;
+    }
+
+    er_obj_position_list_t positions;
+    er_obj_normal_list_t normals;
+    er_obj_uv_list_t uvs;
+    er_obj_vertex_list_t vertices;
+    er_obj_index_list_t indices;
+    std::string line;
+    while( std::getline( stream, line ) )
+    {
+        std::istringstream values( line );
+        std::string type;
+        values >> type;
+        if( type == "v" )
+        {
+            dz_vec3_t value;
+            if( values >> value.x >> value.y >> value.z )
+            {
+                positions.push_back( value );
+            }
+        }
+        else if( type == "vn" )
+        {
+            dz_vec3_t value;
+            if( values >> value.x >> value.y >> value.z )
+            {
+                normals.push_back( value );
+            }
+        }
+        else if( type == "vt" )
+        {
+            dz_vec2_t value;
+            if( values >> value.x >> value.y )
+            {
+                uvs.push_back( value );
+            }
+        }
+        else if( type == "f" )
+        {
+            er_obj_face_t face;
+            std::string token;
+            while( values >> token )
+            {
+                dz_int32_t positionIndex, uvIndex, normalIndex;
+                if( __obj_parse_vertex( token, positions.size(), uvs.size(), normals.size(), &positionIndex, &uvIndex, &normalIndex ) == DZ_FALSE )
+                {
+                    return DZ_FAILURE_INVALID_DATA;
+                }
+                dz_mesh_vertex_t vertex = {};
+                vertex.position = positions[(size_t)positionIndex];
+                vertex.normal = normalIndex >= 0 ? normals[(size_t)normalIndex] : dz_vec3_t{ 0.f, 0.f, 0.f };
+                vertex.tangent = { 1.f, 0.f, 0.f, 1.f };
+                vertex.uv0 = uvIndex >= 0 ? uvs[(size_t)uvIndex] : dz_vec2_t{ 0.f, 0.f };
+                vertex.uv1 = vertex.uv0;
+                face.push_back( (dz_uint32_t)vertices.size() );
+                vertices.push_back( vertex );
+            }
+            if( face.size() < 3U )
+            {
+                return DZ_FAILURE_INVALID_DATA;
+            }
+
+            const dz_vec3_t edge1 = { vertices[face[1]].position.x - vertices[face[0]].position.x, vertices[face[1]].position.y - vertices[face[0]].position.y,
+                                      vertices[face[1]].position.z - vertices[face[0]].position.z };
+            const dz_vec3_t edge2 = { vertices[face[2]].position.x - vertices[face[0]].position.x, vertices[face[2]].position.y - vertices[face[0]].position.y,
+                                      vertices[face[2]].position.z - vertices[face[0]].position.z };
+            dz_vec3_t faceNormal = { edge1.y * edge2.z - edge1.z * edge2.y, edge1.z * edge2.x - edge1.x * edge2.z, edge1.x * edge2.y - edge1.y * edge2.x };
+            const dz_float_t normalLength = sqrtf( faceNormal.x * faceNormal.x + faceNormal.y * faceNormal.y + faceNormal.z * faceNormal.z );
+            if( normalLength <= 0.000001f )
+            {
+                return DZ_FAILURE_INVALID_DATA;
+            }
+            faceNormal.x /= normalLength;
+            faceNormal.y /= normalLength;
+            faceNormal.z /= normalLength;
+            for( dz_uint32_t vertexIndex : face )
+            {
+                dz_mesh_vertex_t & vertex = vertices[vertexIndex];
+                if( vertex.normal.x == 0.f && vertex.normal.y == 0.f && vertex.normal.z == 0.f )
+                {
+                    vertex.normal = faceNormal;
+                }
+                const dz_vec3_t reference = fabsf( vertex.normal.y ) < 0.99f ? dz_vec3_t{ 0.f, 1.f, 0.f } : dz_vec3_t{ 1.f, 0.f, 0.f };
+                dz_vec3_t tangent = { reference.y * vertex.normal.z - reference.z * vertex.normal.y, reference.z * vertex.normal.x - reference.x * vertex.normal.z,
+                                      reference.x * vertex.normal.y - reference.y * vertex.normal.x };
+                const dz_float_t tangentLength = sqrtf( tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z );
+                if( tangentLength > 0.000001f )
+                {
+                    vertex.tangent = { tangent.x / tangentLength, tangent.y / tangentLength, tangent.z / tangentLength, 1.f };
+                }
+            }
+            for( size_t index = 1U; index + 1U < face.size(); ++index )
+            {
+                indices.push_back( face[0] );
+                indices.push_back( face[index] );
+                indices.push_back( face[index + 1U] );
+            }
+        }
+    }
+
+    if( vertices.size() < 3U || indices.size() < 3U || vertices.size() > UINT32_MAX || indices.size() > UINT32_MAX )
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
+    dz_uint32_t meshId = 1U;
+    const dz_uint32_t meshCount = dz_effect_get_mesh_count( m_effect );
+    for( dz_uint32_t index = 0; index != meshCount; ++index )
+    {
+        dz_mesh_desc_t existing;
+        dz_effect_get_mesh_at( m_effect, index, &existing );
+        if( existing.id >= meshId && existing.id != DZ_RESOURCE_ID_NONE )
+        {
+            meshId = existing.id + 1U;
+        }
+    }
+    dz_mesh_desc_t mesh = {};
+    mesh.id = meshId;
+    mesh.vertices = vertices.data();
+    mesh.vertex_count = (dz_uint32_t)vertices.size();
+    mesh.indices = indices.data();
+    mesh.index_count = (dz_uint32_t)indices.size();
+    dz_effect_add_mesh( m_service, m_effect, &mesh );
+
+    dz_effect_layer_desc_t layer;
+    dz_effect_get_layer( m_effect, m_layerIndex, &layer );
+    layer.mesh_id = meshId;
+    layer.particle_mode = DZ_PARTICLE_MODE_MESH;
+    dz_shape_set_mesh_id( const_cast<dz_shape_t *>( layer.shape ), meshId );
+    if( dz_effect_set_layer( m_effect, m_layerIndex, &layer ) != DZ_SUCCESSFUL )
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
+    dz_instance_restart( m_instance );
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showMenuBar()
 {
     if( ImGui::BeginMenuBar() )
     {
         if( ImGui::BeginMenu( ER_MENU_FILE ) )
         {
+            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_NEW ) )
+            {
+                m_openNewProjectDialog = true;
+            }
+
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_OPEN ) ) // todo
             {
                 if( this->loadEffect() == DZ_FAILURE )
@@ -2896,6 +3280,14 @@ dz_result_t editor::showMenuBar()
             if( ImGui::MenuItem( ER_MENU_FILE_ITEM_EXPORT ) ) // todo
             {
                 if( this->exportEffect() == DZ_FAILURE )
+                {
+                    return DZ_FAILURE;
+                }
+            }
+
+            if( ImGui::MenuItem( ER_MENU_FILE_ITEM_IMPORT_OBJ ) )
+            {
+                if( this->importObjMesh() != DZ_SUCCESSFUL )
                 {
                     return DZ_FAILURE;
                 }
@@ -3147,8 +3539,10 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
 
     ImRect bb( window->DC.CursorPos, window->DC.CursorPos + _size );
     ImGui::ItemSize( bb );
-    if( !ImGui::ItemAdd( bb, NULL ) )
+    if( !ImGui::ItemAdd( bb, 0 ) )
+    {
         return 0;
+    }
 
     const bool hovered = ImGui::IsItemHovered();
 
@@ -3177,8 +3571,6 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
         is_active_y2 = false;
         is_point_added = false;
     }
-
-    bool isMoved = false;
 
     if( active_id == id && active_point != ER_CURVE_POINT_NONE )
     {
@@ -3250,7 +3642,6 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
             }
         }
 
-        isMoved = true;
     }
     else if( hovered && active_id == ER_CURVE_ID_NONE )
     {
@@ -3431,7 +3822,6 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
                             _points[sel].y = pos.y;
                         }
 
-                        isMoved = true;
                     }
                 }
             }
@@ -3680,13 +4070,13 @@ static int __setupCurve( const char * _label, const ImVec2 & _size, const int _m
     {
         char buf[256];
 
-        sprintf( buf, "%.2f", _y_min );
+        snprintf( buf, sizeof( buf ), "%.2f", _y_min );
         ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.f, 1.f ) );
 
-        sprintf( buf, "%.2f", _y_max );
+        snprintf( buf, sizeof( buf ), "%.2f", _y_max );
         ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 0.f, 0.f ) );
 
-        sprintf( buf, "%.2f", _x_max );
+        snprintf( buf, sizeof( buf ), "%.2f", _x_max );
         ImGui::RenderTextClipped( ImVec2( bb.Min.x, bb.Min.y + style.FramePadding.y ), bb.Max, buf, NULL, NULL, ImVec2( 1.f, 1.f ) );
 
         // debug text
@@ -3976,11 +4366,175 @@ dz_result_t editor::resetEffectData()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t editor::showEffectData()
+void editor::showEffectData()
 {
     ImGui::Spacing();
 
-    ImGui::Text( ER_WINDOW_EFFECT_TITLE );
+    dz_project_profile_t profile;
+    dz_effect_get_project_profile( m_effect, &profile );
+    ImGui::Text( "Projection: %s (immutable)", profile.projection == DZ_PROJECTION_ORTHOGRAPHIC ? "Orthographic" : "Perspective" );
+    bool cameraChanged = false;
+    cameraChanged |= ImGui::InputFloat3( "Camera position", &profile.position.x );
+    cameraChanged |= ImGui::InputFloat3( "Camera forward", &profile.forward.x );
+    cameraChanged |= ImGui::InputFloat3( "Camera up", &profile.up.x );
+    if( profile.projection == DZ_PROJECTION_ORTHOGRAPHIC )
+    {
+        cameraChanged |= ImGui::InputFloat( "Ortho height", &profile.orthographic_height, 0.1f, 1.f );
+        ImGui::Checkbox( "Full-axis editing", &m_fullAxisEditing );
+    }
+    else
+    {
+        cameraChanged |= ImGui::InputFloat( "Field of view", &profile.field_of_view, 1.f, 5.f );
+        m_fullAxisEditing = true;
+    }
+    cameraChanged |= ImGui::InputFloat( "Near plane", &profile.near_plane, 0.01f, 0.1f );
+    cameraChanged |= ImGui::InputFloat( "Far plane", &profile.far_plane, 1.f, 10.f );
+    if( cameraChanged == true )
+    {
+        dz_effect_set_camera_defaults( m_effect, &profile );
+    }
+
+    ImGui::Spacing();
+    ImGui::Text( "Physics objects" );
+    static const char * physicsTypeNames[] = { "Gravity", "Wind", "Magnet", "Plane", "Sphere", "Box", "Triangle mesh" };
+    static const char * responseNames[] = { "Bounce", "Slide", "Kill" };
+    if( dz_effect_get_physics_object_count( m_effect ) < DZ_EFFECT_PHYSICS_OBJECT_MAX && ImGui::Button( "Add physics object" ) )
+    {
+        dz_uint32_t id = 1U;
+        const dz_uint32_t count = dz_effect_get_physics_object_count( m_effect );
+        for( dz_uint32_t index = 0; index != count; ++index )
+        {
+            dz_physics_object_desc_t existing;
+            dz_effect_get_physics_object( m_effect, index, &existing );
+            if( existing.id >= id )
+            {
+                id = existing.id + 1U;
+            }
+        }
+        dz_physics_object_desc_t object = {};
+        object.id = id;
+        object.mesh_id = DZ_RESOURCE_ID_NONE;
+        object.type = DZ_PHYSICS_GRAVITY;
+        object.transform.rotation.w = 1.f;
+        object.transform.scale = { 1.f, 1.f, 1.f };
+        object.direction.y = -1.f;
+        object.strength = 9.8f;
+        object.response = DZ_COLLISION_BOUNCE;
+        dz_effect_add_physics_object( m_effect, &object, DZ_NULLPTR );
+        dz_instance_restart( m_instance );
+    }
+
+    const dz_uint32_t physicsCount = dz_effect_get_physics_object_count( m_effect );
+    for( dz_uint32_t physicsIndex = 0; physicsIndex != physicsCount; ++physicsIndex )
+    {
+        dz_physics_object_desc_t object;
+        dz_effect_get_physics_object( m_effect, physicsIndex, &object );
+        ImGui::PushID( 20000 + (int)physicsIndex );
+        char physicsTitle[48];
+        snprintf( physicsTitle, sizeof( physicsTitle ), "%s %u", physicsTypeNames[object.type], object.id );
+        bool changed = false;
+        bool remove = false;
+        if( ImGui::TreeNode( physicsTitle ) )
+        {
+            ImGui::Text( "Stable ID: %u", object.id );
+            int type = (int)object.type;
+            if( ImGui::Combo( "Type", &type, physicsTypeNames, IM_ARRAYSIZE( physicsTypeNames ) ) )
+            {
+                object.type = (dz_physics_object_type_e)type;
+                if( object.type == DZ_PHYSICS_MESH && object.mesh_id == DZ_RESOURCE_ID_NONE )
+                {
+                    if( dz_effect_get_mesh_count( m_effect ) != 0U )
+                    {
+                        dz_mesh_desc_t mesh;
+                        dz_effect_get_mesh_at( m_effect, 0U, &mesh );
+                        object.mesh_id = mesh.id;
+                    }
+                    else
+                    {
+                        object.type = DZ_PHYSICS_BOX;
+                    }
+                }
+                changed = true;
+            }
+            changed |= ImGui::InputFloat3( "Position", &object.transform.position.x );
+            dz_vec3_t euler;
+            dz_quat_to_euler_xyz_degrees( &object.transform.rotation, &euler );
+            if( ImGui::InputFloat3( "Rotation", &euler.x ) )
+            {
+                dz_quat_from_euler_xyz_degrees( &euler, &object.transform.rotation );
+                changed = true;
+            }
+            changed |= ImGui::InputFloat3( "Scale", &object.transform.scale.x );
+            changed |= ImGui::InputFloat3( "Direction", &object.direction.x );
+            changed |= ImGui::InputFloat3( "Half extents", &object.half_extents.x );
+            changed |= ImGui::InputFloat( "Radius", &object.radius );
+            changed |= ImGui::InputFloat( "Strength", &object.strength );
+            changed |= ImGui::InputFloat( "Falloff", &object.falloff );
+            changed |= ImGui::InputFloat( "Turbulence", &object.turbulence );
+            changed |= ImGui::InputFloat( "Restitution", &object.restitution );
+            changed |= ImGui::InputFloat( "Friction", &object.friction );
+            if( object.type == DZ_PHYSICS_MESH )
+            {
+                int meshId = (int)object.mesh_id;
+                if( ImGui::InputInt( "Mesh ID", &meshId ) )
+                {
+                    object.mesh_id = meshId >= 0 ? (dz_uint32_t)meshId : DZ_RESOURCE_ID_NONE;
+                    changed = true;
+                }
+            }
+            int response = (int)object.response;
+            if( ImGui::Combo( "Collision response", &response, responseNames, IM_ARRAYSIZE( responseNames ) ) )
+            {
+                object.response = (dz_collision_response_e)response;
+                changed = true;
+            }
+            if( ImGui::Button( "Remove physics object" ) )
+            {
+                remove = true;
+            }
+            ImGui::TreePop();
+        }
+        if( changed )
+        {
+            object.radius = DZ_MAX( object.radius, 0.f );
+            object.half_extents.x = DZ_MAX( object.half_extents.x, 0.f );
+            object.half_extents.y = DZ_MAX( object.half_extents.y, 0.f );
+            object.half_extents.z = DZ_MAX( object.half_extents.z, 0.f );
+            object.restitution = DZ_MAX( object.restitution, 0.f );
+            object.friction = DZ_MAX( 0.f, DZ_MIN( object.friction, 1.f ) );
+            if( object.type == DZ_PHYSICS_BOX || object.type == DZ_PHYSICS_MESH )
+            {
+                if( fabsf( object.transform.scale.x ) < 0.0001f )
+                {
+                    object.transform.scale.x = 0.0001f;
+                }
+                if( fabsf( object.transform.scale.y ) < 0.0001f )
+                {
+                    object.transform.scale.y = 0.0001f;
+                }
+                if( fabsf( object.transform.scale.z ) < 0.0001f )
+                {
+                    object.transform.scale.z = 0.0001f;
+                }
+            }
+            dz_effect_set_physics_object( m_effect, physicsIndex, &object );
+            dz_instance_restart( m_instance );
+        }
+        if( remove )
+        {
+            dz_effect_remove_physics_object( m_effect, physicsIndex );
+            dz_instance_restart( m_instance );
+        }
+        ImGui::PopID();
+        if( remove )
+        {
+            break;
+        }
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text( "%s", ER_WINDOW_EFFECT_TITLE );
     ImGui::Separator();
 
     ImGui::Spacing();
@@ -4010,7 +4564,6 @@ dz_result_t editor::showEffectData()
         this->resetEffect();
     }
 
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showResourceList( int _selected )
@@ -4029,10 +4582,7 @@ dz_result_t editor::showResourceList( int _selected )
             if( ImGui::Button( "+##Layer" ) == true )
             {
                 dz_effect_layer_desc_t layer;
-                if( dz_effect_get_layer( m_effect, m_layerIndex, &layer ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
+                dz_effect_get_layer( m_effect, m_layerIndex, &layer );
 
                 dz_uint32_t layerIndex;
                 if( dz_effect_add_layer( m_effect, &layer, &layerIndex ) == DZ_FAILURE )
@@ -4082,10 +4632,7 @@ dz_result_t editor::showResourceList( int _selected )
                 }
 
                 dz_effect_trigger_desc_t trigger;
-                if( dz_effect_get_trigger( m_effect, sourceTriggerIndex, &trigger ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
+                dz_effect_get_trigger( m_effect, sourceTriggerIndex, &trigger );
 
                 trigger.target_layer_index = layerIndex;
 
@@ -4122,10 +4669,7 @@ dz_result_t editor::showResourceList( int _selected )
             {
                 const dz_uint32_t removedLayerIndex = m_layerIndex;
 
-                if( dz_effect_remove_layer( m_effect, removedLayerIndex, DZ_NULLPTR ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
+                dz_effect_remove_layer( m_effect, removedLayerIndex, DZ_NULLPTR );
 
                 for( dz_uint32_t index = removedLayerIndex + 1; index != layerCount; ++index )
                 {
@@ -4417,7 +4961,7 @@ dz_result_t editor::showResourceList( int _selected )
 dz_result_t editor::showComposerData()
 {
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_COMPOSER_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_COMPOSER_TITLE );
     ImGui::Separator();
 
     dz_uint32_t layerCount = dz_effect_get_layer_count( m_effect );
@@ -4425,10 +4969,7 @@ dz_result_t editor::showComposerData()
     if( layerCount != 0 )
     {
         dz_effect_layer_desc_t layer;
-        if( dz_effect_get_layer( m_effect, m_layerIndex, &layer ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_get_layer( m_effect, m_layerIndex, &layer );
 
         __editor_name_input( ER_WINDOW_COMPOSER_LAYER_NAME_LABEL, m_layerInfos, layerCount, m_layerIndex, "Layer" );
 
@@ -4521,7 +5062,45 @@ dz_result_t editor::showComposerData()
 
         layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_X_LABEL, &layer.x, 1.f, 10.f, "%.2f", ImGuiInputTextFlags_None );
         layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_Y_LABEL, &layer.y, 1.f, 10.f, "%.2f", ImGuiInputTextFlags_None );
+        if( m_fullAxisEditing == true )
+        {
+            layerChanged |= ImGui::InputFloat( "Layer Z", &layer.z, 1.f, 10.f, "%.2f", ImGuiInputTextFlags_None );
+        }
         layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_ANGLE_LABEL, &layer.angle, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
+        dz_vec3_t euler;
+        dz_quat_to_euler_xyz_degrees( &layer.rotation, &euler );
+        if( ImGui::InputFloat3( "Rotation Euler (deg)", &euler.x ) == true )
+        {
+            dz_quat_from_euler_xyz_degrees( &euler, &layer.rotation );
+            layerChanged = true;
+        }
+
+        static const char * particleModes[] = { "Sprite", "Trail", "Beam", "Path", "Mesh" };
+        static const char * orientationModes[] = { "Camera", "Camera axis", "Velocity", "World" };
+        static const char * sortingModes[] = { "None", "Birth ascending", "Birth descending", "Camera near", "Camera far" };
+        int particleMode = (int)layer.particle_mode;
+        int orientationMode = (int)layer.orientation;
+        int sortingMode = (int)layer.sorting;
+        if( ImGui::Combo( "Particle mode", &particleMode, particleModes, IM_ARRAYSIZE( particleModes ) ) )
+        {
+            layer.particle_mode = (dz_particle_mode_e)particleMode;
+            layerChanged = true;
+        }
+        if( ImGui::Combo( "Orientation", &orientationMode, orientationModes, IM_ARRAYSIZE( orientationModes ) ) )
+        {
+            layer.orientation = (dz_particle_orientation_e)orientationMode;
+            layerChanged = true;
+        }
+        if( ImGui::Combo( "Sorting", &sortingMode, sortingModes, IM_ARRAYSIZE( sortingModes ) ) )
+        {
+            layer.sorting = (dz_particle_sort_e)sortingMode;
+            layerChanged = true;
+        }
+        if( layer.particle_mode == DZ_PARTICLE_MODE_TRAIL || layer.particle_mode == DZ_PARTICLE_MODE_BEAM || layer.particle_mode == DZ_PARTICLE_MODE_PATH )
+        {
+            layerChanged |= ImGui::InputFloat( "Trail width", &layer.trail_width, 0.1f, 1.f );
+            layerChanged |= ImGui::InputFloat( "Trail lifetime", &layer.trail_lifetime, 0.05f, 0.5f );
+        }
         layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_LIFE_LABEL, &layer.life, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
 
         int layerSeed = (int)layer.seed;
@@ -4533,12 +5112,11 @@ dz_result_t editor::showComposerData()
 
         if( layerChanged == true )
         {
-            if( layer.life < 0.f )
-            {
-                layer.life = 0.f;
-            }
+            layer.life = DZ_MAX( layer.life, 0.f );
+            layer.trail_width = DZ_MAX( layer.trail_width, 0.f );
+            layer.trail_lifetime = DZ_MAX( layer.trail_lifetime, 0.f );
 
-            if( dz_effect_set_layer( m_effect, m_layerIndex, &layer ) == DZ_FAILURE )
+            if( dz_effect_set_layer( m_effect, m_layerIndex, &layer ) != DZ_SUCCESSFUL )
             {
                 return DZ_FAILURE;
             }
@@ -4561,7 +5139,7 @@ dz_result_t editor::showComposerData()
     }
 
     ImGui::Separator();
-    ImGui::Text( ER_WINDOW_COMPOSER_LAYER_TRIGGERS_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_COMPOSER_LAYER_TRIGGERS_TITLE );
 
     dz_uint32_t triggerIndex;
     if( this->ensureLayerTrigger( m_layerIndex, &triggerIndex ) == DZ_FAILURE )
@@ -4570,10 +5148,7 @@ dz_result_t editor::showComposerData()
     }
 
     dz_effect_trigger_desc_t trigger;
-    if( dz_effect_get_trigger( m_effect, triggerIndex, &trigger ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_effect_get_trigger( m_effect, triggerIndex, &trigger );
 
     bool triggerChanged = false;
 
@@ -4687,21 +5262,18 @@ dz_result_t editor::showShapeData()
     }
 
     // ignore all shape types starts with DZ_SHAPE_POLYGON
-    ImGui::Combo( ER_WINDOW_COMBO_SHAPE_TYPE_TEXT, &selected_type, ER_SHAPE_TYPE_NAMES, DZ_SHAPE_POLYGON, DZ_SHAPE_POLYGON );
+    ImGui::Combo( ER_WINDOW_COMBO_SHAPE_TYPE_TEXT, &selected_type, ER_SHAPE_TYPE_NAMES, __DZ_SHAPE_MAX__, 8 );
 
     if( selected_type != m_shapeType )
     {
         m_shapeType = static_cast<dz_shape_type_e>(selected_type);
 
-        if( this->resetEffect() == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        this->resetEffect();
     }
 
     // timeline
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_SHAPE_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_SHAPE_TITLE );
 
     dz_float_t width = ImGui::GetContentRegionAvail().x;
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
@@ -4741,6 +5313,26 @@ dz_result_t editor::showShapeData()
             {
                 show = true;
             }
+            break;
+        case DZ_SHAPE_SPHERE:
+            show = data.type >= DZ_SHAPE_SPHERE_RADIUS_MIN && data.type <= DZ_SHAPE_SPHERE_RADIUS_MAX;
+            break;
+        case DZ_SHAPE_BOX:
+            show = data.type >= DZ_SHAPE_BOX_WIDTH && data.type <= DZ_SHAPE_BOX_DEPTH;
+            break;
+        case DZ_SHAPE_CONE:
+            show = data.type >= DZ_SHAPE_CONE_RADIUS && data.type <= DZ_SHAPE_CONE_HEIGHT;
+            break;
+        case DZ_SHAPE_CYLINDER:
+            show = data.type >= DZ_SHAPE_CYLINDER_RADIUS && data.type <= DZ_SHAPE_CYLINDER_HEIGHT;
+            break;
+        case DZ_SHAPE_POINT:
+        case DZ_SHAPE_POLYGON:
+        case DZ_SHAPE_MASK:
+        case DZ_SHAPE_MESH_SURFACE:
+        case DZ_SHAPE_MESH_VOLUME:
+        case __DZ_SHAPE_MAX__:
+        default:
             break;
         }
 
@@ -4807,7 +5399,7 @@ dz_result_t editor::showAffectorData()
 
     // timeline
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_AFFECTOR_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_AFFECTOR_TITLE );
 
     dz_float_t width = ImGui::GetContentRegionAvail().x;
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
@@ -4886,7 +5478,7 @@ dz_result_t editor::showEmitterData()
 
     // timeline
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_EMITTER_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_EMITTER_TITLE );
 
     dz_float_t width = ImGui::GetContentRegionAvail().x;
     ImVec2 size( width, width * ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO );
@@ -4993,7 +5585,9 @@ typedef struct er_atlas_pack_region_t
     dz_int32_t packedY;
 } er_atlas_pack_region_t;
 //////////////////////////////////////////////////////////////////////////
-static void __append_png_u32( std::vector<dz_uint8_t> * const _output, dz_uint32_t _value )
+typedef std::vector<er_atlas_pack_region_t> er_atlas_pack_region_list_t;
+//////////////////////////////////////////////////////////////////////////
+static void __append_png_u32( er_byte_buffer_t * const _output, dz_uint32_t _value )
 {
     _output->push_back( (dz_uint8_t)((_value >> 24) & 0xff) );
     _output->push_back( (dz_uint8_t)((_value >> 16) & 0xff) );
@@ -5001,7 +5595,7 @@ static void __append_png_u32( std::vector<dz_uint8_t> * const _output, dz_uint32
     _output->push_back( (dz_uint8_t)(_value & 0xff) );
 }
 //////////////////////////////////////////////////////////////////////////
-static void __append_png_chunk( std::vector<dz_uint8_t> * const _output, const char * _type, const dz_uint8_t * _data, dz_size_t _size )
+static void __append_png_chunk( er_byte_buffer_t * const _output, const char * _type, const dz_uint8_t * _data, dz_size_t _size )
 {
     __append_png_u32( _output, (dz_uint32_t)_size );
 
@@ -5025,7 +5619,7 @@ static void __append_png_chunk( std::vector<dz_uint8_t> * const _output, const c
     __append_png_u32( _output, (dz_uint32_t)chunkCrc );
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __encode_png_rgba( const dz_uint8_t * _pixels, dz_int32_t _width, dz_int32_t _height, std::vector<dz_uint8_t> * const _output )
+static dz_result_t __encode_png_rgba( const dz_uint8_t * _pixels, dz_int32_t _width, dz_int32_t _height, er_byte_buffer_t * const _output )
 {
     if( _pixels == DZ_NULLPTR || _width <= 0 || _height <= 0 )
     {
@@ -5036,7 +5630,7 @@ static dz_result_t __encode_png_rgba( const dz_uint8_t * _pixels, dz_int32_t _wi
     const dz_size_t sourceStride = (dz_size_t)_width * pixelStride;
     const dz_size_t filteredStride = sourceStride + 1;
 
-    std::vector<dz_uint8_t> filtered;
+    er_byte_buffer_t filtered;
     filtered.resize( filteredStride * (dz_size_t)_height );
 
     for( dz_int32_t row = 0; row != _height; ++row )
@@ -5050,7 +5644,7 @@ static dz_result_t __encode_png_rgba( const dz_uint8_t * _pixels, dz_int32_t _wi
 
     uLongf compressedSize = compressBound( (uLong)filtered.size() );
 
-    std::vector<dz_uint8_t> compressed;
+    er_byte_buffer_t compressed;
     compressed.resize( (dz_size_t)compressedSize );
 
     if( compress2( compressed.data(), &compressedSize, filtered.data(), (uLong)filtered.size(), Z_BEST_COMPRESSION ) != Z_OK )
@@ -5117,7 +5711,7 @@ static dz_result_t __get_texture_region_pixels_int( const dz_texture_t * _textur
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __pack_atlas_regions_shelf( std::vector<er_atlas_pack_region_t> * const _regions, const std::vector<dz_uint32_t> & _order, dz_int32_t _candidateWidth, dz_bool_t _apply, dz_int32_t * const _outWidth, dz_int32_t * const _outHeight )
+static void __pack_atlas_regions_shelf( er_atlas_pack_region_list_t * const _regions, const er_atlas_region_order_t & _order, dz_int32_t _candidateWidth, dz_bool_t _apply, dz_int32_t * const _outWidth, dz_int32_t * const _outHeight )
 {
     dz_int32_t cursorX = 0;
     dz_int32_t cursorY = 0;
@@ -5150,14 +5744,14 @@ static void __pack_atlas_regions_shelf( std::vector<er_atlas_pack_region_t> * co
     *_outHeight = cursorY + rowHeight;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __pack_atlas_regions( std::vector<er_atlas_pack_region_t> * const _regions, dz_int32_t * const _outWidth, dz_int32_t * const _outHeight )
+static dz_result_t __pack_atlas_regions( er_atlas_pack_region_list_t * const _regions, dz_int32_t * const _outWidth, dz_int32_t * const _outHeight )
 {
     if( _regions->empty() == true )
     {
         return DZ_FAILURE;
     }
 
-    std::vector<dz_uint32_t> order;
+    er_atlas_region_order_t order;
     order.reserve( _regions->size() );
 
     dz_int32_t maxRegionWidth = 0;
@@ -5243,7 +5837,7 @@ dz_result_t editor::optimizeAtlas()
 
     DZ_UNUSED( sourceComp );
 
-    std::vector<dz_texture_t *> materialTextures;
+    er_texture_list_t materialTextures;
     for( dz_uint32_t materialIndex = 0; materialIndex != m_materialCount; ++materialIndex )
     {
         dz_material_t * material = m_materials[materialIndex];
@@ -5267,7 +5861,7 @@ dz_result_t editor::optimizeAtlas()
         }
     }
 
-    std::vector<er_atlas_pack_region_t> regions;
+    er_atlas_pack_region_list_t regions;
     regions.reserve( materialTextures.size() );
 
     for( dz_texture_t * texture : materialTextures )
@@ -5301,7 +5895,7 @@ dz_result_t editor::optimizeAtlas()
         return DZ_FAILURE;
     }
 
-    std::vector<dz_uint8_t> packedPixels;
+    er_byte_buffer_t packedPixels;
     packedPixels.resize( (dz_size_t)packedWidth * (dz_size_t)packedHeight * 4, 0 );
 
     for( const er_atlas_pack_region_t & region : regions )
@@ -5317,7 +5911,7 @@ dz_result_t editor::optimizeAtlas()
 
     stbi_image_free( sourcePixels );
 
-    std::vector<dz_uint8_t> optimizedAtlasBuffer;
+    er_byte_buffer_t optimizedAtlasBuffer;
     if( __encode_png_rgba( packedPixels.data(), packedWidth, packedHeight, &optimizedAtlasBuffer ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
@@ -5355,7 +5949,9 @@ dz_result_t editor::optimizeAtlas()
 
     m_textureRegionSelecting = false;
 
-    return this->resetEffect();
+    this->resetEffect();
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::appendTextureToAtlas( const char * _path )
@@ -5437,7 +6033,9 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
         dz_float_t region[4];
     } er_existing_texture_region_t;
 
-    std::vector<dz_texture_t *> materialTextures;
+    typedef std::vector<er_existing_texture_region_t> er_existing_texture_region_list_t;
+
+    er_texture_list_t materialTextures;
     for( dz_uint32_t materialIndex = 0; materialIndex != m_materialCount; ++materialIndex )
     {
         dz_material_t * material = m_materials[materialIndex];
@@ -5462,7 +6060,7 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
         }
     }
 
-    std::vector<er_existing_texture_region_t> existingRegions;
+    er_existing_texture_region_list_t existingRegions;
     existingRegions.reserve( materialTextures.size() );
 
     for( dz_texture_t * texture : materialTextures )
@@ -5474,7 +6072,7 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
         existingRegions.push_back( textureRegion );
     }
 
-    std::vector<dz_uint8_t> appendedPixels;
+    er_byte_buffer_t appendedPixels;
     appendedPixels.resize( (dz_size_t)newWidth * (dz_size_t)newHeight * 4, 0 );
 
     for( dz_int32_t row = 0; row != atlasHeight; ++row )
@@ -5496,7 +6094,7 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
     stbi_image_free( appendPixels );
     stbi_image_free( atlasPixels );
 
-    std::vector<dz_uint8_t> appendedAtlasBuffer;
+    er_byte_buffer_t appendedAtlasBuffer;
     if( __encode_png_rgba( appendedPixels.data(), newWidth, newHeight, &appendedAtlasBuffer ) == DZ_FAILURE )
     {
         return DZ_FAILURE;
@@ -5535,7 +6133,9 @@ dz_result_t editor::appendTextureToAtlas( const char * _path )
         }
     }
 
-    return this->resetEffect();
+    this->resetEffect();
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 static ImVec2 __screen_to_atlas_pixel( const ImVec2 & _screenPosition, const ImVec2 & _imageMin, dz_float_t _imageWidth, dz_float_t _imageHeight, int _atlasWidth, int _atlasHeight )
@@ -5584,7 +6184,7 @@ dz_result_t editor::loadAtlasImage( const char * _path )
     size_t sz = ftell( f );
     rewind( f );
 
-    std::vector<dz_uint8_t> atlasBuffer;
+    er_byte_buffer_t atlasBuffer;
     atlasBuffer.resize( sz );
     fread( atlasBuffer.data(), sz, 1, f );
     fclose( f );
@@ -5636,10 +6236,12 @@ dz_result_t editor::loadAtlasImage( const char * _path )
         }
     }
 
-    return this->resetEffect();
+    this->resetEffect();
+
+    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t editor::clearAtlas()
+void editor::clearAtlas()
 {
     // Drop all texture slots from every material since their UVs reference the atlas image we are removing.
     for( dz_uint32_t materialIndex = 0; materialIndex != m_materialCount; ++materialIndex )
@@ -5670,16 +6272,17 @@ dz_result_t editor::clearAtlas()
     m_texture = DZ_NULLPTR;
     m_textureRegionSelecting = false;
 
-    return this->resetEffect();
+    this->resetEffect();
+
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t editor::showAtlasData()
 {
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_ATLAS_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_ATLAS_TITLE );
     ImGui::Separator();
 
-    ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL );
+    ImGui::Text( "%s", ER_WINDOW_MATERIAL_TEXTURE_SIZE_LABEL );
     ImGui::SameLine();
     ImGui::Text( "%d x %d", m_textureWidth, m_textureHeight );
 
@@ -5737,10 +6340,7 @@ dz_result_t editor::showAtlasData()
 
         if( ImGui::Button( ER_WINDOW_MATERIAL_TEXTURE_BTN_CLEAR_ATLAS ) == true )
         {
-            if( this->clearAtlas() == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            this->clearAtlas();
         }
     }
 
@@ -5765,7 +6365,7 @@ dz_result_t editor::showAtlasData()
 dz_result_t editor::showMaterialData()
 {
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_MATERIAL_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_MATERIAL_TITLE );
     ImGui::Separator();
 
     if( m_materialIndex < m_materialCount )
@@ -5804,6 +6404,192 @@ dz_result_t editor::showMaterialData()
 
     const dz_material_mode_e materialMode = dz_material_get_mode( m_material );
 
+    ImGui::Spacing();
+    ImGui::Text( "Material passes" );
+    ImGui::Separator();
+    if( dz_material_get_pass_count( m_material ) < DZ_MATERIAL_PASS_MAX && ImGui::Button( "Add pass" ) )
+    {
+        dz_material_pass_desc_t pass = {};
+        snprintf( pass.technique_id, sizeof( pass.technique_id ), "%s", materialMode == DZ_MATERIAL_MODE_SOLID ? "dazzle.color" : "dazzle.textured" );
+        pass.blend = dz_material_get_blend( m_material );
+        pass.depth_compare = DZ_DEPTH_LESS_EQUAL;
+        pass.cull = DZ_CULL_NONE;
+        pass.color_mask = 0x0f;
+        dz_material_add_pass( m_material, &pass, DZ_NULLPTR );
+    }
+
+    static const char * depthNames[] = { "Always", "Less", "Less equal" };
+    static const char * cullNames[] = { "None", "Back", "Front" };
+    static const char * semanticNames[] = { "Custom", "View", "Projection", "View-projection", "Camera position", "Instance transform", "Time" };
+    static const char * filterNames[] = { "Nearest", "Linear" };
+    static const char * wrapNames[] = { "Clamp", "Repeat", "Mirrored repeat" };
+    const dz_uint32_t passCount = dz_material_get_pass_count( m_material );
+    for( dz_uint32_t passIndex = 0; passIndex != passCount; ++passIndex )
+    {
+        dz_material_pass_desc_t pass;
+        dz_material_get_pass( m_material, passIndex, &pass );
+        ImGui::PushID( (int)passIndex );
+        char title[32];
+        snprintf( title, sizeof( title ), "Pass %u", passIndex );
+        bool changed = false;
+        bool removePass = false;
+        if( ImGui::TreeNode( title ) )
+        {
+            changed |= ImGui::InputText( "Technique ID", pass.technique_id, sizeof( pass.technique_id ) );
+            int passBlend = (int)pass.blend;
+            if( ImGui::Combo( "Blend", &passBlend, ER_BLEND_MODE_NAMES, IM_ARRAYSIZE( ER_BLEND_MODE_NAMES ) ) )
+            {
+                pass.blend = (dz_blend_type_e)passBlend;
+                changed = true;
+            }
+            bool depthTest = pass.depth_test == DZ_TRUE;
+            if( ImGui::Checkbox( "Depth test", &depthTest ) )
+            {
+                pass.depth_test = depthTest ? DZ_TRUE : DZ_FALSE;
+                changed = true;
+            }
+            bool depthWrite = pass.depth_write == DZ_TRUE;
+            if( ImGui::Checkbox( "Depth write", &depthWrite ) )
+            {
+                pass.depth_write = depthWrite ? DZ_TRUE : DZ_FALSE;
+                changed = true;
+            }
+            int depth = (int)pass.depth_compare;
+            if( ImGui::Combo( "Depth compare", &depth, depthNames, IM_ARRAYSIZE( depthNames ) ) )
+            {
+                pass.depth_compare = (dz_depth_compare_e)depth;
+                changed = true;
+            }
+            int cull = (int)pass.cull;
+            if( ImGui::Combo( "Cull", &cull, cullNames, IM_ARRAYSIZE( cullNames ) ) )
+            {
+                pass.cull = (dz_cull_mode_e)cull;
+                changed = true;
+            }
+            int colorMask = pass.color_mask;
+            if( ImGui::InputInt( "Color mask", &colorMask ) )
+            {
+                pass.color_mask = (dz_uint8_t)std::max( 0, std::min( 15, colorMask ) );
+                changed = true;
+            }
+
+            ImGui::Text( "Uniform parameters" );
+            if( pass.uniform_count < DZ_MATERIAL_UNIFORM_MAX && ImGui::Button( "Add uniform" ) )
+            {
+                dz_uniform_desc_t & uniform = pass.uniforms[pass.uniform_count++];
+                memset( &uniform, 0, sizeof( uniform ) );
+                snprintf( uniform.name, sizeof( uniform.name ), "uParam%u", pass.uniform_count );
+                uniform.semantic = DZ_UNIFORM_CUSTOM;
+                uniform.value_count = 4U;
+                changed = true;
+            }
+            for( dz_uint32_t uniformIndex = 0; uniformIndex != pass.uniform_count; ++uniformIndex )
+            {
+                dz_uniform_desc_t & uniform = pass.uniforms[uniformIndex];
+                ImGui::PushID( (int)uniformIndex );
+                changed |= ImGui::InputText( "Name", uniform.name, sizeof( uniform.name ) );
+                int semantic = (int)uniform.semantic;
+                if( ImGui::Combo( "Semantic", &semantic, semanticNames, IM_ARRAYSIZE( semanticNames ) ) )
+                {
+                    uniform.semantic = (dz_uniform_semantic_e)semantic;
+                    uniform.value_count = uniform.semantic == DZ_UNIFORM_CUSTOM ? 4U : 0U;
+                    changed = true;
+                }
+                if( uniform.semantic == DZ_UNIFORM_CUSTOM )
+                {
+                    changed |= ImGui::InputFloat4( "Value", uniform.values );
+                }
+                if( ImGui::Button( "Remove uniform" ) )
+                {
+                    for( dz_uint32_t move = uniformIndex + 1U; move != pass.uniform_count; ++move )
+                    {
+                        pass.uniforms[move - 1U] = pass.uniforms[move];
+                    }
+                    --pass.uniform_count;
+                    --uniformIndex;
+                    changed = true;
+                }
+                ImGui::PopID();
+            }
+
+            ImGui::Text( "Texture bindings" );
+            if( pass.texture_binding_count < DZ_MATERIAL_TEXTURE_BINDING_MAX && ImGui::Button( "Add texture binding" ) )
+            {
+                dz_texture_binding_desc_t & binding = pass.texture_bindings[pass.texture_binding_count++];
+                memset( &binding, 0, sizeof( binding ) );
+                snprintf( binding.uniform_name, sizeof( binding.uniform_name ), "uTexture%u", pass.texture_binding_count );
+                binding.min_filter = binding.mag_filter = DZ_SAMPLER_LINEAR;
+                binding.wrap_u = binding.wrap_v = DZ_SAMPLER_CLAMP;
+                changed = true;
+            }
+            for( dz_uint32_t bindingIndex = 0; bindingIndex != pass.texture_binding_count; ++bindingIndex )
+            {
+                dz_texture_binding_desc_t & binding = pass.texture_bindings[bindingIndex];
+                ImGui::PushID( 1000 + (int)bindingIndex );
+                changed |= ImGui::InputText( "Sampler uniform", binding.uniform_name, sizeof( binding.uniform_name ) );
+                int textureSlot = (int)binding.texture_slot;
+                if( ImGui::InputInt( "Texture slot", &textureSlot ) )
+                {
+                    binding.texture_slot = (dz_uint32_t)std::max( 0, std::min( 63, textureSlot ) );
+                    changed = true;
+                }
+                int minFilter = (int)binding.min_filter;
+                if( ImGui::Combo( "Min filter", &minFilter, filterNames, IM_ARRAYSIZE( filterNames ) ) )
+                {
+                    binding.min_filter = (dz_sampler_filter_e)minFilter;
+                    changed = true;
+                }
+                int magFilter = (int)binding.mag_filter;
+                if( ImGui::Combo( "Mag filter", &magFilter, filterNames, IM_ARRAYSIZE( filterNames ) ) )
+                {
+                    binding.mag_filter = (dz_sampler_filter_e)magFilter;
+                    changed = true;
+                }
+                int wrapU = (int)binding.wrap_u;
+                if( ImGui::Combo( "Wrap U", &wrapU, wrapNames, IM_ARRAYSIZE( wrapNames ) ) )
+                {
+                    binding.wrap_u = (dz_sampler_wrap_e)wrapU;
+                    changed = true;
+                }
+                int wrapV = (int)binding.wrap_v;
+                if( ImGui::Combo( "Wrap V", &wrapV, wrapNames, IM_ARRAYSIZE( wrapNames ) ) )
+                {
+                    binding.wrap_v = (dz_sampler_wrap_e)wrapV;
+                    changed = true;
+                }
+                if( ImGui::Button( "Remove binding" ) )
+                {
+                    for( dz_uint32_t move = bindingIndex + 1U; move != pass.texture_binding_count; ++move )
+                    {
+                        pass.texture_bindings[move - 1U] = pass.texture_bindings[move];
+                    }
+                    --pass.texture_binding_count;
+                    --bindingIndex;
+                    changed = true;
+                }
+                ImGui::PopID();
+            }
+            if( passCount > 1U && ImGui::Button( "Remove pass" ) )
+            {
+                removePass = true;
+            }
+            ImGui::TreePop();
+        }
+        if( changed )
+        {
+            dz_material_set_pass( m_material, passIndex, &pass );
+        }
+        if( removePass )
+        {
+            dz_material_remove_pass( m_material, passIndex );
+        }
+        ImGui::PopID();
+        if( removePass )
+        {
+            break;
+        }
+    }
+
     bool materialTextureChanged = false;
 
     if( materialMode == DZ_MATERIAL_MODE_SOLID )
@@ -5812,7 +6598,7 @@ dz_result_t editor::showMaterialData()
     }
 
     ImGui::Spacing();
-    ImGui::Text( ER_WINDOW_MATERIAL_TEXTURE_TITLE );
+    ImGui::Text( "%s", ER_WINDOW_MATERIAL_TEXTURE_TITLE );
     ImGui::Separator();
 
     if( m_textureId == 0 || m_textureWidth <= 0 || m_textureHeight <= 0 )
@@ -5825,10 +6611,7 @@ dz_result_t editor::showMaterialData()
     if( textureCount == 0 )
     {
         dz_texture_t * texture;
-        if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_texture_create( m_service, &texture, DZ_NULLPTR );
 
         dz_float_t region[4] = {0.f, 0.f, (dz_float_t)m_textureWidth, (dz_float_t)m_textureHeight};
         __set_texture_region_pixels( texture, m_textureWidth, m_textureHeight, region );
@@ -5872,10 +6655,7 @@ dz_result_t editor::showMaterialData()
         dz_material_get_texture_random_weight( m_material, (dz_uint32_t)m_textureIndex, &textureWeight );
 
         dz_texture_t * texture;
-        if( dz_texture_create( m_service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_texture_create( m_service, &texture, DZ_NULLPTR );
 
         __copy_texture_data( texture, m_texture );
 
@@ -5911,7 +6691,9 @@ dz_result_t editor::showMaterialData()
                 dz_float_t random_weight;
             } er_material_texture_data_t;
 
-            std::vector<er_material_texture_data_t> textures;
+            typedef std::vector<er_material_texture_data_t> er_material_texture_data_list_t;
+
+            er_material_texture_data_list_t textures;
             textures.reserve( textureCount - 1 );
 
             const dz_texture_t * removeTexture = DZ_NULLPTR;
@@ -6266,7 +7048,11 @@ void editor::showDazzleCanvas()
 
     GLCALL( glViewport, ((GLint)m_dzWindowPos.x, (GLint)m_dzWindowPos.y, (GLsizei)m_dzWindowSize.x, (GLsizei)m_dzWindowSize.y) );
 
-    dz_render_instance( &m_openglDesc, m_instance );
+    dz_project_profile_t profile;
+    dz_effect_get_project_profile( m_effect, &profile );
+    dz_camera_state_t camera;
+    dz_camera_state_from_profile( &profile, (dz_float_t)m_dzWindowSize.x, (dz_float_t)m_dzWindowSize.y, &camera );
+    dz_render_instance_camera( &m_openglDesc, m_instance, &camera );
 
     GLCALL( glViewport, (oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]) );
 }
@@ -6294,12 +7080,6 @@ bool editor::dumpJSON_( const jpp::object & _json, er_memory_buffer_t * const _o
             }
 
             void * newData = realloc( memoryBuffer->data, newCapacity );
-
-            if( newData == DZ_NULLPTR )
-            {
-                return -1;
-            }
-
             memoryBuffer->data = static_cast<dz_uint8_t *>(newData);
             memoryBuffer->capacity = newCapacity;
         }
@@ -6318,7 +7098,7 @@ bool editor::dumpJSON_( const jpp::object & _json, er_memory_buffer_t * const _o
     }
     else
     {
-        result = jpp::dump( _json, my_jpp_dump_callback, _out );
+        result = jpp::dump( _json, 2, my_jpp_dump_callback, _out );
     }
 
     return result;
@@ -6331,8 +7111,9 @@ void editor::loadJSON_( const void * _buffer, size_t _size, jpp::object * _out )
     jd.carriage = 0;
     jd.capacity = _size;
 
-    auto  my_jpp_error = []( int32_t _line, int32_t _column, int32_t _position, const char * _source, const char * _text, dz_userdata_t _ud )
+    auto my_jpp_error = []( int32_t _line, int32_t _column, int32_t _position, const char * _source, const char * _text, jpp::load_error_code_e _code, dz_userdata_t _ud )
     {
+        DZ_UNUSED( _code );
         DZ_UNUSED( _ud );
 
         printf( "jpp error: %s\nline: %d\n column: %d\nposition: %d\nsource: %s\n"
@@ -6408,8 +7189,6 @@ dz_result_t editor::showContentPane()
     m_dzWindowSize.y = columnHeight;
 
     ImGuiWindow * window = ImGui::GetCurrentWindow();
-
-    ImGuiID id = window->GetID( "DAZZLE_RENDER_CANVAS" );
 
     if( window->SkipItems == true )
     {
@@ -6503,10 +7282,7 @@ dz_result_t editor::showContentPane()
         for( dz_uint32_t index = 0; index != layerCount; ++index )
         {
             dz_effect_layer_desc_t layer;
-            if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_get_layer( m_effect, index, &layer );
 
             const ImVec2 layerScreen = __canvas_world_to_screen( ImVec2( layer.x, layer.y ), cursorPos, m_dzWindowSize );
             const dz_float_t distance = __screen_distance_pow_2( ImGui::GetIO().MousePos, layerScreen );
@@ -6521,10 +7297,7 @@ dz_result_t editor::showContentPane()
         if( hitLayerIndex != DZ_EFFECT_LAYER_NONE )
         {
             dz_effect_layer_desc_t layer;
-            if( dz_effect_get_layer( m_effect, hitLayerIndex, &layer ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_get_layer( m_effect, hitLayerIndex, &layer );
 
             if( hitLayerIndex != m_layerIndex )
             {
@@ -6549,10 +7322,7 @@ dz_result_t editor::showContentPane()
         else
         {
             dz_effect_layer_desc_t layer;
-            if( dz_effect_get_layer( m_effect, m_layerGizmoDragIndex, &layer ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_get_layer( m_effect, m_layerGizmoDragIndex, &layer );
 
             layer.x = mouseWorld.x + m_layerGizmoDragOffset.x;
             layer.y = mouseWorld.y + m_layerGizmoDragOffset.y;
@@ -6591,10 +7361,7 @@ dz_result_t editor::showContentPane()
         for( dz_uint32_t index = 0; index != layerCount; ++index )
         {
             dz_effect_layer_desc_t layer;
-            if( dz_effect_get_layer( m_effect, index, &layer ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_get_layer( m_effect, index, &layer );
 
             const bool selected = index == m_layerIndex;
             const ImVec2 layerScreen = __canvas_world_to_screen( ImVec2( layer.x, layer.y ), cursorPos, m_dzWindowSize );
@@ -6618,6 +7385,74 @@ dz_result_t editor::showContentPane()
             snprintf( label, sizeof( label ), "L%u", index + 1 );
             drawList->AddText( ImVec2( layerScreen.x + 12.f, layerScreen.y - 16.f ), color, label );
         }
+    }
+
+    if( m_showDebugInfo == true )
+    {
+        const ImU32 boundsColor = IM_COL32( 96, 255, 128, 220 );
+        dz_aabb_t bounds;
+        dz_instance_get_aabb( m_instance, &bounds );
+        if( bounds.valid == DZ_TRUE )
+        {
+            const ImVec2 minimum = __canvas_world_to_screen( ImVec2( bounds.minimum.x, bounds.minimum.y ), cursorPos, m_dzWindowSize );
+            const ImVec2 maximum = __canvas_world_to_screen( ImVec2( bounds.maximum.x, bounds.maximum.y ), cursorPos, m_dzWindowSize );
+            drawList->AddRect( ImVec2( std::min( minimum.x, maximum.x ), std::min( minimum.y, maximum.y ) ),
+                               ImVec2( std::max( minimum.x, maximum.x ), std::max( minimum.y, maximum.y ) ), boundsColor, 0.f, 0, 2.f );
+        }
+
+        const dz_uint16_t particleCount = dz_instance_get_particle_count( m_instance );
+        for( dz_uint16_t index = 0; index != particleCount; ++index )
+        {
+            dz_particle_state_t particle;
+            dz_instance_get_particle_state( m_instance, index, &particle );
+            const ImVec2 start = __canvas_world_to_screen( ImVec2( particle.position.x, particle.position.y ), cursorPos, m_dzWindowSize );
+            const ImVec2 end =
+                __canvas_world_to_screen( ImVec2( particle.position.x + particle.velocity.x * 0.1f, particle.position.y + particle.velocity.y * 0.1f ), cursorPos, m_dzWindowSize );
+            drawList->AddLine( start, end, IM_COL32( 255, 128, 64, 190 ), 1.f );
+        }
+
+        const dz_uint32_t physicsCount = dz_effect_get_physics_object_count( m_effect );
+        for( dz_uint32_t index = 0; index != physicsCount; ++index )
+        {
+            dz_physics_object_desc_t object;
+            dz_effect_get_physics_object( m_effect, index, &object );
+            const ImVec2 center = __canvas_world_to_screen( ImVec2( object.transform.position.x, object.transform.position.y ), cursorPos, m_dzWindowSize );
+            const ImU32 color = IM_COL32( 255, 96, 224, 210 );
+            if( object.type == DZ_PHYSICS_SPHERE || object.type == DZ_PHYSICS_MAGNET )
+            {
+                drawList->AddCircle( center, std::max( object.radius * fabsf( object.transform.scale.x ) * camera_scale, 4.f ), color, 32, 2.f );
+            }
+            else if( object.type == DZ_PHYSICS_BOX )
+            {
+                const ImVec2 half( object.half_extents.x * fabsf( object.transform.scale.x ) * camera_scale,
+                                   object.half_extents.y * fabsf( object.transform.scale.y ) * camera_scale );
+                drawList->AddRect( center - half, center + half, color, 0.f, 0, 2.f );
+            }
+            else if( object.type == DZ_PHYSICS_PLANE )
+            {
+                dz_vec2_t tangent = { -object.direction.y, object.direction.x };
+                const dz_float_t length = sqrtf( tangent.x * tangent.x + tangent.y * tangent.y );
+                if( length > 0.000001f )
+                {
+                    tangent.x /= length;
+                    tangent.y /= length;
+                }
+                drawList->AddLine( ImVec2( center.x - tangent.x * 1000.f, center.y + tangent.y * 1000.f ), ImVec2( center.x + tangent.x * 1000.f, center.y - tangent.y * 1000.f ),
+                                   color, 2.f );
+            }
+            else
+            {
+                drawList->AddCircleFilled( center, 5.f, color, 16 );
+            }
+        }
+
+        dz_project_profile_t debugProfile;
+        dz_effect_get_project_profile( m_effect, &debugProfile );
+        char cameraLabel[160];
+        snprintf( cameraLabel, sizeof( cameraLabel ), "%s camera | near %.3f far %.1f | working plane: camera XY | %s axes",
+                  debugProfile.projection == DZ_PROJECTION_ORTHOGRAPHIC ? "Orthographic" : "Perspective", debugProfile.near_plane, debugProfile.far_plane,
+                  m_fullAxisEditing ? "full" : "planar" );
+        drawList->AddText( ImVec2( cursorPos.x + 8.f, cursorPos.y + 8.f ), IM_COL32( 160, 220, 255, 230 ), cameraLabel );
     }
 
     drawList->PopClipRect();
@@ -6669,10 +7504,7 @@ dz_result_t editor::showContentPane()
 
     ImGui::Spacing();
 
-    if( this->showContentPaneControls() == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    this->showContentPaneControls();
 
     ImGui::EndChild();
     ImGui::EndGroup();
@@ -6680,7 +7512,7 @@ dz_result_t editor::showContentPane()
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t editor::showContentPaneControls()
+void editor::showContentPaneControls()
 {
     dz_float_t life = dz_effect_get_life( m_effect );
     dz_float_t time = dz_instance_get_time( m_instance );
@@ -6688,10 +7520,7 @@ dz_result_t editor::showContentPaneControls()
     // buttons
     if( ImGui::Button( ER_WINDOW_CONTROLS_BTN_RESET_TEXT ) )
     {
-        if( this->resetEffect() == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        this->resetEffect();
     }
     ImGui::SameLine();
 
@@ -6718,19 +7547,14 @@ dz_result_t editor::showContentPaneControls()
 
     // time_scale
     char factor_format[100];
-    sprintf( factor_format, "%s %%.3f"
-        , ER_WINDOW_CONTROLS_FACTOR_PREFIX_TEXT
-    );
+    snprintf( factor_format, sizeof( factor_format ), "%s %%.3f", ER_WINDOW_CONTROLS_FACTOR_PREFIX_TEXT );
 
     ImGui::SliderFloat( "##TimeScale", &m_time_scale, 0.0f, 1.0f, factor_format );
 
 
     // time
     char time_format[100];
-    sprintf( time_format, "%s %%.3f s / %.3f s"
-        , ER_WINDOW_CONTROLS_TIME_PREFIX_TEXT
-        , life
-    );
+    snprintf( time_format, sizeof( time_format ), "%s %%.3f s / %.3f s", ER_WINDOW_CONTROLS_TIME_PREFIX_TEXT, life );
 
     if( ImGui::SliderFloat( "##Time", &time, 0.0f, life, time_format ) == true )
     {
@@ -6763,11 +7587,11 @@ dz_result_t editor::showContentPaneControls()
     ImGui::Checkbox( ER_WINDOW_CONTROLS_SHOW_EFFECT_CENTER_TEXT, &m_showEffectCenter );
     ImGui::SameLine();
 
-    ImGui::Text( ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT );
+    ImGui::Text( "%s", ER_WINDOW_CONTROLS_CAMERA_MOVE_HELP_TEXT );
 
     // emitter states
     {
-        ImGui::Text( ER_WINDOW_CONTROLS_EMIT_STATES_LABEL_TEXT );
+        ImGui::Text( "%s", ER_WINDOW_CONTROLS_EMIT_STATES_LABEL_TEXT );
         ImGui::SameLine();
 
         dz_instance_state_e emitter_state = dz_instance_get_state( m_instance );
@@ -6778,7 +7602,7 @@ dz_result_t editor::showContentPaneControls()
             ImVec4 colorRed( ImColor( 255, 0, 0 ) );
 
             ImGui::PushStyleColor( ImGuiCol_Text, _value ? colorGreen : colorRed );
-            ImGui::Text( _msg );
+            ImGui::Text( "%s", _msg );
             ImGui::PopStyleColor( 1 );
             ImGui::SameLine();
         };
@@ -6787,7 +7611,6 @@ dz_result_t editor::showContentPaneControls()
         lamdba_addBoolIndicator( emitter_state & DZ_INSTANCE_PARTICLE_COMPLETE, ER_WINDOW_CONTROLS_PARTICLE_COMPLETE_STATE_TEXT );
     }
 
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void editor::finalize()

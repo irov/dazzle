@@ -10,333 +10,401 @@
 #include "affector.h"
 #include "effect.h"
 
-//////////////////////////////////////////////////////////////////////////
-#define DZ_WRITE(W, U, V) if( (*W)(&V, sizeof(V), U) == DZ_FAILURE ) return DZ_FAILURE
-#define DZ_WRITEN(W, U, V, N) if( (*W)(V, sizeof(*V) * N, U) == DZ_FAILURE ) return DZ_FAILURE
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_bool( dz_bool_t _b, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    const dz_uint8_t v = (dz_uint8_t)_b;
+#include <math.h>
+#include <stdint.h>
+#include <string.h>
 
-    DZ_WRITE( _write, _ud, v );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-#define DZ_WRITEB(W, U, V) if( __write_bool(V, W, U) == DZ_FAILURE ) return DZ_FAILURE
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    const dz_uint32_t magic = dz_get_magic();
-
-    DZ_WRITE( _write, _ud, magic );
-
-    const dz_uint32_t version = dz_get_version();
-
-    DZ_WRITE( _write, _ud, version );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_texture( const dz_texture_t * _texture, dz_float_t _random_weight, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITEN( _write, _ud, _texture->u, 4 );
-    DZ_WRITEN( _write, _ud, _texture->v, 4 );
-
-    DZ_WRITE( _write, _ud, _texture->width );
-    DZ_WRITE( _write, _ud, _texture->height );
-
-    DZ_WRITE( _write, _ud, _texture->trim_offset_x );
-    DZ_WRITE( _write, _ud, _texture->trim_offset_y );
-
-    DZ_WRITE( _write, _ud, _texture->trim_width );
-    DZ_WRITE( _write, _ud, _texture->trim_height );
-
-    DZ_WRITE( _write, _ud, _random_weight );
-    DZ_WRITE( _write, _ud, _texture->sequence_delay );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_atlas( const dz_atlas_t * _atlas, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_UNUSED( _atlas );
     DZ_UNUSED( _write );
     DZ_UNUSED( _ud );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_material( const dz_material_t * _material, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITE( _write, _ud, _material->blend_type );
-
-    DZ_WRITE( _write, _ud, _material->r );
-    DZ_WRITE( _write, _ud, _material->g );
-    DZ_WRITE( _write, _ud, _material->b );
-    DZ_WRITE( _write, _ud, _material->a );
-
-    DZ_WRITE( _write, _ud, _material->mode );
-    DZ_WRITE( _write, _ud, _material->texture_index );
-    DZ_WRITE( _write, _ud, _material->texture_count );
-    DZ_WRITE( _write, _ud, _material->textures_count );
-
-    for( dz_uint32_t index = 0; index != _material->textures_count; ++index )
-    {
-        const dz_material_texture_t * material_texture = &_material->textures[index];
-
-        if( __write_texture( material_texture->texture, material_texture->random_weight, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-    }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_stream_write_t _write, dz_userdata_t _ud );
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_timeline_interpolate( const dz_timeline_interpolate_t * _interpolate, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITE( _write, _ud, _interpolate->type );
-
-    DZ_WRITE( _write, _ud, _interpolate->p0 );
-    DZ_WRITE( _write, _ud, _interpolate->p1 );
-
-    if( _interpolate->key == DZ_NULLPTR )
-    {
-        DZ_WRITEB( _write, _ud, DZ_FALSE );
-    }
-    else
-    {
-        DZ_WRITEB( _write, _ud, DZ_TRUE );
-
-        if( __write_timeline_key( _interpolate->key, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-    }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_timeline_key( const dz_timeline_key_t * _key, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITE( _write, _ud, _key->p );
-
-    DZ_WRITE( _write, _ud, _key->type );
-
-    DZ_WRITE( _write, _ud, _key->const_value );
-
-    DZ_WRITE( _write, _ud, _key->randomize_min_value );
-    DZ_WRITE( _write, _ud, _key->randomize_max_value );
-
-    if( _key->interpolate == DZ_NULLPTR )
-    {
-        DZ_WRITEB( _write, _ud, DZ_FALSE );
-    }
-    else
-    {
-        DZ_WRITEB( _write, _ud, DZ_TRUE );
-
-        if( __write_timeline_interpolate( _key->interpolate, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-    }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_shape( const dz_shape_t * _shape, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITE( _write, _ud, _shape->type );
-
-    for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
-    {
-        const dz_timeline_key_t * timeline = _shape->timelines[index];
-
-        if( timeline == DZ_NULLPTR )
-        {
-            DZ_WRITEB( _write, _ud, DZ_FALSE );
-
-            continue;
-        }
-
-        DZ_WRITEB( _write, _ud, DZ_TRUE );
-
-        if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-    }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_emitter( const dz_emitter_t * _emitter, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITE( _write, _ud, _emitter->life );
-
-    for( dz_uint32_t index = 0; index != __DZ_EMITTER_TIMELINE_MAX__; ++index )
-    {
-        const dz_timeline_key_t * timeline = _emitter->timelines[index];
-
-        if( timeline == DZ_NULLPTR )
-        {
-            DZ_WRITEB( _write, _ud, DZ_FALSE );
-
-            continue;
-        }
-
-        DZ_WRITEB( _write, _ud, DZ_TRUE );
-
-        if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-    }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_affector( const dz_affector_t * _affector, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
-    {
-        const dz_timeline_key_t * timeline = _affector->timelines[index];
-
-        if( timeline == DZ_NULLPTR )
-        {
-            DZ_WRITEB( _write, _ud, DZ_FALSE );
-
-            continue;
-        }
-
-        DZ_WRITEB( _write, _ud, DZ_TRUE );
-
-        if( __write_timeline_key( timeline, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
-    }
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_effect_layer( const dz_effect_layer_desc_t * _layer, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    if( __write_material( _layer->material, _write, _ud ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( __write_shape( _layer->shape, _write, _ud ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( __write_emitter( _layer->emitter, _write, _ud ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( __write_affector( _layer->affector, _write, _ud ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
-    DZ_WRITE( _write, _ud, _layer->x );
-    DZ_WRITE( _write, _ud, _layer->y );
-    DZ_WRITE( _write, _ud, _layer->angle );
-    DZ_WRITE( _write, _ud, _layer->life );
-    DZ_WRITE( _write, _ud, _layer->seed );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __write_effect_trigger( const dz_effect_trigger_desc_t * _trigger, dz_stream_write_t _write, dz_userdata_t _ud )
-{
-    DZ_WRITE( _write, _ud, _trigger->event_type );
-    DZ_WRITE( _write, _ud, _trigger->source_layer_index );
-    DZ_WRITE( _write, _ud, _trigger->target_layer_index );
-    DZ_WRITE( _write, _ud, _trigger->time );
-    DZ_WRITE( _write, _ud, _trigger->probability );
-    DZ_WRITE( _write, _ud, _trigger->spawn_count_min );
-    DZ_WRITE( _write, _ud, _trigger->spawn_count_max );
-    DZ_WRITE( _write, _ud, _trigger->delay_min );
-    DZ_WRITE( _write, _ud, _trigger->delay_max );
-    DZ_WRITEB( _write, _ud, _trigger->inherit_position );
-    DZ_WRITEB( _write, _ud, _trigger->inherit_angle );
-    DZ_WRITEB( _write, _ud, _trigger->inherit_velocity );
-    DZ_WRITE( _write, _ud, _trigger->offset_x );
-    DZ_WRITE( _write, _ud, _trigger->offset_y );
-    DZ_WRITE( _write, _ud, _trigger->angle_offset );
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
-static const dz_atlas_t * __effect_find_atlas( const dz_effect_t * _effect )
-{
-    for( dz_uint32_t index = 0; index != _effect->layer_count; ++index )
-    {
-        const dz_material_t * material = _effect->layers[index].material;
-
-        if( material != DZ_NULLPTR && material->atlas != DZ_NULLPTR )
-        {
-            return material->atlas;
-        }
-    }
-
-    return DZ_NULLPTR;
+    return DZ_FAILURE_UNSUPPORTED;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_stream_write_t _write, dz_userdata_t _ud )
 {
-    const dz_atlas_t * atlas = _effect->atlas;
+    DZ_UNUSED( _effect );
+    DZ_UNUSED( _write );
+    DZ_UNUSED( _ud );
+    return DZ_FAILURE_UNSUPPORTED;
+}
+//////////////////////////////////////////////////////////////////////////
 
-    if( atlas == DZ_NULLPTR )
+typedef struct dz_writer_t
+{
+    dz_uint8_t * data;
+    dz_size_t capacity;
+    dz_size_t size;
+    dz_result_t result;
+} dz_writer_t;
+
+static void __write_bytes( dz_writer_t * _writer, const void * _data, dz_size_t _size )
+{
+    if( _writer->result != DZ_SUCCESSFUL )
     {
-        atlas = __effect_find_atlas( _effect );
+        return;
     }
 
-    if( atlas == DZ_NULLPTR )
+    if( _writer->data != DZ_NULLPTR )
     {
-        DZ_WRITEB( _write, _ud, DZ_FALSE );
-    }
-    else
-    {
-        DZ_WRITEB( _write, _ud, DZ_TRUE );
-
-        if( __write_atlas( atlas, _write, _ud ) == DZ_FAILURE )
+        if( _writer->size + _size > _writer->capacity )
         {
-            return DZ_FAILURE;
+            _writer->result = DZ_FAILURE_BUFFER_TOO_SMALL;
+            return;
+        }
+        memcpy( _writer->data + _writer->size, _data, _size );
+    }
+
+    _writer->size += _size;
+}
+
+static void __write_u32( dz_writer_t * _writer, dz_uint32_t _value )
+{
+    const dz_uint8_t bytes[4] = { (dz_uint8_t)_value, (dz_uint8_t)( _value >> 8 ), (dz_uint8_t)( _value >> 16 ), (dz_uint8_t)( _value >> 24 ) };
+    __write_bytes( _writer, bytes, sizeof( bytes ) );
+}
+
+static void __write_f32( dz_writer_t * _writer, dz_float_t _value )
+{
+    dz_uint32_t bits;
+    memcpy( &bits, &_value, sizeof( bits ) );
+    __write_u32( _writer, bits );
+}
+
+static void __write_vec3( dz_writer_t * _writer, dz_vec3_t _value )
+{
+    __write_f32( _writer, _value.x );
+    __write_f32( _writer, _value.y );
+    __write_f32( _writer, _value.z );
+}
+
+static void __write_quat( dz_writer_t * _writer, dz_quat_t _value )
+{
+    __write_f32( _writer, _value.x );
+    __write_f32( _writer, _value.y );
+    __write_f32( _writer, _value.z );
+    __write_f32( _writer, _value.w );
+}
+
+static void __write_transform( dz_writer_t * _writer, const dz_transform_t * _transform )
+{
+    __write_vec3( _writer, _transform->position );
+    __write_quat( _writer, _transform->rotation );
+    __write_vec3( _writer, _transform->scale );
+}
+
+static dz_uint32_t __write_timeline_count( const dz_timeline_key_t * _key )
+{
+    dz_uint32_t count = 0;
+    while( _key != DZ_NULLPTR )
+    {
+        ++count;
+        _key = _key->interpolate != DZ_NULLPTR ? _key->interpolate->key : DZ_NULLPTR;
+    }
+    return count;
+}
+
+static void __write_timeline( dz_writer_t * _writer, const dz_timeline_key_t * _key )
+{
+    const dz_uint32_t count = __write_timeline_count( _key );
+    __write_u32( _writer, count );
+
+    for( dz_uint32_t index = 0; index != count; ++index )
+    {
+        const dz_timeline_interpolate_t * interpolate = _key->interpolate;
+        __write_f32( _writer, _key->p );
+        __write_u32( _writer, (dz_uint32_t)_key->type );
+        __write_f32( _writer, _key->const_value );
+        __write_f32( _writer, _key->randomize_min_value );
+        __write_f32( _writer, _key->randomize_max_value );
+        __write_u32( _writer, interpolate != DZ_NULLPTR ? 1U : 0U );
+        if( interpolate != DZ_NULLPTR )
+        {
+            __write_u32( _writer, (dz_uint32_t)interpolate->type );
+            __write_f32( _writer, interpolate->p0 );
+            __write_f32( _writer, interpolate->p1 );
+            __write_f32( _writer, interpolate->out_tangent );
+            __write_f32( _writer, interpolate->in_tangent );
+        }
+        _key = interpolate != DZ_NULLPTR ? interpolate->key : DZ_NULLPTR;
+    }
+}
+
+static void __write_texture( dz_writer_t * _writer, const dz_material_texture_t * _texture )
+{
+    for( dz_uint32_t i = 0; i != 4; ++i )
+    {
+        __write_f32( _writer, _texture->texture->u[i] );
+    }
+    for( dz_uint32_t i = 0; i != 4; ++i )
+    {
+        __write_f32( _writer, _texture->texture->v[i] );
+    }
+    __write_f32( _writer, _texture->texture->width );
+    __write_f32( _writer, _texture->texture->height );
+    __write_f32( _writer, _texture->texture->trim_offset_x );
+    __write_f32( _writer, _texture->texture->trim_offset_y );
+    __write_f32( _writer, _texture->texture->trim_width );
+    __write_f32( _writer, _texture->texture->trim_height );
+    __write_f32( _writer, _texture->random_weight );
+    __write_f32( _writer, _texture->texture->sequence_delay );
+}
+
+static void __write_material( dz_writer_t * _writer, const dz_material_t * _material )
+{
+    __write_u32( _writer, (dz_uint32_t)_material->blend_type );
+    __write_f32( _writer, _material->r );
+    __write_f32( _writer, _material->g );
+    __write_f32( _writer, _material->b );
+    __write_f32( _writer, _material->a );
+    __write_u32( _writer, (dz_uint32_t)_material->mode );
+    __write_u32( _writer, _material->texture_index );
+    __write_u32( _writer, _material->texture_count );
+    __write_u32( _writer, _material->textures_count );
+    for( dz_uint32_t i = 0; i != _material->textures_count; ++i )
+    {
+        __write_texture( _writer, _material->textures + i );
+    }
+
+    __write_u32( _writer, _material->pass_count );
+    for( dz_uint32_t i = 0; i != _material->pass_count; ++i )
+    {
+        const dz_material_pass_desc_t * pass = _material->passes + i;
+        __write_bytes( _writer, pass->technique_id, DZ_TECHNIQUE_ID_MAX );
+        __write_u32( _writer, (dz_uint32_t)pass->blend );
+        __write_u32( _writer, (dz_uint32_t)pass->depth_test );
+        __write_u32( _writer, (dz_uint32_t)pass->depth_write );
+        __write_u32( _writer, (dz_uint32_t)pass->depth_compare );
+        __write_u32( _writer, (dz_uint32_t)pass->cull );
+        __write_u32( _writer, pass->color_mask );
+        __write_u32( _writer, pass->uniform_count );
+        for( dz_uint32_t uniform_index = 0; uniform_index != pass->uniform_count; ++uniform_index )
+        {
+            const dz_uniform_desc_t * uniform = pass->uniforms + uniform_index;
+            __write_bytes( _writer, uniform->name, DZ_UNIFORM_NAME_MAX );
+            __write_u32( _writer, (dz_uint32_t)uniform->semantic );
+            __write_u32( _writer, uniform->value_count );
+            for( dz_uint32_t value = 0; value != uniform->value_count; ++value )
+            {
+                __write_f32( _writer, uniform->values[value] );
+            }
+        }
+        __write_u32( _writer, pass->texture_binding_count );
+        for( dz_uint32_t binding_index = 0; binding_index != pass->texture_binding_count; ++binding_index )
+        {
+            const dz_texture_binding_desc_t * binding = pass->texture_bindings + binding_index;
+            __write_bytes( _writer, binding->uniform_name, DZ_UNIFORM_NAME_MAX );
+            __write_u32( _writer, binding->texture_slot );
+            __write_u32( _writer, (dz_uint32_t)binding->min_filter );
+            __write_u32( _writer, (dz_uint32_t)binding->mag_filter );
+            __write_u32( _writer, (dz_uint32_t)binding->wrap_u );
+            __write_u32( _writer, (dz_uint32_t)binding->wrap_v );
+        }
+    }
+}
+
+static void __write_shape( dz_writer_t * _writer, const dz_shape_t * _shape )
+{
+    __write_u32( _writer, (dz_uint32_t)_shape->type );
+    __write_transform( _writer, &_shape->transform );
+    __write_vec3( _writer, _shape->dimensions );
+    __write_u32( _writer, _shape->mesh_id );
+    for( dz_uint32_t i = 0; i != __DZ_SHAPE_TIMELINE_MAX__; ++i )
+    {
+        __write_timeline( _writer, _shape->timelines[i] );
+    }
+
+    __write_u32( _writer, _shape->triangle_count );
+    if( _shape->triangle_count != 0 )
+    {
+        for( dz_uint32_t i = 0; i != _shape->triangle_count * 6U; ++i )
+        {
+            __write_f32( _writer, _shape->triangles[i] );
         }
     }
 
-    DZ_WRITE( _write, _ud, _effect->layer_count );
-
-    for( dz_uint32_t index = 0; index != _effect->layer_count; ++index )
+    __write_u32( _writer, _shape->mask_bites );
+    __write_u32( _writer, _shape->mask_pitch );
+    __write_u32( _writer, _shape->mask_width );
+    __write_u32( _writer, _shape->mask_height );
+    __write_u32( _writer, _shape->mask_threshold );
+    __write_f32( _writer, _shape->mask_scale );
+    const dz_size_t mask_size = (dz_size_t)_shape->mask_pitch * _shape->mask_height;
+    __write_u32( _writer, (dz_uint32_t)mask_size );
+    if( mask_size != 0 )
     {
-        if( __write_effect_layer( _effect->layers + index, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        __write_bytes( _writer, _shape->mask_buffer, mask_size );
+    }
+}
+
+static void __write_emitter( dz_writer_t * _writer, const dz_emitter_t * _emitter )
+{
+    __write_f32( _writer, _emitter->life );
+    for( dz_uint32_t i = 0; i != __DZ_EMITTER_TIMELINE_MAX__; ++i )
+    {
+        __write_timeline( _writer, _emitter->timelines[i] );
+    }
+}
+
+static void __write_affector( dz_writer_t * _writer, const dz_affector_t * _affector )
+{
+    for( dz_uint32_t i = 0; i != __DZ_AFFECTOR_TIMELINE_MAX__; ++i )
+    {
+        __write_timeline( _writer, _affector->timelines[i] );
+    }
+}
+
+static void __write_layer( dz_writer_t * _writer, const dz_effect_layer_desc_t * _layer )
+{
+    __write_material( _writer, _layer->material );
+    __write_shape( _writer, _layer->shape );
+    __write_emitter( _writer, _layer->emitter );
+    __write_affector( _writer, _layer->affector );
+    __write_f32( _writer, _layer->x );
+    __write_f32( _writer, _layer->y );
+    __write_f32( _writer, _layer->z );
+    __write_f32( _writer, _layer->angle );
+    __write_quat( _writer, _layer->rotation );
+    __write_vec3( _writer, _layer->scale );
+    __write_u32( _writer, (dz_uint32_t)_layer->particle_mode );
+    __write_u32( _writer, (dz_uint32_t)_layer->orientation );
+    __write_u32( _writer, (dz_uint32_t)_layer->sorting );
+    __write_vec3( _writer, _layer->orientation_axis );
+    __write_u32( _writer, _layer->mesh_id );
+    __write_f32( _writer, _layer->trail_width );
+    __write_f32( _writer, _layer->trail_lifetime );
+    __write_f32( _writer, _layer->life );
+    __write_u32( _writer, _layer->seed );
+}
+
+static void __write_trigger( dz_writer_t * _writer, const dz_effect_trigger_desc_t * _trigger )
+{
+    __write_u32( _writer, (dz_uint32_t)_trigger->event_type );
+    __write_u32( _writer, _trigger->source_layer_index );
+    __write_u32( _writer, _trigger->target_layer_index );
+    __write_f32( _writer, _trigger->time );
+    __write_f32( _writer, _trigger->probability );
+    __write_u32( _writer, _trigger->spawn_count_min );
+    __write_u32( _writer, _trigger->spawn_count_max );
+    __write_f32( _writer, _trigger->delay_min );
+    __write_f32( _writer, _trigger->delay_max );
+    __write_u32( _writer, (dz_uint32_t)_trigger->inherit_position );
+    __write_u32( _writer, (dz_uint32_t)_trigger->inherit_angle );
+    __write_u32( _writer, (dz_uint32_t)_trigger->inherit_velocity );
+    __write_f32( _writer, _trigger->offset_x );
+    __write_f32( _writer, _trigger->offset_y );
+    __write_f32( _writer, _trigger->angle_offset );
+}
+
+static void __write_mesh( dz_writer_t * _writer, const dz_mesh_desc_t * _mesh )
+{
+    __write_u32( _writer, _mesh->id );
+    __write_u32( _writer, _mesh->vertex_count );
+    __write_u32( _writer, _mesh->index_count );
+    for( dz_uint32_t index = 0; index != _mesh->vertex_count; ++index )
+    {
+        const dz_mesh_vertex_t * vertex = _mesh->vertices + index;
+        __write_vec3( _writer, vertex->position );
+        __write_vec3( _writer, vertex->normal );
+        __write_f32( _writer, vertex->tangent.x );
+        __write_f32( _writer, vertex->tangent.y );
+        __write_f32( _writer, vertex->tangent.z );
+        __write_f32( _writer, vertex->tangent.w );
+        __write_f32( _writer, vertex->uv0.x );
+        __write_f32( _writer, vertex->uv0.y );
+        __write_f32( _writer, vertex->uv1.x );
+        __write_f32( _writer, vertex->uv1.y );
+    }
+    for( dz_uint32_t index = 0; index != _mesh->index_count; ++index )
+    {
+        __write_u32( _writer, _mesh->indices[index] );
+    }
+}
+
+static void __write_physics( dz_writer_t * _writer, const dz_physics_object_desc_t * _object )
+{
+    __write_u32( _writer, _object->id );
+    __write_u32( _writer, _object->mesh_id );
+    __write_u32( _writer, (dz_uint32_t)_object->type );
+    __write_transform( _writer, &_object->transform );
+    __write_vec3( _writer, _object->direction );
+    __write_vec3( _writer, _object->half_extents );
+    __write_f32( _writer, _object->radius );
+    __write_f32( _writer, _object->strength );
+    __write_f32( _writer, _object->falloff );
+    __write_f32( _writer, _object->turbulence );
+    __write_f32( _writer, _object->restitution );
+    __write_f32( _writer, _object->friction );
+    __write_u32( _writer, (dz_uint32_t)_object->response );
+}
+
+static void __write_effect_payload( dz_writer_t * _writer, const dz_effect_t * _effect )
+{
+    __write_u32( _writer, (dz_uint32_t)_effect->profile.projection );
+    __write_vec3( _writer, _effect->profile.position );
+    __write_vec3( _writer, _effect->profile.forward );
+    __write_vec3( _writer, _effect->profile.up );
+    __write_f32( _writer, _effect->profile.field_of_view );
+    __write_f32( _writer, _effect->profile.orthographic_height );
+    __write_f32( _writer, _effect->profile.near_plane );
+    __write_f32( _writer, _effect->profile.far_plane );
+    __write_f32( _writer, _effect->life );
+    __write_u32( _writer, _effect->seed );
+    __write_u32( _writer, _effect->atlas != DZ_NULLPTR ? 1U : 0U );
+    __write_u32( _writer, _effect->mesh_count );
+    for( dz_uint32_t i = 0; i != _effect->mesh_count; ++i )
+    {
+        __write_mesh( _writer, _effect->meshes + i );
+    }
+    __write_u32( _writer, _effect->layer_count );
+    for( dz_uint32_t i = 0; i != _effect->layer_count; ++i )
+    {
+        __write_layer( _writer, _effect->layers + i );
+    }
+    __write_u32( _writer, _effect->trigger_count );
+    for( dz_uint32_t i = 0; i != _effect->trigger_count; ++i )
+    {
+        __write_trigger( _writer, _effect->triggers + i );
+    }
+    __write_u32( _writer, _effect->physics_object_count );
+    for( dz_uint32_t i = 0; i != _effect->physics_object_count; ++i )
+    {
+        __write_physics( _writer, _effect->physics_objects + i );
+    }
+}
+
+dz_result_t dz_effect_write_memory( const dz_effect_t * _effect, void * _buffer, dz_size_t _capacity, dz_size_t * _written )
+{
+    *_written = 0;
+
+    dz_writer_t measure = { DZ_NULLPTR, SIZE_MAX, 0, DZ_SUCCESSFUL };
+    __write_effect_payload( &measure, _effect );
+
+    const dz_size_t payload_size = measure.size + 8U;
+    const dz_size_t total_size = payload_size + 32U;
+    *_written = total_size;
+    if( _buffer == DZ_NULLPTR || _capacity < total_size )
+    {
+        return DZ_FAILURE_BUFFER_TOO_SMALL;
     }
 
-    DZ_WRITE( _write, _ud, _effect->trigger_count );
-
-    for( dz_uint32_t index = 0; index != _effect->trigger_count; ++index )
+    dz_writer_t writer = { (dz_uint8_t *)_buffer, _capacity, 0, DZ_SUCCESSFUL };
+    __write_u32( &writer, dz_get_magic() );
+    __write_u32( &writer, dz_get_version() );
+    __write_u32( &writer, 0x01020304U );
+    __write_u32( &writer, 32U );
+    __write_u32( &writer, (dz_uint32_t)payload_size );
+    __write_u32( &writer, 0U );
+    __write_u32( &writer, 1U );
+    __write_u32( &writer, 0U );
+    __write_u32( &writer, 'E' + ( 'F' << 8 ) + ( 'C' << 16 ) + ( 'T' << 24 ) );
+    __write_u32( &writer, (dz_uint32_t)measure.size );
+    __write_effect_payload( &writer, _effect );
+    if( writer.result != DZ_SUCCESSFUL )
     {
-        if( __write_effect_trigger( _effect->triggers + index, _write, _ud ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        return writer.result;
     }
-
-    DZ_WRITE( _write, _ud, _effect->life );
-    DZ_WRITE( _write, _ud, _effect->seed );
 
     return DZ_SUCCESSFUL;
 }
-//////////////////////////////////////////////////////////////////////////

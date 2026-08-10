@@ -13,6 +13,7 @@ typedef struct dz_shape_t
 
     const dz_float_t * triangles;
     dz_uint32_t triangle_count;
+    dz_bool_t owns_triangles;
 
     const void * mask_buffer;
     dz_uint32_t mask_bites;
@@ -21,6 +22,11 @@ typedef struct dz_shape_t
     dz_uint32_t mask_height;
     dz_uint32_t mask_threshold;
     dz_float_t mask_scale;
+    dz_bool_t owns_mask;
+
+    dz_transform_t transform;
+    dz_vec3_t dimensions;
+    dz_uint32_t mesh_id;
 
     dz_userdata_t ud;
 } dz_shape_t;

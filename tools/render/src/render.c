@@ -6,7 +6,9 @@
 
 #include "render/render.h"
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 static const char * __gl_get_error_string( GLenum _err )
@@ -89,7 +91,8 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
             , infoLog
         );
 
-        return EXIT_FAILURE;
+        glDeleteShader( vertexShaderColor );
+        return 0;
     }
 
     GLuint fragmentShaderColor = glCreateShader( GL_FRAGMENT_SHADER );
@@ -107,7 +110,9 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
             , infoLog
         );
 
-        return EXIT_FAILURE;
+        glDeleteShader( vertexShaderColor );
+        glDeleteShader( fragmentShaderColor );
+        return 0;
     }
 
     GLuint shaderProgram;
@@ -128,13 +133,52 @@ static GLuint __make_program( const char * _vertexShaderSource, const char * _fr
             , infoLog
         );
 
-        return EXIT_FAILURE;
+        glDeleteShader( vertexShaderColor );
+        glDeleteShader( fragmentShaderColor );
+        glDeleteProgram( shaderProgram );
+        return 0;
     }
 
     GLCALL( glDeleteShader, (vertexShaderColor) );
     GLCALL( glDeleteShader, (fragmentShaderColor) );
 
     return shaderProgram;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_result_t __register_program( dz_render_desc_t * _desc, const char * _id, GLuint _program, dz_bool_t _owned )
+{
+    if( _id[0] == '\0' || _program == 0 )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+    for( dz_uint32_t index = 0; index != _desc->techniqueCount; ++index )
+    {
+        if( strcmp( _desc->techniques[index].id, _id ) == 0 )
+        {
+            return DZ_FAILURE_INVALID_DATA;
+        }
+    }
+
+    dz_render_technique_t * technique = _desc->techniques + _desc->techniqueCount++;
+    snprintf( technique->id, sizeof( technique->id ), "%s", _id );
+    technique->program = _program;
+    technique->owned = _owned;
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_render_register_technique( dz_render_desc_t * _desc, const char * _id, const char * _vertex_shader, const char * _fragment_shader )
+{
+    const GLuint program = __make_program( _vertex_shader, _fragment_shader );
+    if( program == 0 )
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
+    const dz_result_t result = __register_program( _desc, _id, program, DZ_TRUE );
+    if( result != DZ_SUCCESSFUL )
+    {
+        glDeleteProgram( program );
+    }
+    return result;
 }
 //////////////////////////////////////////////////////////////////////////
 GLuint dz_render_make_texture( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height )
@@ -382,23 +426,7 @@ dz_result_t dz_render_find_alpha_bounds_near_from_memory( const void * _buffer, 
     const dz_size_t pixel_count = (dz_size_t)width * (dz_size_t)height;
 
     dz_uint8_t * visited = (dz_uint8_t *)calloc( pixel_count, sizeof( dz_uint8_t ) );
-
-    if( visited == DZ_NULLPTR )
-    {
-        stbi_image_free( data );
-
-        return DZ_FAILURE;
-    }
-
     dz_size_t * stack = (dz_size_t *)malloc( pixel_count * sizeof( dz_size_t ) );
-
-    if( stack == DZ_NULLPTR )
-    {
-        free( visited );
-        stbi_image_free( data );
-
-        return DZ_FAILURE;
-    }
 
     dz_int32_t min_x = width;
     dz_int32_t min_y = height;
@@ -488,18 +516,18 @@ void dz_render_delete_texture( GLuint _id )
 }
 //////////////////////////////////////////////////////////////////////////
 static const char * vertexShaderColorSource = "#version 330 core\n"
-"layout (location = 0) in vec2 inPos;\n"
-"layout (location = 1) in vec4 inColor;\n"
-"uniform mat4 uWVP;\n"
-"uniform float uScale;\n"
-"uniform vec2 uOffset;\n"
-"out vec4 v2fColor;\n"
-"void main()\n"
-"{\n"
-"   vec3 p = vec3(inPos.xy + uOffset, 0.0) * uScale;\n"
-"   gl_Position = uWVP * vec4(p, 1.0);\n"
-"   v2fColor = inColor;\n"
-"}\0";
+                                              "layout (location = 0) in vec3 inPos;\n"
+                                              "layout (location = 3) in vec4 inColor;\n"
+                                              "uniform mat4 uViewProjection;\n"
+                                              "uniform float uScale;\n"
+                                              "uniform vec2 uOffset;\n"
+                                              "out vec4 v2fColor;\n"
+                                              "void main()\n"
+                                              "{\n"
+                                              "   vec3 p = vec3((inPos.xy + uOffset) * uScale, inPos.z);\n"
+                                              "   gl_Position = uViewProjection * vec4(p, 1.0);\n"
+                                              "   v2fColor = inColor;\n"
+                                              "}\0";
 //////////////////////////////////////////////////////////////////////////
 static const char * fragmentShaderColorSource = "#version 330 core\n"
 "in vec4 v2fColor;\n"
@@ -510,37 +538,60 @@ static const char * fragmentShaderColorSource = "#version 330 core\n"
 "}\n\0";
 //////////////////////////////////////////////////////////////////////////
 static const char * vertexShaderTextureSource = "#version 330 core\n"
-"layout (location = 0) in vec2 inPos;\n"
-"layout (location = 1) in vec4 inColor;\n"
-"layout (location = 2) in vec2 inUV;\n"
-"uniform mat4 uWVP;\n"
-"uniform float uScale;\n"
-"uniform vec2 uOffset;\n"
-"out vec4 v2fColor;\n"
-"out vec2 v2fUV;\n"
-"void main()\n"
-"{\n"
-"   vec3 p = vec3(inPos.xy + uOffset, 0.0) * uScale;\n"
-"   gl_Position = uWVP * vec4(p, 1.0);\n"
-"   v2fColor = inColor;\n"
-"   v2fUV = inUV;\n"
-"}\0";
+                                                "layout (location = 0) in vec3 inPos;\n"
+                                                "layout (location = 1) in vec3 inNormal;\n"
+                                                "layout (location = 3) in vec4 inColor;\n"
+                                                "layout (location = 4) in vec2 inUV;\n"
+                                                "uniform mat4 uViewProjection;\n"
+                                                "uniform float uScale;\n"
+                                                "uniform vec2 uOffset;\n"
+                                                "out vec4 v2fColor;\n"
+                                                "out vec2 v2fUV;\n"
+                                                "out vec3 v2fNormal;\n"
+                                                "void main()\n"
+                                                "{\n"
+                                                "   vec3 p = vec3((inPos.xy + uOffset) * uScale, inPos.z);\n"
+                                                "   gl_Position = uViewProjection * vec4(p, 1.0);\n"
+                                                "   v2fColor = inColor;\n"
+                                                "   v2fUV = inUV;\n"
+                                                "   v2fNormal = inNormal;\n"
+                                                "}\0";
 //////////////////////////////////////////////////////////////////////////
 static const char * fragmentShaderTextureSource = "#version 330 core\n"
-"uniform sampler2D uTextureRGB;\n"
-"in vec4 v2fColor;\n"
-"in vec2 v2fUV;\n"
-"out vec4 oColor;\n"
-"void main()\n"
-"{\n"
-"   vec4 texColor = texture( uTextureRGB, v2fUV );\n"
-"   oColor = texColor * v2fColor;\n"
-"}\n\0";
+                                                  "uniform sampler2D uTextureRGB;\n"
+                                                  "in vec4 v2fColor;\n"
+                                                  "in vec2 v2fUV;\n"
+                                                  "in vec3 v2fNormal;\n"
+                                                  "out vec4 oColor;\n"
+                                                  "void main()\n"
+                                                  "{\n"
+                                                  "   vec4 texColor = texture( uTextureRGB, v2fUV );\n"
+                                                  "   oColor = texColor * v2fColor;\n"
+                                                  "}\n\0";
+//////////////////////////////////////////////////////////////////////////
+static const char * fragmentShaderLitSource = "#version 330 core\n"
+                                              "uniform sampler2D uTextureRGB;\n"
+                                              "in vec4 v2fColor;\n"
+                                              "in vec2 v2fUV;\n"
+                                              "in vec3 v2fNormal;\n"
+                                              "out vec4 oColor;\n"
+                                              "void main()\n"
+                                              "{\n"
+                                              "   float light = 0.2 + 0.8 * max(dot(normalize(v2fNormal), normalize(vec3(0.4, 0.7, 0.5))), 0.0);\n"
+                                              "   vec4 texColor = texture(uTextureRGB, v2fUV);\n"
+                                              "   oColor = vec4(texColor.rgb * v2fColor.rgb * light, texColor.a * v2fColor.a);\n"
+                                              "}\n\0";
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_vertex_count, dz_uint16_t _max_index_count )
 {
+    memset( _desc, 0, sizeof( *_desc ) );
     GLuint shaderColorProgram = __make_program( vertexShaderColorSource, fragmentShaderColorSource );
     GLuint shaderTextureProgram = __make_program( vertexShaderTextureSource, fragmentShaderTextureSource );
+    GLuint shaderLitProgram = __make_program( vertexShaderTextureSource, fragmentShaderLitSource );
+    if( shaderColorProgram == 0 || shaderTextureProgram == 0 || shaderLitProgram == 0 )
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
 
     GLCALL( glUseProgram, (shaderColorProgram) );
 
@@ -598,10 +649,16 @@ dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_ver
     GLCALL( glEnableVertexAttribArray, (0) );
     GLCALL( glEnableVertexAttribArray, (1) );
     GLCALL( glEnableVertexAttribArray, (2) );
+    GLCALL( glEnableVertexAttribArray, ( 3 ) );
+    GLCALL( glEnableVertexAttribArray, ( 4 ) );
+    GLCALL( glEnableVertexAttribArray, ( 5 ) );
 
-    GLCALL( glVertexAttribPointer, (0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x )) );
-    GLCALL( glVertexAttribPointer, (1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c )) );
-    GLCALL( glVertexAttribPointer, (2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u )) );
+    GLCALL( glVertexAttribPointer, ( 0, 3, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (const void *)(uintptr_t)offsetof( gl_vertex_t, x ) ) );
+    GLCALL( glVertexAttribPointer, ( 1, 3, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (const void *)(uintptr_t)offsetof( gl_vertex_t, nx ) ) );
+    GLCALL( glVertexAttribPointer, ( 2, 4, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (const void *)(uintptr_t)offsetof( gl_vertex_t, tx ) ) );
+    GLCALL( glVertexAttribPointer, ( 3, 4, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (const void *)(uintptr_t)offsetof( gl_vertex_t, r ) ) );
+    GLCALL( glVertexAttribPointer, ( 4, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (const void *)(uintptr_t)offsetof( gl_vertex_t, u ) ) );
+    GLCALL( glVertexAttribPointer, ( 5, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (const void *)(uintptr_t)offsetof( gl_vertex_t, u1 ) ) );
 
     GLuint IBO;
     GLCALL( glGenBuffers, (1, &IBO) );
@@ -631,6 +688,16 @@ dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_ver
     _desc->shaderColorProgram = shaderColorProgram;
     _desc->shaderTextureProgram = shaderTextureProgram;
     _desc->whiteTextureId = whiteTextureId;
+    _desc->cameraOffsetX = 0.f;
+    _desc->cameraOffsetY = 0.f;
+    _desc->cameraScale = 1.f;
+    _desc->techniqueCount = 0;
+    if( __register_program( _desc, "dazzle.color", shaderColorProgram, DZ_FALSE ) != DZ_SUCCESSFUL ||
+        __register_program( _desc, "dazzle.textured", shaderTextureProgram, DZ_FALSE ) != DZ_SUCCESSFUL ||
+        __register_program( _desc, "dazzle.lit", shaderLitProgram, DZ_TRUE ) != DZ_SUCCESSFUL )
+    {
+        return DZ_FAILURE;
+    }
 
     return DZ_SUCCESSFUL;
 }
@@ -643,6 +710,15 @@ void dz_render_finalize( dz_render_desc_t * _desc )
 
     GLCALL( glDeleteProgram, (_desc->shaderColorProgram) );
     GLCALL( glDeleteProgram, (_desc->shaderTextureProgram) );
+
+    for( dz_uint32_t index = 0; index != _desc->techniqueCount; ++index )
+    {
+        if( _desc->techniques[index].owned == DZ_TRUE )
+        {
+            GLCALL( glDeleteProgram, ( _desc->techniques[index].program ) );
+        }
+    }
+    _desc->techniqueCount = 0;
 
     if( _desc->whiteTextureId != 0 )
     {
@@ -664,7 +740,7 @@ void dz_render_set_proj( const dz_render_desc_t * _desc, dz_float_t _left, dz_fl
     GLCALL( glUseProgram, (shaderProgram) );
 
     GLint wvpLocation;
-    GLCALLR( wvpLocation, glGetUniformLocation, (shaderProgram, "uWVP") );
+    GLCALLR( wvpLocation, glGetUniformLocation, ( shaderProgram, "uViewProjection" ) );
 
     if( wvpLocation >= 0 )
     {
@@ -682,8 +758,11 @@ void dz_render_use_texture_program( dz_render_desc_t * _desc )
     _desc->shaderCurrentProgram = _desc->shaderTextureProgram;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_render_set_camera( const dz_render_desc_t * _desc, dz_float_t _offsetX, dz_float_t _offsetY, dz_float_t _scale )
+void dz_render_set_camera( dz_render_desc_t * _desc, dz_float_t _offsetX, dz_float_t _offsetY, dz_float_t _scale )
 {
+    _desc->cameraOffsetX = _offsetX;
+    _desc->cameraOffsetY = _offsetY;
+    _desc->cameraScale = _scale;
     GLCALL( glUseProgram, (_desc->shaderCurrentProgram) );
 
     GLint uOffsetColorLocation;
@@ -703,109 +782,334 @@ void dz_render_set_camera( const dz_render_desc_t * _desc, dz_float_t _offsetX, 
     }
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instance )
+static GLuint __find_technique( const dz_render_desc_t * _desc, const char * _id )
 {
-    GLCALL( glUseProgram, (_desc->shaderCurrentProgram) );
-
-    GLCALL( glBindBuffer, (GL_ARRAY_BUFFER, _desc->VBO) );
-    GLCALL( glBindBuffer, (GL_ELEMENT_ARRAY_BUFFER, _desc->IBO) );
-
-    GLCALL( glEnableVertexAttribArray, (0) );
-    GLCALL( glEnableVertexAttribArray, (1) );
-    GLCALL( glEnableVertexAttribArray, (2) );
-
-    GLCALL( glVertexAttribPointer, (0, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, x )) );
-    GLCALL( glVertexAttribPointer, (1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, c )) );
-    GLCALL( glVertexAttribPointer, (2, 2, GL_FLOAT, GL_FALSE, sizeof( gl_vertex_t ), (dz_uint8_t *)0 + offsetof( gl_vertex_t, u )) );
-
-    void * vertices;
-    GLCALLR( vertices, glMapBuffer, (GL_ARRAY_BUFFER, GL_WRITE_ONLY) );
-
-    void * indices;
-    GLCALLR( indices, glMapBuffer, (GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY) );
-
-    dz_instance_mesh_t mesh;
-    mesh.position_buffer = vertices;
-    mesh.position_offset = offsetof( gl_vertex_t, x );
-    mesh.position_stride = sizeof( gl_vertex_t );
-
-    mesh.color_buffer = vertices;
-    mesh.color_offset = offsetof( gl_vertex_t, c );
-    mesh.color_stride = sizeof( gl_vertex_t );
-
-    mesh.uv_buffer = vertices;
-    mesh.uv_offset = offsetof( gl_vertex_t, u );
-    mesh.uv_stride = sizeof( gl_vertex_t );
-
-    mesh.index_buffer = indices;
-
-    mesh.flags = DZ_EFFECT_MESH_FLAG_NONE;
-    mesh.r = 1.f;
-    mesh.g = 1.f;
-    mesh.b = 1.f;
-    mesh.a = 1.f;
-
-    dz_instance_mesh_chunk_t chunks[16];
-    dz_uint32_t chunk_count;
-
-    dz_instance_compute_mesh( _instance, &mesh, chunks, 16, &chunk_count );
-
-    GLCALL( glUnmapBuffer, (GL_ARRAY_BUFFER) );
-    GLCALL( glUnmapBuffer, (GL_ELEMENT_ARRAY_BUFFER) );
-
-    for( dz_uint32_t index = 0; index != chunk_count; ++index )
+    for( dz_uint32_t index = 0; index != _desc->techniqueCount; ++index )
     {
-        dz_instance_mesh_chunk_t * chunk = chunks + index;
-
-        GLuint textureId = chunk->surface != DZ_NULLPTR ? *(GLuint *)chunk->surface : 0;
-
-        if( textureId == 0 )
+        if( strcmp( _desc->techniques[index].id, _id ) == 0 )
         {
-            // SOLID material (or atlas without an image) — bind the 1x1 white texture so the fragment shader
-            // multiplies by white and produces the vertex color unchanged.
-            textureId = _desc->whiteTextureId;
+            return _desc->techniques[index].program;
         }
-
-        GLCALL( glActiveTexture, (GL_TEXTURE0) );
-        GLCALL( glBindTexture, (GL_TEXTURE_2D, textureId) );
-
-        GLCALL( glEnable, (GL_BLEND) );
-
-        switch( chunk->blend_type )
+    }
+    return 0;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __multiply_matrix( const dz_float_t * _a, const dz_float_t * _b, dz_float_t * _result )
+{
+    for( dz_uint32_t column = 0; column != 4; ++column )
+    {
+        for( dz_uint32_t row = 0; row != 4; ++row )
         {
-        case DZ_BLEND_NORMAL:
+            _result[column * 4 + row] =
+                _a[0 * 4 + row] * _b[column * 4 + 0] + _a[1 * 4 + row] * _b[column * 4 + 1] + _a[2 * 4 + row] * _b[column * 4 + 2] + _a[3 * 4 + row] * _b[column * 4 + 3];
+        }
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+static void __set_matrix_uniform( GLuint _program, const char * _name, const dz_float_t * _value )
+{
+    const GLint location = glGetUniformLocation( _program, _name );
+    if( location >= 0 )
+    {
+        glUniformMatrix4fv( location, 1, GL_FALSE, _value );
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+static void __apply_pass_uniforms( GLuint _program, const dz_material_pass_desc_t * _pass, const dz_mat4_t * _view, const dz_mat4_t * _projection,
+                                   const dz_mat4_t * _view_projection, const dz_float_t * _instance, const dz_camera_state_t * _camera, dz_float_t _time )
+{
+    for( dz_uint32_t index = 0; index != _pass->uniform_count; ++index )
+    {
+        const dz_uniform_desc_t * uniform = _pass->uniforms + index;
+        const GLint location = glGetUniformLocation( _program, uniform->name );
+        if( location < 0 )
+        {
+            continue;
+        }
+        switch( uniform->semantic )
+        {
+        case DZ_UNIFORM_VIEW:
+            glUniformMatrix4fv( location, 1, GL_FALSE, _view->m );
+            break;
+        case DZ_UNIFORM_PROJECTION:
+            glUniformMatrix4fv( location, 1, GL_FALSE, _projection->m );
+            break;
+        case DZ_UNIFORM_VIEW_PROJECTION:
+            glUniformMatrix4fv( location, 1, GL_FALSE, _view_projection->m );
+            break;
+        case DZ_UNIFORM_CAMERA_POSITION:
+            glUniform3f( location, _camera->position.x, _camera->position.y, _camera->position.z );
+            break;
+        case DZ_UNIFORM_INSTANCE_TRANSFORM:
+            glUniformMatrix4fv( location, 1, GL_FALSE, _instance );
+            break;
+        case DZ_UNIFORM_TIME:
+            glUniform1f( location, _time );
+            break;
+        case DZ_UNIFORM_CUSTOM:
+            switch( uniform->value_count )
             {
-                GLCALL( glBlendFunc, (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-            }break;
-        case DZ_BLEND_ADD:
-            {
-                GLCALL( glBlendFunc, (GL_SRC_ALPHA, GL_ONE) );
-            }break;
-        case DZ_BLEND_MULTIPLY:
-            {
-                GLCALL( glBlendFunc, (GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA) );
-            }break;
-        case DZ_BLEND_SCREEN:
-            {
-                GLCALL( glBlendFunc, (GL_ONE, GL_ONE_MINUS_SRC_ALPHA) );
-            }break;
-        case __DZ_BLEND_MAX__:
+            case 1:
+                glUniform1fv( location, 1, uniform->values );
+                break;
+            case 2:
+                glUniform2fv( location, 1, uniform->values );
+                break;
+            case 3:
+                glUniform3fv( location, 1, uniform->values );
+                break;
+            case 4:
+                glUniform4fv( location, 1, uniform->values );
+                break;
+            case 16:
+                glUniformMatrix4fv( location, 1, GL_FALSE, uniform->values );
+                break;
+            default:
+                break;
+            }
+            break;
+        case __DZ_UNIFORM_SEMANTIC_MAX__:
         default:
-            return DZ_FAILURE;
+            break;
         }
-
-        GLCALL( glDrawElements, (GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_SHORT, (const void *)((dz_size_t)chunk->index_offset * sizeof( dz_uint16_t ))) );
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+static GLenum __sampler_filter( dz_sampler_filter_e _filter )
+{
+    return _filter == DZ_SAMPLER_NEAREST ? GL_NEAREST : GL_LINEAR;
+}
+//////////////////////////////////////////////////////////////////////////
+static GLenum __sampler_wrap( dz_sampler_wrap_e _wrap )
+{
+    if( _wrap == DZ_SAMPLER_REPEAT )
+    {
+        return GL_REPEAT;
+    }
+    if( _wrap == DZ_SAMPLER_MIRRORED_REPEAT )
+    {
+        return GL_MIRRORED_REPEAT;
+    }
+    return GL_CLAMP_TO_EDGE;
+}
+//////////////////////////////////////////////////////////////////////////
+static void __apply_texture_bindings( GLuint _program, const dz_material_pass_desc_t * _pass, GLuint _texture )
+{
+    glActiveTexture( GL_TEXTURE0 );
+    glBindTexture( GL_TEXTURE_2D, _texture );
+    GLint default_location = glGetUniformLocation( _program, "uTextureRGB" );
+    if( default_location >= 0 )
+    {
+        glUniform1i( default_location, 0 );
     }
 
-    GLCALL( glBindBuffer, (GL_ARRAY_BUFFER, 0) );
-    GLCALL( glBindBuffer, (GL_ELEMENT_ARRAY_BUFFER, 0) );
+    for( dz_uint32_t index = 0; index != _pass->texture_binding_count; ++index )
+    {
+        const dz_texture_binding_desc_t * binding = _pass->texture_bindings + index;
+        glActiveTexture( GL_TEXTURE0 + index );
+        glBindTexture( GL_TEXTURE_2D, _texture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)__sampler_filter( binding->min_filter ) );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)__sampler_filter( binding->mag_filter ) );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)__sampler_wrap( binding->wrap_u ) );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)__sampler_wrap( binding->wrap_v ) );
+        const GLint location = glGetUniformLocation( _program, binding->uniform_name );
+        if( location >= 0 )
+        {
+            glUniform1i( location, (GLint)index );
+        }
+    }
+    glActiveTexture( GL_TEXTURE0 );
+}
+//////////////////////////////////////////////////////////////////////////
+static void __apply_pass_state( const dz_material_pass_desc_t * _pass )
+{
+    if( _pass->depth_test == DZ_TRUE )
+    {
+        glEnable( GL_DEPTH_TEST );
+    }
+    else
+    {
+        glDisable( GL_DEPTH_TEST );
+    }
+    glDepthMask( _pass->depth_write == DZ_TRUE ? GL_TRUE : GL_FALSE );
+    glDepthFunc( _pass->depth_compare == DZ_DEPTH_LESS ? GL_LESS : ( _pass->depth_compare == DZ_DEPTH_LESS_EQUAL ? GL_LEQUAL : GL_ALWAYS ) );
+    if( _pass->cull == DZ_CULL_NONE )
+    {
+        glDisable( GL_CULL_FACE );
+    }
+    else
+    {
+        glEnable( GL_CULL_FACE );
+        glCullFace( _pass->cull == DZ_CULL_BACK ? GL_BACK : GL_FRONT );
+    }
+    glColorMask( ( _pass->color_mask & 1U ) != 0, ( _pass->color_mask & 2U ) != 0, ( _pass->color_mask & 4U ) != 0, ( _pass->color_mask & 8U ) != 0 );
+    glEnable( GL_BLEND );
+    switch( _pass->blend )
+    {
+    case DZ_BLEND_NORMAL:
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        break;
+    case DZ_BLEND_ADD:
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+        break;
+    case DZ_BLEND_MULTIPLY:
+        glBlendFunc( GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA );
+        break;
+    case DZ_BLEND_SCREEN:
+        glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+        break;
+    case __DZ_BLEND_MAX__:
+    default:
+        break;
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_render_instance_camera( const dz_render_desc_t * _desc, const dz_instance_t * _instance, const dz_camera_state_t * _camera )
+{
+    dz_render_requirements_t requirements;
+    dz_instance_prepare_render( _instance, _camera, &requirements );
+    if( requirements.vertex_count == 0 )
+    {
+        return DZ_SUCCESSFUL;
+    }
+    gl_vertex_t * vertices = (gl_vertex_t *)calloc( requirements.vertex_count, sizeof( gl_vertex_t ) );
+    const dz_size_t index_size = requirements.index_type == DZ_INDEX_UINT32 ? sizeof( dz_uint32_t ) : sizeof( dz_uint16_t );
+    void * indices = calloc( requirements.index_count, index_size );
+    dz_render_chunk_t * chunks = (dz_render_chunk_t *)calloc( requirements.chunk_count, sizeof( dz_render_chunk_t ) );
 
-    GLCALL( glDisableVertexAttribArray, (0) );
-    GLCALL( glDisableVertexAttribArray, (1) );
-    GLCALL( glDisableVertexAttribArray, (2) );
+    dz_render_buffers_t buffers;
+    memset( &buffers, 0, sizeof( buffers ) );
+#define DZ_SET_STREAM( name, member )                                                                                                                                              \
+    do                                                                                                                                                                             \
+    {                                                                                                                                                                              \
+        buffers.name.buffer = vertices;                                                                                                                                            \
+        buffers.name.size = requirements.vertex_count * sizeof( gl_vertex_t );                                                                                                     \
+        buffers.name.offset = offsetof( gl_vertex_t, member );                                                                                                                     \
+        buffers.name.stride = sizeof( gl_vertex_t );                                                                                                                               \
+    } while( 0 )
+    DZ_SET_STREAM( positions, x );
+    DZ_SET_STREAM( normals, nx );
+    DZ_SET_STREAM( tangents, tx );
+    DZ_SET_STREAM( colors, r );
+    DZ_SET_STREAM( uv0, u );
+    DZ_SET_STREAM( uv1, u1 );
+#undef DZ_SET_STREAM
+    buffers.indices = indices;
+    buffers.indices_size = requirements.index_count * index_size;
+    buffers.index_type = requirements.index_type;
+    dz_uint32_t chunk_count = 0;
+    dz_result_t result = dz_instance_fill_render( _instance, _camera, &buffers, chunks, requirements.chunk_count, &chunk_count );
+    if( result != DZ_SUCCESSFUL )
+    {
+        free( vertices );
+        free( indices );
+        free( chunks );
+        return result;
+    }
 
-    GLCALL( glUseProgram, (0) );
+    GLCALL( glBindVertexArray, ( _desc->VAO ) );
+    GLCALL( glBindBuffer, ( GL_ARRAY_BUFFER, _desc->VBO ) );
+    GLCALL( glBufferData, ( GL_ARRAY_BUFFER, requirements.vertex_count * sizeof( gl_vertex_t ), vertices, GL_DYNAMIC_DRAW ) );
+    GLCALL( glBindBuffer, ( GL_ELEMENT_ARRAY_BUFFER, _desc->IBO ) );
+    GLCALL( glBufferData, ( GL_ELEMENT_ARRAY_BUFFER, requirements.index_count * index_size, indices, GL_DYNAMIC_DRAW ) );
 
-    return DZ_SUCCESSFUL;
+    dz_camera_state_t camera;
+    if( _camera != DZ_NULLPTR )
+    {
+        camera = *_camera;
+    }
+    else
+    {
+        dz_project_profile_t profile;
+        dz_effect_get_project_profile( dz_instance_get_effect( _instance ), &profile );
+        dz_camera_state_from_profile( &profile, 1.f, 1.f, &camera );
+    }
+    dz_mat4_t view, projection, view_projection;
+    dz_camera_compute_view( &camera, &view );
+    dz_camera_compute_projection( &camera, &projection );
+    __multiply_matrix( projection.m, view.m, view_projection.m );
+
+    dz_transform_t instance_transform;
+    dz_instance_get_transform( _instance, &instance_transform );
+    dz_float_t instance_matrix[16] = { instance_transform.scale.x,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       instance_transform.scale.y,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       instance_transform.scale.z,
+                                       0,
+                                       instance_transform.position.x,
+                                       instance_transform.position.y,
+                                       instance_transform.position.z,
+                                       1 };
+
+    for( dz_uint32_t index = 0; result == DZ_SUCCESSFUL && index != chunk_count; ++index )
+    {
+        const dz_render_chunk_t * chunk = chunks + index;
+        const GLuint program = __find_technique( _desc, chunk->pass.technique_id );
+        if( program == 0 )
+        {
+            result = DZ_FAILURE_UNSUPPORTED;
+            break;
+        }
+        GLCALL( glUseProgram, ( program ) );
+        __set_matrix_uniform( program, "uView", view.m );
+        __set_matrix_uniform( program, "uProjection", projection.m );
+        __set_matrix_uniform( program, "uViewProjection", view_projection.m );
+        __set_matrix_uniform( program, "uInstanceTransform", instance_matrix );
+        GLint location = glGetUniformLocation( program, "uCameraPosition" );
+        if( location >= 0 )
+        {
+            glUniform3f( location, camera.position.x, camera.position.y, camera.position.z );
+        }
+        location = glGetUniformLocation( program, "uTime" );
+        if( location >= 0 )
+        {
+            glUniform1f( location, dz_instance_get_time( _instance ) );
+        }
+        location = glGetUniformLocation( program, "uOffset" );
+        if( location >= 0 )
+        {
+            glUniform2f( location, _desc->cameraOffsetX, _desc->cameraOffsetY );
+        }
+        location = glGetUniformLocation( program, "uScale" );
+        if( location >= 0 )
+        {
+            glUniform1f( location, _desc->cameraScale );
+        }
+        __apply_pass_uniforms( program, &chunk->pass, &view, &projection, &view_projection, instance_matrix, &camera, dz_instance_get_time( _instance ) );
+        __apply_pass_state( &chunk->pass );
+
+        GLuint texture_id = chunk->surface != DZ_NULLPTR ? *(GLuint *)chunk->surface : _desc->whiteTextureId;
+        if( texture_id == 0 )
+        {
+            texture_id = _desc->whiteTextureId;
+        }
+        __apply_texture_bindings( program, &chunk->pass, texture_id );
+        const GLenum index_type = requirements.index_type == DZ_INDEX_UINT32 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
+        const GLenum primitive = chunk->primitive == DZ_PRIMITIVE_LINES ? GL_LINES : GL_TRIANGLES;
+        glDrawElements( primitive, (GLsizei)chunk->index_count, index_type, (const void *)( (dz_size_t)chunk->index_offset * index_size ) );
+    }
+
+    glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+    glDepthMask( GL_TRUE );
+    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+    glBindVertexArray( 0 );
+    glUseProgram( 0 );
+    free( vertices );
+    free( indices );
+    free( chunks );
+    return result;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instance )
+{
+    return dz_render_instance_camera( _desc, _instance, DZ_NULLPTR );
 }
 //////////////////////////////////////////////////////////////////////////

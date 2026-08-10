@@ -8,5 +8,6 @@ typedef dz_result_t( *dz_stream_write_t )(const void * _data, dz_size_t _size, d
 
 dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud );
 dz_result_t dz_effect_write( const dz_effect_t * _effect, dz_stream_write_t _write, dz_userdata_t _ud );
+dz_result_t dz_effect_write_memory( const dz_effect_t * _effect, void * _buffer, dz_size_t _capacity, dz_size_t * _written );
 
 #endif

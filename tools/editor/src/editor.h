@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////
 // prefix ER_ means editor
 //////////////////////////////////////////////////////////////////////////
-static constexpr dz_uint32_t ER_CURVE_MAX_POINTS = 100;
+static constexpr int ER_CURVE_MAX_POINTS = 100;
 static constexpr dz_uint32_t ER_EDITOR_RESOURCE_MAX = 128;
 static constexpr dz_uint32_t ER_EDITOR_NAME_MAX = 64;
 static constexpr dz_float_t ER_CURVE_BOX_HEIGHT_TO_WIDTH_RATIO = 0.4f;
@@ -50,6 +50,8 @@ typedef struct er_memory_buffer_t
     dz_size_t capacity;
 } er_memory_buffer_t;
 //////////////////////////////////////////////////////////////////////////
+typedef std::vector<dz_uint8_t> er_byte_buffer_t;
+//////////////////////////////////////////////////////////////////////////
 typedef struct er_editor_instance_info_t
 {
     dz_uint32_t id;
@@ -67,7 +69,7 @@ protected:
     void finalize();
 
     dz_result_t update( double _time );
-    dz_result_t render();
+    void render();
 
 public:
     dz_result_t run( int argc, char ** argv );
@@ -77,7 +79,9 @@ public:
     const ImVec2 & getDzWindowSize() const;
 
 protected:
-    dz_result_t resetEffect();
+    void resetEffect();
+    dz_result_t createNewProject( dz_projection_type_e _projection );
+    dz_result_t showNewProjectDialog();
     dz_result_t createDefaultMaterial( dz_material_t ** const _material );
     dz_result_t createDefaultShape( dz_shape_t ** const _shape );
     dz_result_t createDefaultEmitter( dz_emitter_t ** const _emitter );
@@ -97,6 +101,7 @@ protected:
     dz_result_t loadEffect();
 
     dz_result_t exportEffect();
+    dz_result_t importObjMesh();
 
     dz_result_t readTimelineKey( const dz_timeline_key_t * _key, er_curve_point_t * _pointsData, size_t _index );
 
@@ -104,7 +109,7 @@ protected:
 
     dz_result_t showMenuBar();
 
-    dz_result_t showEffectData();
+    void showEffectData();
     dz_result_t showResourceList( int _selected );
     dz_result_t showComposerData();
     dz_result_t showShapeData();
@@ -116,10 +121,10 @@ protected:
     dz_result_t optimizeAtlas();
     dz_result_t appendTextureToAtlas( const char * _path );
     dz_result_t loadAtlasImage( const char * _path );
-    dz_result_t clearAtlas();
+    void clearAtlas();
 
     dz_result_t showContentPane();
-    dz_result_t showContentPaneControls();
+    void showContentPaneControls();
 
 public:
     void showDazzleCanvas();
@@ -141,6 +146,8 @@ public:
     bool m_showCanvasLines;
     bool m_showLayerGizmos;
     bool m_showEffectCenter;
+    bool m_openNewProjectDialog;
+    bool m_fullAxisEditing;
 
     bool m_pause;
     int m_windowType;
@@ -196,7 +203,7 @@ public:
     bool m_textureRegionSelecting;
     ImVec2 m_textureRegionSelectStart;
 
-    std::vector<dz_uint8_t> m_atlasBuffer;
+    er_byte_buffer_t m_atlasBuffer;
 
     GLuint m_textureId;
 

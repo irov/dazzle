@@ -18,12 +18,16 @@ set(DAZZLE_EVICT_SOURCES
 )
 
 add_library(${PROJECT_NAME} STATIC ${DAZZLE_EVICT_SOURCES})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_link_libraries(${PROJECT_NAME} dazzle)
 target_link_libraries(${PROJECT_NAME} dazzle_aux)
 
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jansson${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(${PROJECT_NAME} jansson jpp)
+
+if(COMMAND dazzle_configure_target)
+    dazzle_configure_target(${PROJECT_NAME})
+endif()
 
 set_target_properties (${PROJECT_NAME} PROPERTIES
     FOLDER evict

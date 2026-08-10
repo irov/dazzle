@@ -4,9 +4,10 @@
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 static void * dz_malloc( dz_size_t _size, dz_userdata_t _ud )
@@ -123,10 +124,7 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
     dz_timeline_key_set_const_value( key0, _value0 );
 
     dz_timeline_interpolate_t * interpolate0;
-    if( dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR );
 
     dz_timeline_key_t * key1;
     if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -144,10 +142,7 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
     }
 
     dz_timeline_interpolate_t * interpolate1;
-    if( dz_timeline_interpolate_create( _service, &interpolate1, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_interpolate_create( _service, &interpolate1, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR );
 
     dz_timeline_key_t * key2;
     if( dz_timeline_key_create( _service, &key2, _time1, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
@@ -231,8 +226,7 @@ static void __glfw_cursorPosCallback( GLFWwindow * _window, double _x, double _y
 //////////////////////////////////////////////////////////////////////////
 int main( int argc, char ** argv )
 {
-    DZ_UNUSED( argc );
-    DZ_UNUSED( argv );
+    const dz_projection_type_e projection = argc > 1 && strcmp( argv[1], "perspective" ) == 0 ? DZ_PROJECTION_PERSPECTIVE : DZ_PROJECTION_ORTHOGRAPHIC;
 
     if( glfwInit() == 0 )
     {
@@ -251,7 +245,7 @@ int main( int argc, char ** argv )
     //camera_offset_x = window_width * 0.5f;
     //camera_offset_y = window_height * 0.5f;
 
-    GLFWwindow * fwWindow = glfwCreateWindow( window_width, window_height, "graphics", 0, 0 );
+    GLFWwindow * fwWindow = glfwCreateWindow( window_width, window_height, projection == DZ_PROJECTION_PERSPECTIVE ? "Dazzle - Perspective" : "Dazzle - Orthographic", 0, 0 );
 
     if( fwWindow == 0 )
     {
@@ -288,20 +282,46 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
+    static const char * demoVertexShader =
+        "#version 330 core\n"
+        "layout(location=0) in vec3 inPos;\n"
+        "layout(location=3) in vec4 inColor;\n"
+        "uniform mat4 uViewProjection;\n"
+        "out vec4 vColor;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = uViewProjection * vec4(inPos, 1.0);\n"
+        "    vColor = inColor;\n"
+        "}\n";
+    static const char * demoFragmentShader =
+        "#version 330 core\n"
+        "in vec4 vColor;\n"
+        "uniform float uTime;\n"
+        "out vec4 oColor;\n"
+        "void main()\n"
+        "{\n"
+        "    float pulse = 0.35 + 0.25 * sin(uTime * 3.0);\n"
+        "    oColor = vec4(vColor.rgb * pulse, vColor.a * pulse);\n"
+        "}\n";
+    if( dz_render_register_technique( &opengl_desc, "demo.glow", demoVertexShader, demoFragmentShader ) != DZ_SUCCESSFUL )
+    {
+        return EXIT_FAILURE;
+    }
+
     dz_render_use_texture_program( &opengl_desc );
 
     dz_render_set_proj( &opengl_desc, -(dz_float_t)window_width * 0.5f, (dz_float_t)window_width * 0.5f, -(dz_float_t)window_height * 0.5f, (dz_float_t)window_height * 0.5f );
 
-    char texture_path[250];
-    sprintf( texture_path, "%s/%s"
-        , DAZZLE_EXAMPLE_CONTENT_DIR
-        , "particle.png"
-    );
-
-    int width = 0;
-    int height = 0;
-
-    GLuint textureId = dz_render_make_texture( texture_path, &width, &height );
+    const dz_uint8_t whitePixel[4] = { 255U, 255U, 255U, 255U };
+    GLuint textureId = 0;
+    GLCALL( glGenTextures, ( 1, &textureId ) );
+    GLCALL( glBindTexture, ( GL_TEXTURE_2D, textureId ) );
+    GLCALL( glTexImage2D, ( GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel ) );
+    GLCALL( glTexParameteri, ( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
+    GLCALL( glTexParameteri, ( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ) );
+    GLCALL( glBindTexture, ( GL_TEXTURE_2D, 0 ) );
+    const int width = 32;
+    const int height = 32;
 
     dz_service_providers_t providers;
     providers.f_malloc = &dz_malloc;
@@ -312,22 +332,13 @@ int main( int argc, char ** argv )
     providers.f_sinf = &dz_sinf;
 
     dz_service_t * service;
-    if( dz_service_create( &service, &providers, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_service_create( &service, &providers, DZ_NULLPTR );
 
     dz_atlas_t * atlas;
-    if( dz_atlas_create( service, &atlas, &textureId, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_atlas_create( service, &atlas, &textureId, DZ_NULLPTR );
 
     dz_texture_t * texture;
-    if( dz_texture_create( service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_texture_create( service, &texture, DZ_NULLPTR );
 
     dz_float_t u[4] = {0.f, 1.f, 1.f, 0.f};
     dz_float_t v[4] = {0.f, 0.f, 1.f, 1.f};
@@ -339,10 +350,7 @@ int main( int argc, char ** argv )
     dz_texture_set_trim_size( texture, (dz_float_t)width, (dz_float_t)height );
 
     dz_material_t * material;
-    if( dz_material_create( service, &material, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_material_create( service, &material, DZ_NULLPTR );
 
     dz_material_set_blend( material, DZ_BLEND_ADD );
     dz_material_set_mode( material, DZ_MATERIAL_MODE_TEXTURE );
@@ -355,11 +363,18 @@ int main( int argc, char ** argv )
         return EXIT_FAILURE;
     }
 
+    dz_material_pass_desc_t glowPass = {};
+    snprintf( glowPass.technique_id, sizeof( glowPass.technique_id ), "%s", "demo.glow" );
+    glowPass.blend = DZ_BLEND_ADD;
+    glowPass.depth_compare = DZ_DEPTH_LESS_EQUAL;
+    glowPass.color_mask = 0x0fU;
+    glowPass.uniform_count = 1U;
+    snprintf( glowPass.uniforms[0].name, sizeof( glowPass.uniforms[0].name ), "%s", "uTime" );
+    glowPass.uniforms[0].semantic = DZ_UNIFORM_TIME;
+    dz_material_add_pass( material, &glowPass, DZ_NULLPTR );
+
     dz_shape_t * shape;
-    if( dz_shape_create( service, &shape, DZ_SHAPE_POINT, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_shape_create( service, &shape, DZ_SHAPE_POINT, DZ_NULLPTR );
 
     //__set_shape_timeline_const( service, shape, DZ_SHAPE_RECT_WIDTH_MAX, 300.f );
     //__set_shape_timeline_const( service, shape, DZ_SHAPE_RECT_HEIGHT_MAX, 200.f );
@@ -380,10 +395,7 @@ int main( int argc, char ** argv )
     dz_shape_set_mask_scale( shape, 50.f );
 
     dz_emitter_t * emitter;
-    if( dz_emitter_create( service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_emitter_create( service, &emitter, DZ_NULLPTR );
 
     dz_emitter_set_life( emitter, 1000.f );
 
@@ -391,10 +403,7 @@ int main( int argc, char ** argv )
     __set_emitter_timeline_const( service, emitter, DZ_EMITTER_SPAWN_COUNT, 3.f );
 
     dz_affector_t * affector;
-    if( dz_affector_create( service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_affector_create( service, &affector, DZ_NULLPTR );
 
     typedef struct timeline_t
     {
@@ -407,25 +416,31 @@ int main( int argc, char ** argv )
     } timeline_t;
 
     timeline_t timeline_datas[] = {
-        {DZ_AFFECTOR_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f},
+        { DZ_AFFECTOR_TIMELINE_LIFE, 0.5f, 1.f, 3.f, 5.f, 2.f },
 
-        {DZ_AFFECTOR_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 10.f, 50.f, 100.f},
-        {DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.f, 0.1f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_SPIN_SPEED, 0.5f, 1.f, 0.01f, 0.1f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, 0.5f, 1.f, 0.001f, 0.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f},
-        {DZ_AFFECTOR_TIMELINE_SCALE, 0.5f, 1.f, 1.f, 2.5f, 10.f},
-        {DZ_AFFECTOR_TIMELINE_ASPECT, 0.f, 1.f, 1.f, 2.f, 10.f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f},
-        {DZ_AFFECTOR_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f},
+        { DZ_AFFECTOR_TIMELINE_MOVE_SPEED, 0.5f, 1.f, 10.f, 50.f, 100.f },
+        { DZ_AFFECTOR_TIMELINE_MOVE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_ROTATE_SPEED, 0.5f, 1.f, 0.f, 0.1f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_ROTATE_ACCELERATE, 0.5f, 1.f, 0.f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_SPIN_SPEED, 0.5f, 1.f, 0.01f, 0.1f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_SPIN_ACCELERATE, 0.5f, 1.f, 0.001f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_STRAFE_SPEED, 0.5f, 1.f, 0.f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_STRAFE_FRENQUENCE, 0.5f, 1.f, 0.f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_STRAFE_SIZE, 0.5f, 1.f, 50.f, 100.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_STRAFE_SHIFT, 0.5f, 1.f, 0.f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_SCALE, 0.5f, 1.f, 1.f, 2.5f, 10.f },
+        { DZ_AFFECTOR_TIMELINE_ASPECT, 0.f, 1.f, 1.f, 2.f, 10.f },
+        { DZ_AFFECTOR_TIMELINE_COLOR_R, 0.5f, 1.f, 0.75f, 0.25f, 0.4f },
+        { DZ_AFFECTOR_TIMELINE_COLOR_G, 0.5f, 1.f, 0.5f, 0.1f, 0.4f },
+        { DZ_AFFECTOR_TIMELINE_COLOR_B, 0.5f, 1.f, 0.25f, 0.9f, 0.4f },
+        { DZ_AFFECTOR_TIMELINE_COLOR_A, 0.05f, 1.f, 0.f, 1.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_DIRECTION_Z, 0.f, 1.f, 0.15f, 0.35f, -0.1f },
+        { DZ_AFFECTOR_TIMELINE_GRAVITY_X, 0.f, 1.f, 0.f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_GRAVITY_Y, 0.f, 1.f, -4.f, -4.f, -4.f },
+        { DZ_AFFECTOR_TIMELINE_GRAVITY_Z, 0.f, 1.f, 0.f, 0.f, 0.f },
+        { DZ_AFFECTOR_TIMELINE_DRAG, 0.f, 1.f, 0.05f, 0.1f, 0.2f },
     };
+    static_assert( sizeof( timeline_datas ) / sizeof( timeline_datas[0] ) == __DZ_AFFECTOR_TIMELINE_MAX__, "affector demo timelines must cover every channel" );
 
     for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
     {
@@ -437,58 +452,110 @@ int main( int argc, char ** argv )
         }
     }
 
-    dz_effect_t * effect;
-    if( dz_effect_create( service, &effect, 5.f, 0, DZ_NULLPTR ) == DZ_FAILURE )
+    dz_project_profile_t projectProfile;
+    dz_project_profile_default( &projectProfile, projection );
+    projectProfile.far_plane = 5000.f;
+    if( projection == DZ_PROJECTION_ORTHOGRAPHIC )
     {
-        return EXIT_FAILURE;
+        projectProfile.orthographic_height = (dz_float_t)window_height;
     }
+    else
+    {
+        projectProfile.position.z = 700.f;
+    }
+
+    dz_effect_t * effect;
+    dz_effect_create_with_profile( service, &effect, &projectProfile, 5.f, 0, DZ_NULLPTR );
 
     dz_effect_set_atlas( effect, atlas );
 
-    dz_effect_layer_desc_t layer;
-    layer.material = material;
-    layer.shape = shape;
-    layer.emitter = emitter;
-    layer.affector = affector;
-    layer.x = 0.f;
-    layer.y = 0.f;
-    layer.angle = 0.f;
-    layer.life = 5.f;
-    layer.seed = 0;
+    const dz_mesh_vertex_t demoMeshVertices[4] = { { { -12.f, -12.f, 0.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f, 1.f }, { 0.f, 0.f }, { 0.f, 0.f } },
+                                                   { { 12.f, -12.f, 0.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f, 1.f }, { 1.f, 0.f }, { 1.f, 0.f } },
+                                                   { { 0.f, 16.f, 0.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f, 1.f }, { 0.5f, 1.f }, { 0.5f, 1.f } },
+                                                   { { 0.f, 0.f, 24.f }, { 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f, 1.f }, { 0.5f, 0.5f }, { 0.5f, 0.5f } } };
+    const dz_uint32_t demoMeshIndices[12] = { 0U, 2U, 1U, 0U, 1U, 3U, 1U, 2U, 3U, 2U, 0U, 3U };
+    dz_mesh_desc_t demoMesh = {};
+    demoMesh.id = 100U;
+    demoMesh.vertices = demoMeshVertices;
+    demoMesh.vertex_count = 4U;
+    demoMesh.indices = demoMeshIndices;
+    demoMesh.index_count = 12U;
+    dz_effect_add_mesh( service, effect, &demoMesh );
 
-    dz_uint32_t layer_index;
-    if( dz_effect_add_layer( effect, &layer, &layer_index ) == DZ_FAILURE )
+    for( dz_uint32_t mode = 0; mode != __DZ_PARTICLE_MODE_MAX__; ++mode )
     {
-        return EXIT_FAILURE;
+        dz_effect_layer_desc_t layer;
+        dz_effect_layer_desc_default( &layer );
+        layer.material = material;
+        layer.shape = shape;
+        layer.emitter = emitter;
+        layer.affector = affector;
+        layer.x = ( (dz_float_t)mode - 2.f ) * 110.f;
+        layer.z = projection == DZ_PROJECTION_PERSPECTIVE ? ( (dz_float_t)( mode % 2U ) - 0.5f ) * 80.f : 0.f;
+        layer.life = 5.f;
+        layer.seed = mode * 17U;
+        layer.particle_mode = (dz_particle_mode_e)mode;
+        layer.orientation = mode == DZ_PARTICLE_MODE_MESH ? DZ_PARTICLE_ORIENTATION_WORLD : DZ_PARTICLE_ORIENTATION_CAMERA;
+        layer.sorting = DZ_PARTICLE_SORT_CAMERA_FAR;
+        layer.mesh_id = mode == DZ_PARTICLE_MODE_MESH ? demoMesh.id : DZ_RESOURCE_ID_NONE;
+        layer.trail_width = 12.f;
+        layer.trail_lifetime = 0.4f;
+
+        dz_uint32_t layer_index;
+        if( dz_effect_add_layer( effect, &layer, &layer_index ) != DZ_SUCCESSFUL )
+        {
+            return EXIT_FAILURE;
+        }
+
+        dz_effect_trigger_desc_t trigger = {};
+        trigger.event_type = DZ_EFFECT_EVENT_EFFECT_START;
+        trigger.source_layer_index = DZ_EFFECT_LAYER_NONE;
+        trigger.target_layer_index = layer_index;
+        trigger.probability = 1.f;
+        trigger.spawn_count_min = 1U;
+        trigger.spawn_count_max = 1U;
+        if( dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR ) != DZ_SUCCESSFUL )
+        {
+            return EXIT_FAILURE;
+        }
     }
 
-    dz_effect_trigger_desc_t trigger;
-    trigger.event_type = DZ_EFFECT_EVENT_EFFECT_START;
-    trigger.source_layer_index = DZ_EFFECT_LAYER_NONE;
-    trigger.target_layer_index = layer_index;
-    trigger.time = 0.f;
-    trigger.probability = 1.f;
-    trigger.spawn_count_min = 1;
-    trigger.spawn_count_max = 1;
-    trigger.delay_min = 0.f;
-    trigger.delay_max = 0.f;
-    trigger.inherit_position = DZ_FALSE;
-    trigger.inherit_angle = DZ_FALSE;
-    trigger.inherit_velocity = DZ_FALSE;
-    trigger.offset_x = 0.f;
-    trigger.offset_y = 0.f;
-    trigger.angle_offset = 0.f;
+    dz_physics_object_desc_t wind = {};
+    wind.id = 1U;
+    wind.type = DZ_PHYSICS_WIND;
+    wind.transform.rotation.w = 1.f;
+    wind.transform.scale = { 1.f, 1.f, 1.f };
+    wind.direction = { 1.f, 0.f, 0.2f };
+    wind.strength = 8.f;
+    wind.turbulence = 4.f;
+    wind.response = DZ_COLLISION_BOUNCE;
+    dz_effect_add_physics_object( effect, &wind, DZ_NULLPTR );
 
-    if( dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_physics_object_desc_t magnet = {};
+    magnet.id = 2U;
+    magnet.type = DZ_PHYSICS_MAGNET;
+    magnet.transform.rotation.w = 1.f;
+    magnet.transform.scale = { 1.f, 1.f, 1.f };
+    magnet.transform.position = { 0.f, 80.f, 40.f };
+    magnet.strength = 35.f;
+    magnet.falloff = 0.02f;
+    magnet.response = DZ_COLLISION_BOUNCE;
+    dz_effect_add_physics_object( effect, &magnet, DZ_NULLPTR );
+
+    dz_physics_object_desc_t plane = {};
+    plane.id = 3U;
+    plane.type = DZ_PHYSICS_PLANE;
+    plane.transform.rotation.w = 1.f;
+    plane.transform.scale = { 1.f, 1.f, 1.f };
+    plane.transform.position.y = -260.f;
+    plane.direction.y = 1.f;
+    plane.restitution = 0.65f;
+    plane.friction = 0.1f;
+    plane.response = DZ_COLLISION_BOUNCE;
+    dz_effect_add_physics_object( effect, &plane, DZ_NULLPTR );
 
     dz_instance_t * instnace;
-    if( dz_instance_create( service, &instnace, effect, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return EXIT_FAILURE;
-    }
+    dz_instance_create( service, &instnace, effect, DZ_NULLPTR );
 
     while( glfwWindowShouldClose( fwWindow ) == 0 )
     {
@@ -496,21 +563,32 @@ int main( int argc, char ** argv )
 
         dz_instance_update( service, instnace, 0.005f );
 
-        dz_render_set_camera( &opengl_desc, camera_offset_x, camera_offset_y, camera_scale );
-
         glClearColor( 0, 0, 0, 255 );
         glClear( GL_COLOR_BUFFER_BIT );
 
-        dz_render_instance( &opengl_desc, instnace );
+        int framebufferWidth;
+        int framebufferHeight;
+        glfwGetFramebufferSize( fwWindow, &framebufferWidth, &framebufferHeight );
+        dz_camera_state_t camera;
+        dz_camera_state_from_profile( &projectProfile, (dz_float_t)framebufferWidth, (dz_float_t)framebufferHeight, &camera );
+        camera.position.x -= camera_offset_x;
+        camera.position.y += camera_offset_y;
+        if( camera.projection == DZ_PROJECTION_ORTHOGRAPHIC )
+        {
+            camera.orthographic_height /= camera_scale;
+        }
+        dz_render_instance_camera( &opengl_desc, instnace, &camera );
 
         glfwSwapBuffers( fwWindow );
     }
 
+    dz_instance_destroy( service, instnace );
     dz_effect_destroy( service, effect );
-    dz_emitter_destroy( service, emitter );
-    dz_affector_destroy( service, affector );
-    dz_shape_destroy( service, shape );
     dz_service_destroy( service );
+    dz_render_delete_texture( textureId );
+    dz_render_finalize( &opengl_desc );
+    glfwDestroyWindow( fwWindow );
+    glfwTerminate();
 
     return EXIT_SUCCESS;
 }

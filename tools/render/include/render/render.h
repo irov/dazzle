@@ -28,13 +28,34 @@ typedef struct gl_vertex_t
 {
     dz_float_t x;
     dz_float_t y;
-    dz_uint32_t c;
+    dz_float_t z;
+    dz_float_t nx;
+    dz_float_t ny;
+    dz_float_t nz;
+    dz_float_t tx;
+    dz_float_t ty;
+    dz_float_t tz;
+    dz_float_t tw;
+    dz_float_t r;
+    dz_float_t g;
+    dz_float_t b;
+    dz_float_t a;
     dz_float_t u;
     dz_float_t v;
+    dz_float_t u1;
+    dz_float_t v1;
 } gl_vertex_t;
 //////////////////////////////////////////////////////////////////////////
 typedef dz_uint16_t gl_index_t;
 //////////////////////////////////////////////////////////////////////////
+#define DZ_RENDER_TECHNIQUE_MAX 32
+typedef struct dz_render_technique_t
+{
+    char id[DZ_TECHNIQUE_ID_MAX];
+    GLuint program;
+    dz_bool_t owned;
+} dz_render_technique_t;
+
 typedef struct dz_render_desc_t
 {
     GLuint VAO;
@@ -46,6 +67,11 @@ typedef struct dz_render_desc_t
     GLuint shaderTextureProgram;
 
     GLuint whiteTextureId;
+    dz_float_t cameraOffsetX;
+    dz_float_t cameraOffsetY;
+    dz_float_t cameraScale;
+    dz_render_technique_t techniques[DZ_RENDER_TECHNIQUE_MAX];
+    dz_uint32_t techniqueCount;
 }dz_render_desc_t;
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_render_initialize( dz_render_desc_t * _desc, dz_uint16_t _max_vertex_count, dz_uint16_t _max_index_count );
@@ -60,9 +86,11 @@ void dz_render_delete_texture( GLuint _id );
 //////////////////////////////////////////////////////////////////////////
 void dz_render_use_color_program( dz_render_desc_t * _desc );
 void dz_render_use_texture_program( dz_render_desc_t * _desc );
-void dz_render_set_camera( const dz_render_desc_t * _desc, dz_float_t _offsetX, dz_float_t _offsetY, dz_float_t _scale );
+void dz_render_set_camera( dz_render_desc_t * _desc, dz_float_t _offsetX, dz_float_t _offsetY, dz_float_t _scale );
+dz_result_t dz_render_register_technique( dz_render_desc_t * _desc, const char * _id, const char * _vertex_shader, const char * _fragment_shader );
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instnace );
+dz_result_t dz_render_instance_camera( const dz_render_desc_t * _desc, const dz_instance_t * _instance, const dz_camera_state_t * _camera );
 //////////////////////////////////////////////////////////////////////////
 
 #endif

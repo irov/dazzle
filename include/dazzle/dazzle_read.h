@@ -11,6 +11,7 @@ typedef enum dz_effect_read_status_e
     DZ_EFFECT_LOAD_STATUS_SUCCESSFUL = 0x00000000,
     DZ_EFFECT_LOAD_STATUS_INVALID_MAGIC = 0x00000001,
     DZ_EFFECT_LOAD_STATUS_INVALID_VERSION = 0x00000002,
+    DZ_EFFECT_LOAD_STATUS_INVALID_DATA = 0x00000003,
 } dz_effect_read_status_e;
 
 dz_result_t dz_header_read( dz_stream_read_t _load, dz_userdata_t _ud, dz_effect_read_status_e * const _status );

@@ -2,6 +2,13 @@
 
 #include "dazzle/dazzle_aux.hpp"
 
+#include <cstdio>
+#include <cstring>
+#include <vector>
+
+//////////////////////////////////////////////////////////////////////////
+typedef std::vector<dz_mesh_vertex_t> dz_evict_mesh_vertex_list_t;
+typedef std::vector<dz_uint32_t> dz_evict_mesh_index_list_t;
 //////////////////////////////////////////////////////////////////////////
 static jpp::object __evict_texture_write( const dz_texture_t * _texture, dz_float_t _random_weight )
 {
@@ -93,6 +100,54 @@ static jpp::object __evict_material_write( const dz_material_t * _material )
 
     obj.set( "textures", array_textures );
 
+    jpp::array passes = jpp::make_array();
+    const dz_uint32_t pass_count = dz_material_get_pass_count( _material );
+    for( dz_uint32_t index = 0; index != pass_count; ++index )
+    {
+        dz_material_pass_desc_t pass;
+        dz_material_get_pass( _material, index, &pass );
+        jpp::object pass_data = jpp::make_object();
+        pass_data.set( "technique", pass.technique_id );
+        pass_data.set( "blend", (dz_uint32_t)pass.blend );
+        pass_data.set( "depth_test", pass.depth_test == DZ_TRUE );
+        pass_data.set( "depth_write", pass.depth_write == DZ_TRUE );
+        pass_data.set( "depth_compare", (dz_uint32_t)pass.depth_compare );
+        pass_data.set( "cull", (dz_uint32_t)pass.cull );
+        pass_data.set( "color_mask", pass.color_mask );
+        jpp::array uniforms = jpp::make_array();
+        for( dz_uint32_t uniformIndex = 0; uniformIndex != pass.uniform_count; ++uniformIndex )
+        {
+            const dz_uniform_desc_t & uniform = pass.uniforms[uniformIndex];
+            jpp::object uniformData = jpp::make_object();
+            uniformData.set( "name", uniform.name );
+            uniformData.set( "semantic", (dz_uint32_t)uniform.semantic );
+            jpp::array values = jpp::make_array();
+            for( dz_uint32_t value = 0; value != uniform.value_count; ++value )
+            {
+                values.push_back( uniform.values[value] );
+            }
+            uniformData.set( "values", values );
+            uniforms.push_back( uniformData );
+        }
+        pass_data.set( "uniforms", uniforms );
+        jpp::array bindings = jpp::make_array();
+        for( dz_uint32_t bindingIndex = 0; bindingIndex != pass.texture_binding_count; ++bindingIndex )
+        {
+            const dz_texture_binding_desc_t & binding = pass.texture_bindings[bindingIndex];
+            jpp::object bindingData = jpp::make_object();
+            bindingData.set( "uniform", binding.uniform_name );
+            bindingData.set( "texture_slot", binding.texture_slot );
+            bindingData.set( "min_filter", (dz_uint32_t)binding.min_filter );
+            bindingData.set( "mag_filter", (dz_uint32_t)binding.mag_filter );
+            bindingData.set( "wrap_u", (dz_uint32_t)binding.wrap_u );
+            bindingData.set( "wrap_v", (dz_uint32_t)binding.wrap_v );
+            bindings.push_back( bindingData );
+        }
+        pass_data.set( "texture_bindings", bindings );
+        passes.push_back( pass_data );
+    }
+    obj.set( "passes", passes );
+
     return obj;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -118,6 +173,11 @@ static jpp::object __evict_timeline_interpolate_write( const dz_timeline_interpo
     obj_bezier2.set( "p1", p1 );
 
     obj.set( "bezier2", obj_bezier2 );
+
+    dz_float_t out_tangent;
+    dz_float_t in_tangent;
+    dz_timeline_interpolate_get_hermite( _interpolate, &out_tangent, &in_tangent );
+    obj.set( "hermite", jpp::make_tuple( out_tangent, in_tangent ) );
 
     const dz_timeline_key_t * key = dz_timeline_interpolate_get_key( _interpolate );
 
@@ -178,6 +238,16 @@ static jpp::object __evict_shape_write( const dz_shape_t * _shape )
     const char * shape_type_str = dz_shape_type_stringize( shape_type );
 
     obj.set( "type", shape_type_str );
+
+    dz_transform_t transform;
+    dz_shape_get_transform( _shape, &transform );
+    dz_vec3_t dimensions;
+    dz_shape_get_dimensions( _shape, &dimensions );
+    obj.set( "position", jpp::make_tuple( transform.position.x, transform.position.y, transform.position.z ) );
+    obj.set( "rotation", jpp::make_tuple( transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w ) );
+    obj.set( "scale", jpp::make_tuple( transform.scale.x, transform.scale.y, transform.scale.z ) );
+    obj.set( "dimensions", jpp::make_tuple( dimensions.x, dimensions.y, dimensions.z ) );
+    obj.set( "mesh_id", dz_shape_get_mesh_id( _shape ) );
 
     jpp::object obj_timeline = jpp::make_object();
 
@@ -328,8 +398,17 @@ static jpp::object __evict_effect_layer_write( const dz_effect_layer_desc_t * _l
     obj.set( "shape", __evict_shape_write( _layer->shape ) );
     obj.set( "emitter", __evict_emitter_write( _layer->emitter ) );
     obj.set( "affector", __evict_affector_write( _layer->affector ) );
-    obj.set( "position", jpp::make_tuple( _layer->x, _layer->y ) );
+    obj.set( "position", jpp::make_tuple( _layer->x, _layer->y, _layer->z ) );
     obj.set( "angle", _layer->angle );
+    obj.set( "rotation", jpp::make_tuple( _layer->rotation.x, _layer->rotation.y, _layer->rotation.z, _layer->rotation.w ) );
+    obj.set( "scale", jpp::make_tuple( _layer->scale.x, _layer->scale.y, _layer->scale.z ) );
+    obj.set( "particle_mode", (dz_uint32_t)_layer->particle_mode );
+    obj.set( "orientation", (dz_uint32_t)_layer->orientation );
+    obj.set( "sorting", (dz_uint32_t)_layer->sorting );
+    obj.set( "orientation_axis", jpp::make_tuple( _layer->orientation_axis.x, _layer->orientation_axis.y, _layer->orientation_axis.z ) );
+    obj.set( "mesh_id", _layer->mesh_id );
+    obj.set( "trail_width", _layer->trail_width );
+    obj.set( "trail_lifetime", _layer->trail_lifetime );
     obj.set( "life", _layer->life );
     obj.set( "seed", _layer->seed );
 
@@ -387,6 +466,45 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 
     obj.set( "seed", seed );
 
+    dz_project_profile_t profile;
+    dz_effect_get_project_profile( _effect, &profile );
+    jpp::object camera = jpp::make_object();
+    camera.set( "projection", profile.projection == DZ_PROJECTION_ORTHOGRAPHIC ? "orthographic" : "perspective" );
+    camera.set( "position", jpp::make_tuple( profile.position.x, profile.position.y, profile.position.z ) );
+    camera.set( "forward", jpp::make_tuple( profile.forward.x, profile.forward.y, profile.forward.z ) );
+    camera.set( "up", jpp::make_tuple( profile.up.x, profile.up.y, profile.up.z ) );
+    camera.set( "field_of_view", profile.field_of_view );
+    camera.set( "orthographic_height", profile.orthographic_height );
+    camera.set( "near", profile.near_plane );
+    camera.set( "far", profile.far_plane );
+    obj.set( "camera", camera );
+
+    jpp::array meshes = jpp::make_array();
+    const dz_uint32_t mesh_count = dz_effect_get_mesh_count( _effect );
+    for( dz_uint32_t mesh_index = 0; mesh_index != mesh_count; ++mesh_index )
+    {
+        dz_mesh_desc_t mesh;
+        dz_effect_get_mesh_at( _effect, mesh_index, &mesh );
+        jpp::object mesh_data = jpp::make_object();
+        mesh_data.set( "id", mesh.id );
+        jpp::array vertices = jpp::make_array();
+        for( dz_uint32_t vertex_index = 0; vertex_index != mesh.vertex_count; ++vertex_index )
+        {
+            const dz_mesh_vertex_t & vertex = mesh.vertices[vertex_index];
+            vertices.push_back( jpp::make_tuple( vertex.position.x, vertex.position.y, vertex.position.z, vertex.normal.x, vertex.normal.y, vertex.normal.z, vertex.tangent.x,
+                                                 vertex.tangent.y, vertex.tangent.z, vertex.tangent.w, vertex.uv0.x, vertex.uv0.y, vertex.uv1.x, vertex.uv1.y ) );
+        }
+        jpp::array indices = jpp::make_array();
+        for( dz_uint32_t index = 0; index != mesh.index_count; ++index )
+        {
+            indices.push_back( mesh.indices[index] );
+        }
+        mesh_data.set( "vertices", vertices );
+        mesh_data.set( "indices", indices );
+        meshes.push_back( mesh_data );
+    }
+    obj.set( "meshes", meshes );
+
     const dz_atlas_t * atlas = dz_effect_get_atlas( _effect );
 
     if( atlas == DZ_NULLPTR )
@@ -426,16 +544,39 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
 
     obj.set( "triggers", triggers );
 
+    jpp::array physics = jpp::make_array();
+    const dz_uint32_t physics_count = dz_effect_get_physics_object_count( _effect );
+    for( dz_uint32_t index = 0; index != physics_count; ++index )
+    {
+        dz_physics_object_desc_t object;
+        dz_effect_get_physics_object( _effect, index, &object );
+        jpp::object value = jpp::make_object();
+        value.set( "id", object.id );
+        value.set( "mesh_id", object.mesh_id );
+        value.set( "type", (dz_uint32_t)object.type );
+        value.set( "position", jpp::make_tuple( object.transform.position.x, object.transform.position.y, object.transform.position.z ) );
+        value.set( "rotation", jpp::make_tuple( object.transform.rotation.x, object.transform.rotation.y, object.transform.rotation.z, object.transform.rotation.w ) );
+        value.set( "scale", jpp::make_tuple( object.transform.scale.x, object.transform.scale.y, object.transform.scale.z ) );
+        value.set( "direction", jpp::make_tuple( object.direction.x, object.direction.y, object.direction.z ) );
+        value.set( "half_extents", jpp::make_tuple( object.half_extents.x, object.half_extents.y, object.half_extents.z ) );
+        value.set( "radius", object.radius );
+        value.set( "strength", object.strength );
+        value.set( "falloff", object.falloff );
+        value.set( "turbulence", object.turbulence );
+        value.set( "restitution", object.restitution );
+        value.set( "friction", object.friction );
+        value.set( "response", (dz_uint32_t)object.response );
+        physics.push_back( value );
+    }
+    obj.set( "physics", physics );
+
     return obj;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t ** _texture, dz_float_t * const _random_weight, const jpp::object & _data )
+static void __evict_texture_load( dz_service_t * _service, dz_texture_t ** _texture, dz_float_t * const _random_weight, const jpp::object & _data )
 {
     dz_texture_t * texture;
-    if( dz_texture_create( _service, &texture, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_texture_create( _service, &texture, DZ_NULLPTR );
 
     jpp::array j_u = _data["u"];
     jpp::array j_v = _data["v"];
@@ -477,31 +618,22 @@ static dz_result_t __evict_texture_load( dz_service_t * _service, dz_texture_t *
 
     *_texture = texture;
 
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_atlas_load( dz_service_t * _service, dz_atlas_t ** _atlas, const jpp::object & _data )
+static void __evict_atlas_load( dz_service_t * _service, dz_atlas_t ** _atlas, const jpp::object & _data )
 {
     DZ_UNUSED( _data );
 
     dz_atlas_t * atlas;
-    if( dz_atlas_create( _service, &atlas, DZ_NULLPTR, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_atlas_create( _service, &atlas, DZ_NULLPTR, DZ_NULLPTR );
 
     *_atlas = atlas;
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t ** _material, const dz_atlas_t * _atlas, const jpp::object & _data )
 {
     dz_material_t * material;
-    if( dz_material_create( _service, &material, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_material_create( _service, &material, DZ_NULLPTR );
 
     const char * j_blend_type = _data["blend_type"];
 
@@ -564,10 +696,7 @@ static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t
     {
         dz_texture_t * texture;
         dz_float_t random_weight;
-        if( __evict_texture_load( _service, &texture, &random_weight, texture_data ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        __evict_texture_load( _service, &texture, &random_weight, texture_data );
 
         if( dz_material_add_texture( material, texture ) == DZ_FAILURE )
         {
@@ -581,6 +710,62 @@ static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t
         }
     }
 
+    jpp::array passes = _data.get( "passes", jpp::make_array() );
+    dz_uint32_t pass_index = 0;
+    for( const jpp::object & pass_data : passes )
+    {
+        dz_material_pass_desc_t pass;
+        memset( &pass, 0, sizeof( pass ) );
+        const char * technique = pass_data["technique"];
+        snprintf( pass.technique_id, sizeof( pass.technique_id ), "%s", technique );
+        pass.blend = (dz_blend_type_e)pass_data.get( "blend", (dz_uint32_t)DZ_BLEND_NORMAL );
+        pass.depth_test = pass_data.get( "depth_test", false ) ? DZ_TRUE : DZ_FALSE;
+        pass.depth_write = pass_data.get( "depth_write", false ) ? DZ_TRUE : DZ_FALSE;
+        pass.depth_compare = (dz_depth_compare_e)pass_data.get( "depth_compare", (dz_uint32_t)DZ_DEPTH_LESS_EQUAL );
+        pass.cull = (dz_cull_mode_e)pass_data.get( "cull", (dz_uint32_t)DZ_CULL_NONE );
+        pass.color_mask = (dz_uint8_t)pass_data.get( "color_mask", 0x0f );
+
+        jpp::array uniforms = pass_data.get( "uniforms", jpp::make_array() );
+        pass.uniform_count = (dz_uint32_t)uniforms.size();
+        for( dz_uint32_t uniformIndex = 0; uniformIndex != pass.uniform_count; ++uniformIndex )
+        {
+            jpp::object uniformData = uniforms[uniformIndex];
+            dz_uniform_desc_t & uniform = pass.uniforms[uniformIndex];
+            snprintf( uniform.name, sizeof( uniform.name ), "%s", (const char *)uniformData["name"] );
+            uniform.semantic = (dz_uniform_semantic_e)uniformData.get( "semantic", (dz_uint32_t)DZ_UNIFORM_CUSTOM );
+            jpp::array values = uniformData.get( "values", jpp::make_array() );
+            uniform.value_count = (dz_uint32_t)values.size();
+            for( dz_uint32_t value = 0; value != uniform.value_count; ++value )
+            {
+                uniform.values[value] = values[value];
+            }
+        }
+
+        jpp::array bindings = pass_data.get( "texture_bindings", jpp::make_array() );
+        pass.texture_binding_count = (dz_uint32_t)bindings.size();
+        for( dz_uint32_t bindingIndex = 0; bindingIndex != pass.texture_binding_count; ++bindingIndex )
+        {
+            jpp::object bindingData = bindings[bindingIndex];
+            dz_texture_binding_desc_t & binding = pass.texture_bindings[bindingIndex];
+            snprintf( binding.uniform_name, sizeof( binding.uniform_name ), "%s", (const char *)bindingData["uniform"] );
+            binding.texture_slot = bindingData.get( "texture_slot", 0U );
+            binding.min_filter = (dz_sampler_filter_e)bindingData.get( "min_filter", (dz_uint32_t)DZ_SAMPLER_LINEAR );
+            binding.mag_filter = (dz_sampler_filter_e)bindingData.get( "mag_filter", (dz_uint32_t)DZ_SAMPLER_LINEAR );
+            binding.wrap_u = (dz_sampler_wrap_e)bindingData.get( "wrap_u", (dz_uint32_t)DZ_SAMPLER_CLAMP );
+            binding.wrap_v = (dz_sampler_wrap_e)bindingData.get( "wrap_v", (dz_uint32_t)DZ_SAMPLER_CLAMP );
+        }
+
+        if( pass_index == 0 )
+        {
+            dz_material_set_pass( material, 0, &pass );
+        }
+        else
+        {
+            dz_material_add_pass( material, &pass, DZ_NULLPTR );
+        }
+        ++pass_index;
+    }
+
     *_material = material;
 
     return DZ_SUCCESSFUL;
@@ -588,13 +773,21 @@ static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t
 //////////////////////////////////////////////////////////////////////////
 static dz_timeline_interpolate_type_e __load_timeline_interpolate_type( const char * _type )
 {
-    if( strcmp( _type, "linear" ) == 0 )
+    if( strcmp( _type, "step" ) == 0 )
+    {
+        return DZ_TIMELINE_INTERPOLATE_STEP;
+    }
+    else if( strcmp( _type, "linear" ) == 0 )
     {
         return DZ_TIMELINE_INTERPOLATE_LINEAR;
     }
     else if( strcmp( _type, "bezier2" ) == 0 )
     {
         return DZ_TIMELINE_INTERPOLATE_BEZIER2;
+    }
+    else if( strcmp( _type, "hermite" ) == 0 )
+    {
+        return DZ_TIMELINE_INTERPOLATE_HERMITE;
     }
 
     return __DZ_TIMELINE_INTERPOLATE_MAX__;
@@ -609,10 +802,7 @@ static dz_result_t __evict_timeline_interpolate_load( dz_service_t * _service, d
     dz_timeline_interpolate_type_e timeline_interpolate_type = __load_timeline_interpolate_type( j_interpolate_type );
 
     dz_timeline_interpolate_t * interpolate;
-    if( dz_timeline_interpolate_create( _service, &interpolate, timeline_interpolate_type, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_interpolate_create( _service, &interpolate, timeline_interpolate_type, DZ_NULLPTR );
 
     jpp::object j_bezier2 = _data["bezier2"];
 
@@ -620,6 +810,9 @@ static dz_result_t __evict_timeline_interpolate_load( dz_service_t * _service, d
     dz_float_t p1 = j_bezier2["p1"];
 
     dz_timeline_interpolate_set_bezier2( interpolate, p0, p1 );
+
+    jpp::array hermite = _data.get( "hermite", jpp::make_tuple( 0.f, 0.f ) );
+    dz_timeline_interpolate_set_hermite( interpolate, hermite[0], hermite[1] );
 
     jpp::object j_key;
     if( _data.exist( "key", &j_key ) == true )
@@ -729,6 +922,30 @@ static dz_shape_type_e __load_shape_type( const char * _type )
     {
         return DZ_SHAPE_MASK;
     }
+    else if( strcmp( _type, "sphere" ) == 0 )
+    {
+        return DZ_SHAPE_SPHERE;
+    }
+    else if( strcmp( _type, "box" ) == 0 )
+    {
+        return DZ_SHAPE_BOX;
+    }
+    else if( strcmp( _type, "cone" ) == 0 )
+    {
+        return DZ_SHAPE_CONE;
+    }
+    else if( strcmp( _type, "cylinder" ) == 0 )
+    {
+        return DZ_SHAPE_CYLINDER;
+    }
+    else if( strcmp( _type, "mesh_surface" ) == 0 )
+    {
+        return DZ_SHAPE_MESH_SURFACE;
+    }
+    else if( strcmp( _type, "mesh_volume" ) == 0 )
+    {
+        return DZ_SHAPE_MESH_VOLUME;
+    }
 
     return __DZ_SHAPE_MAX__;
 }
@@ -745,10 +962,27 @@ static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _s
     }
 
     dz_shape_t * shape;
-    if( dz_shape_create( _service, &shape, shape_type, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_shape_create( _service, &shape, shape_type, DZ_NULLPTR );
+
+    dz_transform_t transform;
+    jpp::array position = _data.get( "position", jpp::make_tuple( 0.f, 0.f, 0.f ) );
+    jpp::array rotation = _data.get( "rotation", jpp::make_tuple( 0.f, 0.f, 0.f, 1.f ) );
+    jpp::array scale = _data.get( "scale", jpp::make_tuple( 1.f, 1.f, 1.f ) );
+    transform.position.x = position[0];
+    transform.position.y = position[1];
+    transform.position.z = position[2];
+    transform.rotation.x = rotation[0];
+    transform.rotation.y = rotation[1];
+    transform.rotation.z = rotation[2];
+    transform.rotation.w = rotation[3];
+    transform.scale.x = scale[0];
+    transform.scale.y = scale[1];
+    transform.scale.z = scale[2];
+    dz_shape_set_transform( shape, &transform );
+    jpp::array dimensions_data = _data.get( "dimensions", jpp::make_tuple( 1.f, 1.f, 1.f ) );
+    dz_vec3_t dimensions = { dimensions_data[0], dimensions_data[1], dimensions_data[2] };
+    dz_shape_set_dimensions( shape, &dimensions );
+    dz_shape_set_mesh_id( shape, _data.get( "mesh_id", DZ_RESOURCE_ID_NONE ) );
 
     jpp::object j_timeline = _data["timeline"];
 
@@ -781,10 +1015,7 @@ static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _s
 static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t ** _emitter, const jpp::object & _data )
 {
     dz_emitter_t * emitter;
-    if( dz_emitter_create( _service, &emitter, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_emitter_create( _service, &emitter, DZ_NULLPTR );
 
     dz_float_t life = _data["life"];
 
@@ -821,10 +1052,7 @@ static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t *
 dz_result_t __evict_affector_load( dz_service_t * _service, dz_affector_t ** _affector, const jpp::object & _data )
 {
     dz_affector_t * affector;
-    if( dz_affector_create( _service, &affector, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_affector_create( _service, &affector, DZ_NULLPTR );
 
     jpp::object j_timeline = _data["timeline"];
 
@@ -893,10 +1121,30 @@ static dz_result_t __evict_effect_layer_load( dz_service_t * _service, dz_effect
     _layer->emitter = emitter;
     _layer->affector = affector;
 
-    jpp::array j_position = _data.get( "position", jpp::make_tuple( 0.f, 0.f ) );
+    jpp::array j_position = _data.get( "position", jpp::make_tuple( 0.f, 0.f, 0.f ) );
     _layer->x = j_position[0];
     _layer->y = j_position[1];
+    _layer->z = j_position[2];
     _layer->angle = _data.get( "angle", 0.f );
+    jpp::array rotation = _data.get( "rotation", jpp::make_tuple( 0.f, 0.f, 0.f, 1.f ) );
+    _layer->rotation.x = rotation[0];
+    _layer->rotation.y = rotation[1];
+    _layer->rotation.z = rotation[2];
+    _layer->rotation.w = rotation[3];
+    jpp::array scale = _data.get( "scale", jpp::make_tuple( 1.f, 1.f, 1.f ) );
+    _layer->scale.x = scale[0];
+    _layer->scale.y = scale[1];
+    _layer->scale.z = scale[2];
+    _layer->particle_mode = (dz_particle_mode_e)_data.get( "particle_mode", (dz_uint32_t)DZ_PARTICLE_MODE_SPRITE );
+    _layer->orientation = (dz_particle_orientation_e)_data.get( "orientation", (dz_uint32_t)DZ_PARTICLE_ORIENTATION_CAMERA );
+    _layer->sorting = (dz_particle_sort_e)_data.get( "sorting", (dz_uint32_t)DZ_PARTICLE_SORT_NONE );
+    jpp::array orientation_axis = _data.get( "orientation_axis", jpp::make_tuple( 0.f, 1.f, 0.f ) );
+    _layer->orientation_axis.x = orientation_axis[0];
+    _layer->orientation_axis.y = orientation_axis[1];
+    _layer->orientation_axis.z = orientation_axis[2];
+    _layer->mesh_id = _data.get( "mesh_id", DZ_EFFECT_LAYER_NONE );
+    _layer->trail_width = _data.get( "trail_width", 1.f );
+    _layer->trail_lifetime = _data.get( "trail_lifetime", 0.5f );
     _layer->life = _data.get( "life", 0.f );
     _layer->seed = _data.get( "seed", 0 );
 
@@ -944,28 +1192,107 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
     dz_atlas_t * atlas = DZ_NULLPTR;
 
     jpp::object j_atlas;
-    if( _data.exist( "atlas", &j_atlas ) == true && __evict_atlas_load( _service, &atlas, j_atlas ) == DZ_FAILURE )
+    if( _data.exist( "atlas", &j_atlas ) == true )
     {
-        return DZ_FAILURE;
+        __evict_atlas_load( _service, &atlas, j_atlas );
     }
 
     dz_float_t life = _data.get( "life", 0.f );
 
     dz_uint32_t seed = _data.get( "seed", 0 );
 
-    dz_effect_t * effect;
-    if( dz_effect_create( _service, &effect, life, seed, DZ_NULLPTR ) == DZ_FAILURE )
+    jpp::object camera;
+    if( _data.exist( "camera", &camera ) == false )
     {
-        return DZ_FAILURE;
+        return DZ_FAILURE_INVALID_VERSION;
     }
 
+    const char * projection = camera["projection"];
+    dz_project_profile_t profile;
+    if( strcmp( projection, "orthographic" ) == 0 )
+    {
+        dz_project_profile_default( &profile, DZ_PROJECTION_ORTHOGRAPHIC );
+    }
+    else if( strcmp( projection, "perspective" ) == 0 )
+    {
+        dz_project_profile_default( &profile, DZ_PROJECTION_PERSPECTIVE );
+    }
+    else
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
+
+    jpp::array camera_position = camera["position"];
+    jpp::array camera_forward = camera["forward"];
+    jpp::array camera_up = camera["up"];
+    profile.position.x = camera_position[0];
+    profile.position.y = camera_position[1];
+    profile.position.z = camera_position[2];
+    profile.forward.x = camera_forward[0];
+    profile.forward.y = camera_forward[1];
+    profile.forward.z = camera_forward[2];
+    profile.up.x = camera_up[0];
+    profile.up.y = camera_up[1];
+    profile.up.z = camera_up[2];
+    profile.field_of_view = camera.get( "field_of_view", profile.field_of_view );
+    profile.orthographic_height = camera.get( "orthographic_height", profile.orthographic_height );
+    profile.near_plane = camera.get( "near", profile.near_plane );
+    profile.far_plane = camera.get( "far", profile.far_plane );
+
+    dz_effect_t * effect;
+    dz_effect_create_with_profile( _service, &effect, &profile, life, seed, DZ_NULLPTR );
+
     dz_effect_set_atlas( effect, atlas );
+
+    jpp::array j_meshes = _data.get( "meshes", jpp::make_array() );
+    for( const jpp::object & mesh_data : j_meshes )
+    {
+        jpp::array vertex_data = mesh_data["vertices"];
+        jpp::array index_data = mesh_data["indices"];
+        if( vertex_data.size() < 3 || index_data.size() < 3 || index_data.size() % 3 != 0 )
+        {
+            dz_effect_destroy( _service, effect );
+            return DZ_FAILURE_INVALID_DATA;
+        }
+
+        dz_evict_mesh_vertex_list_t vertices( vertex_data.size() );
+        dz_evict_mesh_index_list_t indices( index_data.size() );
+        for( jpp::array::size_type index = 0; index != vertex_data.size(); ++index )
+        {
+            jpp::array values = vertex_data[index];
+            if( values.size() != 14 )
+            {
+                dz_effect_destroy( _service, effect );
+                return DZ_FAILURE_INVALID_DATA;
+            }
+            dz_mesh_vertex_t & vertex = vertices[index];
+            vertex.position = { (dz_float_t)values[0], (dz_float_t)values[1], (dz_float_t)values[2] };
+            vertex.normal = { (dz_float_t)values[3], (dz_float_t)values[4], (dz_float_t)values[5] };
+            vertex.tangent = { (dz_float_t)values[6], (dz_float_t)values[7], (dz_float_t)values[8], (dz_float_t)values[9] };
+            vertex.uv0 = { (dz_float_t)values[10], (dz_float_t)values[11] };
+            vertex.uv1 = { (dz_float_t)values[12], (dz_float_t)values[13] };
+        }
+        for( jpp::array::size_type index = 0; index != index_data.size(); ++index )
+        {
+            indices[index] = (dz_uint32_t)index_data[index];
+        }
+
+        dz_mesh_desc_t mesh;
+        memset( &mesh, 0, sizeof( mesh ) );
+        mesh.id = mesh_data["id"];
+        mesh.vertices = vertices.data();
+        mesh.vertex_count = (dz_uint32_t)vertices.size();
+        mesh.indices = indices.data();
+        mesh.index_count = (dz_uint32_t)indices.size();
+        dz_effect_add_mesh( _service, effect, &mesh );
+    }
 
     jpp::array j_layers = _data["layers"];
 
     for( const jpp::object & j_layer : j_layers )
     {
         dz_effect_layer_desc_t layer;
+        dz_effect_layer_desc_default( &layer );
         if( __evict_effect_layer_load( _service, &layer, atlas, j_layer ) == DZ_FAILURE )
         {
             return DZ_FAILURE;
@@ -991,6 +1318,34 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
         {
             return DZ_FAILURE;
         }
+    }
+
+    jpp::array physics = _data.get( "physics", jpp::make_array() );
+    for( const jpp::object & value : physics )
+    {
+        dz_physics_object_desc_t object;
+        memset( &object, 0, sizeof( object ) );
+        object.id = value["id"];
+        object.mesh_id = value.get( "mesh_id", DZ_RESOURCE_ID_NONE );
+        object.type = (dz_physics_object_type_e)(dz_uint32_t)value["type"];
+        jpp::array position = value.get( "position", jpp::make_tuple( 0.f, 0.f, 0.f ) );
+        jpp::array rotation = value.get( "rotation", jpp::make_tuple( 0.f, 0.f, 0.f, 1.f ) );
+        jpp::array scale = value.get( "scale", jpp::make_tuple( 1.f, 1.f, 1.f ) );
+        jpp::array direction = value.get( "direction", jpp::make_tuple( 0.f, 0.f, 0.f ) );
+        jpp::array half_extents = value.get( "half_extents", jpp::make_tuple( 0.f, 0.f, 0.f ) );
+        object.transform.position = { (dz_float_t)position[0], (dz_float_t)position[1], (dz_float_t)position[2] };
+        object.transform.rotation = { (dz_float_t)rotation[0], (dz_float_t)rotation[1], (dz_float_t)rotation[2], (dz_float_t)rotation[3] };
+        object.transform.scale = { (dz_float_t)scale[0], (dz_float_t)scale[1], (dz_float_t)scale[2] };
+        object.direction = { (dz_float_t)direction[0], (dz_float_t)direction[1], (dz_float_t)direction[2] };
+        object.half_extents = { (dz_float_t)half_extents[0], (dz_float_t)half_extents[1], (dz_float_t)half_extents[2] };
+        object.radius = value.get( "radius", 0.f );
+        object.strength = value.get( "strength", 0.f );
+        object.falloff = value.get( "falloff", 0.f );
+        object.turbulence = value.get( "turbulence", 0.f );
+        object.restitution = value.get( "restitution", 0.f );
+        object.friction = value.get( "friction", 0.f );
+        object.response = (dz_collision_response_e)value.get( "response", (dz_uint32_t)DZ_COLLISION_BOUNCE );
+        dz_effect_add_physics_object( effect, &object, DZ_NULLPTR );
     }
 
     *_effect = effect;

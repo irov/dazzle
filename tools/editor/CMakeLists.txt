@@ -27,6 +27,7 @@ set(DAZZLE_EDITOR_SOURCES
 )
 
 add_executable(${PROJECT_NAME} ${DAZZLE_EDITOR_SOURCES})
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
 target_link_libraries(${PROJECT_NAME} dazzle)
 target_link_libraries(${PROJECT_NAME} dazzle_render)
@@ -35,14 +36,7 @@ target_link_libraries(${PROJECT_NAME} dazzle_aux)
 target_link_libraries(${PROJECT_NAME} dazzle_write)
 target_link_libraries(${PROJECT_NAME} dazzle_read)
 
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zsd${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}minizip${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glad_gl_core_33${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}glfw3${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}imgui${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}imgui_glfw${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}imgui_opengl3${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_link_libraries(${PROJECT_NAME} ${DAZZLE_THIRDPARTY_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}nativefiledialog${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(${PROJECT_NAME} zlibstatic minizip glad_gl_core_33 glfw imgui imgui_glfw imgui_opengl3 nativefiledialog jansson jpp)
 
 if(UNIX AND NOT ANDROID AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} m)
@@ -54,6 +48,10 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} rt)
     target_link_libraries(${PROJECT_NAME} GL)
     target_link_libraries(${PROJECT_NAME} pthread)
+endif()
+
+if(COMMAND dazzle_configure_target)
+    dazzle_configure_target(${PROJECT_NAME})
 endif()
 
 if(APPLE)

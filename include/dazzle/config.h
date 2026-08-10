@@ -6,8 +6,14 @@
 
 typedef enum dz_result_e
 {
-    DZ_SUCCESSFUL,
-    DZ_FAILURE
+    DZ_SUCCESSFUL = 0,
+    DZ_FAILURE = 1,
+    DZ_FAILURE_INVALID_ARGUMENT = 2,
+    DZ_FAILURE_INVALID_DATA = 3,
+    DZ_FAILURE_INVALID_VERSION = 4,
+    DZ_FAILURE_PROJECTION_MISMATCH = 5,
+    DZ_FAILURE_UNSUPPORTED = 6,
+    DZ_FAILURE_BUFFER_TOO_SMALL = 7
 } dz_result_e;
 
 typedef enum dz_boolean_e
@@ -24,6 +30,8 @@ typedef int16_t dz_int16_t;
 typedef uint16_t dz_uint16_t;
 typedef int32_t dz_int32_t;
 typedef uint32_t dz_uint32_t;
+typedef int64_t dz_int64_t;
+typedef uint64_t dz_uint64_t;
 typedef float dz_float_t;
 typedef size_t dz_size_t;
 typedef void * dz_userdata_t;

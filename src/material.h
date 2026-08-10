@@ -30,6 +30,9 @@ typedef struct dz_material_t
     dz_uint32_t texture_index;
     dz_uint32_t texture_count;
 
+    dz_material_pass_desc_t passes[DZ_MATERIAL_PASS_MAX];
+    dz_uint32_t pass_count;
+
     dz_userdata_t ud;
 } dz_material_t;
 

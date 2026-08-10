@@ -57,6 +57,11 @@ const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_typ
 {
     switch( _type )
     {
+    case DZ_TIMELINE_INTERPOLATE_STEP:
+    {
+        return "step";
+    }
+    break;
     case DZ_TIMELINE_INTERPOLATE_LINEAR:
         {
             return "linear";
@@ -65,10 +70,15 @@ const char * dz_timeline_interpolate_type_stringize( dz_timeline_interpolate_typ
         {
             return "bezier2";
         }break;
-    case __DZ_TIMELINE_INTERPOLATE_MAX__:
-    default:
+        case DZ_TIMELINE_INTERPOLATE_HERMITE:
+        {
+            return "hermite";
+        }
         break;
-    }
+        case __DZ_TIMELINE_INTERPOLATE_MAX__:
+        default:
+            break;
+        }
 
     return DZ_NULLPTR;
 }
@@ -165,10 +175,20 @@ const char * dz_affector_timeline_type_stringize( dz_affector_timeline_type_e _t
         {
             return "color_a";
         }break;
-    case __DZ_AFFECTOR_TIMELINE_MAX__:
-    default:
-        break;
-    }
+        case DZ_AFFECTOR_TIMELINE_DIRECTION_Z:
+            return "direction_z";
+        case DZ_AFFECTOR_TIMELINE_GRAVITY_X:
+            return "gravity_x";
+        case DZ_AFFECTOR_TIMELINE_GRAVITY_Y:
+            return "gravity_y";
+        case DZ_AFFECTOR_TIMELINE_GRAVITY_Z:
+            return "gravity_z";
+        case DZ_AFFECTOR_TIMELINE_DRAG:
+            return "drag";
+        case __DZ_AFFECTOR_TIMELINE_MAX__:
+        default:
+            break;
+        }
 
     return DZ_NULLPTR;
 }
@@ -205,10 +225,22 @@ const char * dz_shape_type_stringize( dz_shape_type_e _type )
         {
             return "mask";
         }break;
-    case __DZ_SHAPE_MAX__:
-    default:
-        break;
-    }
+        case DZ_SHAPE_SPHERE:
+            return "sphere";
+        case DZ_SHAPE_BOX:
+            return "box";
+        case DZ_SHAPE_CONE:
+            return "cone";
+        case DZ_SHAPE_CYLINDER:
+            return "cylinder";
+        case DZ_SHAPE_MESH_SURFACE:
+            return "mesh_surface";
+        case DZ_SHAPE_MESH_VOLUME:
+            return "mesh_volume";
+        case __DZ_SHAPE_MAX__:
+        default:
+            break;
+        }
 
     return DZ_NULLPTR;
 }
@@ -269,10 +301,28 @@ const char * dz_shape_timeline_type_stringize( dz_shape_timeline_type_e _type )
         {
             return "rect_height_max";
         }break;
-    case __DZ_SHAPE_TIMELINE_MAX__:
-    default:
-        break;
-    }
+        case DZ_SHAPE_SPHERE_RADIUS_MIN:
+            return "sphere_radius_min";
+        case DZ_SHAPE_SPHERE_RADIUS_MAX:
+            return "sphere_radius_max";
+        case DZ_SHAPE_BOX_WIDTH:
+            return "box_width";
+        case DZ_SHAPE_BOX_HEIGHT:
+            return "box_height";
+        case DZ_SHAPE_BOX_DEPTH:
+            return "box_depth";
+        case DZ_SHAPE_CONE_RADIUS:
+            return "cone_radius";
+        case DZ_SHAPE_CONE_HEIGHT:
+            return "cone_height";
+        case DZ_SHAPE_CYLINDER_RADIUS:
+            return "cylinder_radius";
+        case DZ_SHAPE_CYLINDER_HEIGHT:
+            return "cylinder_height";
+        case __DZ_SHAPE_TIMELINE_MAX__:
+        default:
+            break;
+        }
 
     return DZ_NULLPTR;
 }
@@ -297,10 +347,14 @@ const char * dz_emitter_timeline_type_stringize( dz_emitter_timeline_type_e _typ
         {
             return "spin_max";
         }break;
-    case __DZ_EMITTER_TIMELINE_MAX__:
-    default:
-        break;
-    }
+        case DZ_EMITTER_SPAWN_ELEVATION_MIN:
+            return "elevation_min";
+        case DZ_EMITTER_SPAWN_ELEVATION_MAX:
+            return "elevation_max";
+        case __DZ_EMITTER_TIMELINE_MAX__:
+        default:
+            break;
+        }
 
     return DZ_NULLPTR;
 }
