@@ -65,10 +65,7 @@ static dz_float_t dz_sinf( dz_float_t _a, dz_userdata_t _ud )
 //static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
 //{
 //    dz_timeline_key_t * timeline;
-//    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
+//    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 //
 //    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
 //    {
@@ -80,28 +77,20 @@ static dz_float_t dz_sinf( dz_float_t _a, dz_userdata_t _ud )
 //    return DZ_SUCCESSFUL;
 //}
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
+static void __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
-    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
     dz_timeline_key_set_const_value( timeline, _value );
 
     dz_emitter_set_timeline( _emitter, _type, timeline );
-
-    return DZ_SUCCESSFUL;
 }
 ////////////////////////////////////////////////////////////////////////////
 //static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
 //{
 //    dz_timeline_key_t * timeline;
-//    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-//    {
-//        return DZ_FAILURE;
-//    }
+//    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 //
 //    if( dz_timeline_key_const_set_value( timeline, _value ) == DZ_FAILURE )
 //    {
@@ -113,13 +102,10 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
 //    return DZ_SUCCESSFUL;
 //}
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _time0, dz_float_t _time1, dz_float_t _value0, dz_float_t _value1, dz_float_t _value2 )
+static void __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _time0, dz_float_t _time1, dz_float_t _value0, dz_float_t _value1, dz_float_t _value2 )
 {
     dz_timeline_key_t * key0;
-    if( dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
     dz_timeline_key_set_const_value( key0, _value0 );
 
@@ -127,41 +113,25 @@ static dz_result_t __set_affector_timeline_linear2( dz_service_t * _service, dz_
     dz_timeline_interpolate_create( _service, &interpolate0, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR );
 
     dz_timeline_key_t * key1;
-    if( dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &key1, _time0, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
     dz_timeline_key_set_const_value( key1, _value1 );
 
     dz_timeline_interpolate_set_key( interpolate0, key1 );
-
-    if( dz_timeline_key_set_interpolate( key0, interpolate0 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_interpolate( key0, interpolate0 );
 
     dz_timeline_interpolate_t * interpolate1;
     dz_timeline_interpolate_create( _service, &interpolate1, DZ_TIMELINE_INTERPOLATE_LINEAR, DZ_NULLPTR );
 
     dz_timeline_key_t * key2;
-    if( dz_timeline_key_create( _service, &key2, _time1, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &key2, _time1, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
     dz_timeline_key_set_const_value( key2, _value2 );
 
     dz_timeline_interpolate_set_key( interpolate1, key2 );
-
-    if( dz_timeline_key_set_interpolate( key1, interpolate1 ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_set_interpolate( key1, interpolate1 );
 
     dz_affector_set_timeline( _affector, _type, key0 );
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 float camera_scale = 1.f;
@@ -446,10 +416,7 @@ int main( int argc, char ** argv )
     {
         timeline_t data = timeline_datas[index];
 
-        if( __set_affector_timeline_linear2( service, affector, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 ) == DZ_FAILURE )
-        {
-            return EXIT_FAILURE;
-        }
+        __set_affector_timeline_linear2( service, affector, data.type, data.time0, data.time1, data.value0, data.value1, data.value2 );
     }
 
     dz_project_profile_t projectProfile;
@@ -502,10 +469,7 @@ int main( int argc, char ** argv )
         layer.trail_lifetime = 0.4f;
 
         dz_uint32_t layer_index;
-        if( dz_effect_add_layer( effect, &layer, &layer_index ) != DZ_SUCCESSFUL )
-        {
-            return EXIT_FAILURE;
-        }
+        dz_effect_add_layer( effect, &layer, &layer_index );
 
         dz_effect_trigger_desc_t trigger = {};
         trigger.event_type = DZ_EFFECT_EVENT_EFFECT_START;
@@ -514,10 +478,7 @@ int main( int argc, char ** argv )
         trigger.probability = 1.f;
         trigger.spawn_count_min = 1U;
         trigger.spawn_count_max = 1U;
-        if( dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR ) != DZ_SUCCESSFUL )
-        {
-            return EXIT_FAILURE;
-        }
+        dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR );
     }
 
     dz_physics_object_desc_t wind = {};

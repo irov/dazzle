@@ -230,18 +230,9 @@ dz_uint32_t dz_instance_get_seed( const dz_instance_t * _instance )
     return _instance->init_seed;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, dz_uint16_t _limit )
+void dz_instance_set_particle_limit( dz_instance_t * const _instance, dz_uint16_t _limit )
 {
-#ifdef DZ_DEBUG
-    if( _limit > 10922 )
-    {
-        return DZ_FAILURE;
-    }
-#endif
-
     _instance->particle_limit = _limit;
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance )
@@ -279,20 +270,11 @@ dz_bool_t dz_instance_get_loop( const dz_instance_t * _instance )
     return _instance->loop;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_set_time( dz_instance_t * const _instance, dz_float_t _time )
+void dz_instance_set_time( dz_instance_t * const _instance, dz_float_t _time )
 {
-#ifdef DZ_DEBUG
-    if( _time < 0.f )
-    {
-        return DZ_FAILURE;
-    }
-#endif
-
     _instance->time = _time;
     _instance->emitter_instance_count = 0;
     _instance->started = _time > 0.f ? DZ_TRUE : DZ_FALSE;
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 dz_float_t dz_instance_get_time( const dz_instance_t * _instance )

@@ -396,10 +396,7 @@ static dz_result_t openZipFile( unzFile _uf, const char * _file, er_byte_buffer_
 static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
-    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
     dz_timeline_key_set_const_value( timeline, _value );
 
@@ -415,19 +412,13 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
 
     if( _points[0].mode == ER_CURVE_POINT_MODE_NORMAL )
     {
-        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
     else if( _points[0].mode == ER_CURVE_POINT_MODE_RANDOM )
     {
-        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR );
 
         dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
     }
@@ -449,19 +440,13 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
 
         if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
         {
-            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
         else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
         {
-            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR );
 
             dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
         }
@@ -471,11 +456,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
         }
 
         dz_timeline_interpolate_set_key( interpolate, nextKey );
-
-        if( dz_timeline_key_set_interpolate( prevKey, interpolate ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_set_interpolate( prevKey, interpolate );
 
         prevKey = nextKey;
     }
@@ -497,10 +478,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
 static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
-    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
     dz_timeline_key_set_const_value( timeline, _value );
 
@@ -516,19 +494,13 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 
     if( _points[0].mode == ER_CURVE_POINT_MODE_NORMAL )
     {
-        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
     else if( _points[0].mode == ER_CURVE_POINT_MODE_RANDOM )
     {
-        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR );
 
         dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
     }
@@ -550,19 +522,13 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 
         if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
         {
-            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
         else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
         {
-            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR );
 
             dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
         }
@@ -572,11 +538,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
         }
 
         dz_timeline_interpolate_set_key( interpolate, nextKey );
-
-        if( dz_timeline_key_set_interpolate( prevKey, interpolate ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_set_interpolate( prevKey, interpolate );
 
         prevKey = nextKey;
     }
@@ -595,10 +557,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
 static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
-    if( dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
     dz_timeline_key_set_const_value( timeline, _value );
 
@@ -614,19 +573,13 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
 
     if( _points[0].mode == ER_CURVE_POINT_MODE_NORMAL )
     {
-        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
         dz_timeline_key_set_const_value( key0, _points[0].y );
     }
     else if( _points[0].mode == ER_CURVE_POINT_MODE_RANDOM )
     {
-        if( dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_create( _service, &key0, _points[0].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR );
 
         dz_timeline_key_set_randomize_min_max( key0, _points[0].y, _points[0].y2 );
     }
@@ -648,19 +601,13 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
 
         if( _points[i].mode == ER_CURVE_POINT_MODE_NORMAL )
         {
-            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
 
             dz_timeline_key_set_const_value( nextKey, _points[i].y );
         }
         else if( _points[i].mode == ER_CURVE_POINT_MODE_RANDOM )
         {
-            if( dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_timeline_key_create( _service, &nextKey, _points[i].x, DZ_TIMELINE_KEY_RANDOMIZE, DZ_NULLPTR );
 
             dz_timeline_key_set_randomize_min_max( nextKey, _points[i].y, _points[i].y2 );
         }
@@ -670,11 +617,7 @@ static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * 
         }
 
         dz_timeline_interpolate_set_key( interpolate, nextKey );
-
-        if( dz_timeline_key_set_interpolate( prevKey, interpolate ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_set_interpolate( prevKey, interpolate );
 
         prevKey = nextKey;
     }
@@ -1141,10 +1084,7 @@ dz_result_t editor::init()
         layer.life = 5.f;
         layer.seed = 0;
 
-        if( dz_effect_add_layer( m_effect, &layer, &m_layerIndex ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_add_layer( m_effect, &layer, &m_layerIndex );
 
         __editor_set_default_name( m_layerInfos + m_layerIndex, &m_nextEditorInstanceId, "Layer", m_layerIndex );
 
@@ -1167,10 +1107,7 @@ dz_result_t editor::init()
         trigger.offset_y = 0.f;
         trigger.angle_offset = 0.f;
 
-        if( dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex );
 
         __editor_set_default_name( m_triggerInfos + m_triggerIndex, &m_nextEditorInstanceId, "Trigger", m_triggerIndex );
 
@@ -2076,17 +2013,11 @@ dz_result_t editor::createNewProject( dz_projection_type_e _projection )
     layer.emitter = m_emitter;
     layer.affector = m_affector;
     layer.life = 5.f;
-    if( dz_effect_add_layer( m_effect, &layer, &m_layerIndex ) != DZ_SUCCESSFUL )
-    {
-        return DZ_FAILURE;
-    }
+    dz_effect_add_layer( m_effect, &layer, &m_layerIndex );
 
     dz_effect_trigger_desc_t trigger;
     __make_default_layer_trigger( &trigger, m_layerIndex );
-    if( dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex ) != DZ_SUCCESSFUL )
-    {
-        return DZ_FAILURE;
-    }
+    dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex );
     dz_instance_create( m_service, &m_instance, m_effect, DZ_NULLPTR );
     dz_instance_set_loop( m_instance, m_loop );
 
@@ -2483,10 +2414,7 @@ dz_result_t editor::ensureLayerTrigger( dz_uint32_t _layerIndex, dz_uint32_t * c
             dz_effect_trigger_desc_t trigger;
             __make_default_layer_trigger( &trigger, _layerIndex );
 
-            if( dz_effect_add_trigger( m_effect, &trigger, &keepTriggerIndex ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_add_trigger( m_effect, &trigger, &keepTriggerIndex );
 
             __editor_set_default_name( m_triggerInfos + keepTriggerIndex, &m_nextEditorInstanceId, "Trigger", keepTriggerIndex );
             triggerCount = dz_effect_get_trigger_count( m_effect );
@@ -3242,10 +3170,7 @@ dz_result_t editor::importObjMesh()
     layer.mesh_id = meshId;
     layer.particle_mode = DZ_PARTICLE_MODE_MESH;
     dz_shape_set_mesh_id( const_cast<dz_shape_t *>( layer.shape ), meshId );
-    if( dz_effect_set_layer( m_effect, m_layerIndex, &layer ) != DZ_SUCCESSFUL )
-    {
-        return DZ_FAILURE_INVALID_DATA;
-    }
+    dz_effect_set_layer( m_effect, m_layerIndex, &layer );
     dz_instance_restart( m_instance );
     return DZ_SUCCESSFUL;
 }
@@ -4585,10 +4510,7 @@ dz_result_t editor::showResourceList( int _selected )
                 dz_effect_get_layer( m_effect, m_layerIndex, &layer );
 
                 dz_uint32_t layerIndex;
-                if( dz_effect_add_layer( m_effect, &layer, &layerIndex ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
+                dz_effect_add_layer( m_effect, &layer, &layerIndex );
 
                 __editor_set_default_name( m_layerInfos + layerIndex, &m_nextEditorInstanceId, "Layer", layerIndex );
 
@@ -4646,10 +4568,7 @@ dz_result_t editor::showResourceList( int _selected )
                     trigger.source_layer_index = DZ_EFFECT_LAYER_NONE;
                 }
 
-                if( dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex ) == DZ_FAILURE )
-                {
-                    return DZ_FAILURE;
-                }
+                dz_effect_add_trigger( m_effect, &trigger, &m_triggerIndex );
 
                 __editor_set_default_name( m_triggerInfos + m_triggerIndex, &m_nextEditorInstanceId, "Trigger", m_triggerIndex );
 
@@ -5116,10 +5035,7 @@ dz_result_t editor::showComposerData()
             layer.trail_width = DZ_MAX( layer.trail_width, 0.f );
             layer.trail_lifetime = DZ_MAX( layer.trail_lifetime, 0.f );
 
-            if( dz_effect_set_layer( m_effect, m_layerIndex, &layer ) != DZ_SUCCESSFUL )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_set_layer( m_effect, m_layerIndex, &layer );
 
             if( layerResourcesChanged == true )
             {
@@ -5239,10 +5155,7 @@ dz_result_t editor::showComposerData()
             trigger.inherit_velocity = DZ_FALSE;
         }
 
-        if( dz_effect_set_trigger( m_effect, triggerIndex, &trigger ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_set_trigger( m_effect, triggerIndex, &trigger );
 
         this->resetEffect();
     }
@@ -7327,10 +7240,7 @@ dz_result_t editor::showContentPane()
             layer.x = mouseWorld.x + m_layerGizmoDragOffset.x;
             layer.y = mouseWorld.y + m_layerGizmoDragOffset.y;
 
-            if( dz_effect_set_layer( m_effect, m_layerGizmoDragIndex, &layer ) == DZ_FAILURE )
-            {
-                return DZ_FAILURE;
-            }
+            dz_effect_set_layer( m_effect, m_layerGizmoDragIndex, &layer );
         }
     }
 

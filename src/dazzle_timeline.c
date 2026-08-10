@@ -76,15 +76,8 @@ void dz_timeline_interpolate_get_hermite( const dz_timeline_interpolate_t * _int
     *_in_tangent = _interpolate->in_tangent;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_float_t _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
+void dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_float_t _p, dz_timeline_key_type_e _type, dz_userdata_t _ud )
 {
-#ifdef DZ_DEBUG
-    if( _p < 0.f || _p > 1.f )
-    {
-        return DZ_FAILURE;
-    }
-#endif
-
     dz_timeline_key_t * key = DZ_NEW( _service, dz_timeline_key_t );
 
     key->p = _p;
@@ -97,8 +90,6 @@ dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_k
     key->randomize_max_value = 0.f;
 
     *_key = key;
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_timeline_key_destroy( const dz_service_t * _service, const dz_timeline_key_t * _key )
@@ -150,16 +141,8 @@ void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpo
     _interpolate->key = _key;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate )
+void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate )
 {
-#ifdef DZ_DEBUG
-    if( _interpolate != DZ_NULLPTR &&
-        _interpolate->key == DZ_NULLPTR )
-    {
-        return DZ_FAILURE;
-    }
-#endif
-
     _key->interpolate = _interpolate;
 
     if( _interpolate != DZ_NULLPTR )
@@ -170,8 +153,6 @@ dz_result_t dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_
     {
         _key->d_inv = 0.f;
     }
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_timeline_key_set_p( dz_timeline_key_t * const _key, dz_float_t _p )

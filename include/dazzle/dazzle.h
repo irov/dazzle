@@ -245,7 +245,7 @@ typedef enum dz_timeline_key_type_e
 
 typedef struct dz_timeline_key_t dz_timeline_key_t;
 
-dz_result_t dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_float_t _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
+void dz_timeline_key_create( const dz_service_t * _service, dz_timeline_key_t ** _key, dz_float_t _p, dz_timeline_key_type_e _type, dz_userdata_t _ud );
 void dz_timeline_key_destroy( const dz_service_t * _service, const dz_timeline_key_t * _key );
 
 void dz_timeline_key_set_ud( dz_timeline_key_t * const _key, dz_userdata_t _ud );
@@ -292,7 +292,7 @@ void dz_timeline_interpolate_get_hermite( const dz_timeline_interpolate_t * _int
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate );
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );
 void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpolate, dz_timeline_key_t * const _key );
-dz_result_t dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate );
+void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate );
 
 typedef struct dz_affector_t dz_affector_t;
 
@@ -579,15 +579,15 @@ void dz_effect_set_atlas( dz_effect_t * const _effect, const dz_atlas_t * _atlas
 const dz_atlas_t * dz_effect_get_atlas( const dz_effect_t * _effect );
 
 dz_uint32_t dz_effect_get_layer_count( const dz_effect_t * _effect );
-dz_result_t dz_effect_add_layer( dz_effect_t * const _effect, const dz_effect_layer_desc_t * _layer, dz_uint32_t * const _index );
+void dz_effect_add_layer( dz_effect_t * const _effect, const dz_effect_layer_desc_t * _layer, dz_uint32_t * const _index );
 void dz_effect_remove_layer( dz_effect_t * const _effect, dz_uint32_t _index, dz_effect_layer_desc_t * const _layer );
-dz_result_t dz_effect_set_layer( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_layer_desc_t * _layer );
+void dz_effect_set_layer( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_layer_desc_t * _layer );
 void dz_effect_get_layer( const dz_effect_t * _effect, dz_uint32_t _index, dz_effect_layer_desc_t * const _layer );
 
 dz_uint32_t dz_effect_get_trigger_count( const dz_effect_t * _effect );
-dz_result_t dz_effect_add_trigger( dz_effect_t * const _effect, const dz_effect_trigger_desc_t * _trigger, dz_uint32_t * const _index );
+void dz_effect_add_trigger( dz_effect_t * const _effect, const dz_effect_trigger_desc_t * _trigger, dz_uint32_t * const _index );
 void dz_effect_remove_trigger( dz_effect_t * const _effect, dz_uint32_t _index, dz_effect_trigger_desc_t * const _trigger );
-dz_result_t dz_effect_set_trigger( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_trigger_desc_t * _trigger );
+void dz_effect_set_trigger( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_trigger_desc_t * _trigger );
 void dz_effect_get_trigger( const dz_effect_t * _effect, dz_uint32_t _index, dz_effect_trigger_desc_t * const _trigger );
 
 void dz_effect_set_life( dz_effect_t * const _effect, dz_float_t _life );
@@ -610,7 +610,7 @@ const dz_effect_t * dz_instance_get_effect( const dz_instance_t * _instance );
 void dz_instance_set_loop( dz_instance_t * const _instance, dz_bool_t _loop );
 dz_bool_t dz_instance_get_loop( const dz_instance_t * _instance );
 
-dz_result_t dz_instance_set_time( dz_instance_t * const _instance, dz_float_t _time );
+void dz_instance_set_time( dz_instance_t * const _instance, dz_float_t _time );
 dz_float_t dz_instance_get_time( const dz_instance_t * _instance );
 void dz_instance_set_fixed_step( dz_instance_t * _instance, dz_float_t _step );
 dz_float_t dz_instance_get_fixed_step( const dz_instance_t * _instance );
@@ -618,7 +618,7 @@ dz_float_t dz_instance_get_fixed_step( const dz_instance_t * _instance );
 void dz_instance_set_seed( dz_instance_t * const _instance, dz_uint32_t _seed );
 dz_uint32_t dz_instance_get_seed( const dz_instance_t * _instance );
 
-dz_result_t dz_instance_set_particle_limit( dz_instance_t * const _instance, dz_uint16_t _limit );
+void dz_instance_set_particle_limit( dz_instance_t * const _instance, dz_uint16_t _limit );
 dz_uint16_t dz_instance_get_particle_limit( const dz_instance_t * _instance );
 
 void dz_instance_set_position( dz_instance_t * const _instance, dz_float_t _x, dz_float_t _y );

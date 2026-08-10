@@ -112,10 +112,7 @@ static dz_result_t make_serialized_effect( const dz_service_t * service, dz_effe
     dz_timeline_key_set_const_value( key1, 2.f );
     dz_timeline_interpolate_set_key( interpolation, key1 );
     dz_timeline_interpolate_set_hermite( interpolation, 0.5f, -0.25f );
-    if( dz_timeline_key_set_interpolate( key0, interpolation ) != DZ_SUCCESSFUL )
-    {
-        return DZ_FAILURE_INVALID_DATA;
-    }
+    dz_timeline_key_set_interpolate( key0, interpolation );
     dz_affector_set_timeline( affector, DZ_AFFECTOR_TIMELINE_SCALE, key0 );
 
     dz_effect_layer_desc_t layer;
@@ -129,11 +126,7 @@ static dz_result_t make_serialized_effect( const dz_service_t * service, dz_effe
     layer.particle_mode = DZ_PARTICLE_MODE_MESH;
     layer.mesh_id = 7U;
     layer.orientation = DZ_PARTICLE_ORIENTATION_WORLD;
-    dz_result_t result = dz_effect_add_layer( *effect, &layer, DZ_NULLPTR );
-    if( result != DZ_SUCCESSFUL )
-    {
-        return result;
-    }
+    dz_effect_add_layer( *effect, &layer, DZ_NULLPTR );
 
     dz_physics_object_desc_t object;
     memset( &object, 0, sizeof( object ) );

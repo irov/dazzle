@@ -35,11 +35,7 @@ static dz_result_t make_effect( const dz_service_t * service, dz_projection_type
     layer.particle_mode = mode;
     layer.sorting = DZ_PARTICLE_SORT_CAMERA_FAR;
     dz_uint32_t layer_index;
-    dz_result_t result = dz_effect_add_layer( *effect, &layer, &layer_index );
-    if( result != DZ_SUCCESSFUL )
-    {
-        return result;
-    }
+    dz_effect_add_layer( *effect, &layer, &layer_index );
 
     dz_effect_trigger_desc_t trigger;
     memset( &trigger, 0, sizeof( trigger ) );
@@ -49,11 +45,7 @@ static dz_result_t make_effect( const dz_service_t * service, dz_projection_type
     trigger.probability = 1.f;
     trigger.spawn_count_min = 1U;
     trigger.spawn_count_max = 1U;
-    result = dz_effect_add_trigger( *effect, &trigger, DZ_NULLPTR );
-    if( result != DZ_SUCCESSFUL )
-    {
-        return result;
-    }
+    dz_effect_add_trigger( *effect, &trigger, DZ_NULLPTR );
 
     dz_physics_object_desc_t gravity;
     memset( &gravity, 0, sizeof( gravity ) );

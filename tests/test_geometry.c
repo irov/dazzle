@@ -71,11 +71,7 @@ static dz_result_t add_layer( const dz_service_t * _service, dz_effect_t * _effe
         layer.mesh_id = _mesh_id;
     }
     dz_uint32_t layer_index;
-    dz_result_t result = dz_effect_add_layer( _effect, &layer, &layer_index );
-    if( result != DZ_SUCCESSFUL )
-    {
-        return result;
-    }
+    dz_effect_add_layer( _effect, &layer, &layer_index );
 
     dz_effect_trigger_desc_t trigger;
     memset( &trigger, 0, sizeof( trigger ) );
@@ -85,7 +81,9 @@ static dz_result_t add_layer( const dz_service_t * _service, dz_effect_t * _effe
     trigger.probability = 1.f;
     trigger.spawn_count_min = 1U;
     trigger.spawn_count_max = 1U;
-    return dz_effect_add_trigger( _effect, &trigger, DZ_NULLPTR );
+    dz_effect_add_trigger( _effect, &trigger, DZ_NULLPTR );
+
+    return DZ_SUCCESSFUL;
 }
 
 static int verify_mixed_geometry( const dz_service_t * _service )

@@ -859,10 +859,7 @@ static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeli
     }
 
     dz_timeline_key_t * key;
-    if( dz_timeline_key_create( _service, &key, p, timeline_key_type, DZ_NULLPTR ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
+    dz_timeline_key_create( _service, &key, p, timeline_key_type, DZ_NULLPTR );
 
     dz_float_t const_value = _data["const_value"];
     dz_timeline_key_set_const_value( key, const_value );
@@ -881,10 +878,7 @@ static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeli
             return DZ_FAILURE;
         }
 
-        if( dz_timeline_key_set_interpolate( key, interpolate ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_timeline_key_set_interpolate( key, interpolate );
     }
 
     *_key = key;
@@ -1298,10 +1292,7 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
             return DZ_FAILURE;
         }
 
-        if( dz_effect_add_layer( effect, &layer, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_add_layer( effect, &layer, DZ_NULLPTR );
     }
 
     jpp::array j_triggers = _data.get( "triggers", jpp::make_array() );
@@ -1314,10 +1305,7 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
             return DZ_FAILURE;
         }
 
-        if( dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR ) == DZ_FAILURE )
-        {
-            return DZ_FAILURE;
-        }
+        dz_effect_add_trigger( effect, &trigger, DZ_NULLPTR );
     }
 
     jpp::array physics = _data.get( "physics", jpp::make_array() );

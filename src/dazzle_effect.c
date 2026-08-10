@@ -405,42 +405,13 @@ dz_result_t dz_effect_remove_mesh( const dz_service_t * _service, dz_effect_t * 
     return DZ_FAILURE_INVALID_DATA;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __effect_validate_layer( const dz_effect_layer_desc_t * _layer )
-{
-#ifdef DZ_DEBUG
-    if( _layer == DZ_NULLPTR )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( _layer->material == DZ_NULLPTR || _layer->shape == DZ_NULLPTR || _layer->emitter == DZ_NULLPTR || _layer->affector == DZ_NULLPTR )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( _layer->life < 0.f )
-    {
-        return DZ_FAILURE;
-    }
-#else
-    DZ_UNUSED( _layer );
-#endif
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
 dz_uint32_t dz_effect_get_layer_count( const dz_effect_t * _effect )
 {
     return _effect->layer_count;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_add_layer( dz_effect_t * const _effect, const dz_effect_layer_desc_t * _layer, dz_uint32_t * const _index )
+void dz_effect_add_layer( dz_effect_t * const _effect, const dz_effect_layer_desc_t * _layer, dz_uint32_t * const _index )
 {
-    if( __effect_validate_layer( _layer ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
     const dz_uint32_t index = _effect->layer_count++;
 
     _effect->layers[index] = *_layer;
@@ -449,8 +420,6 @@ dz_result_t dz_effect_add_layer( dz_effect_t * const _effect, const dz_effect_la
     {
         *_index = index;
     }
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_remove_layer( dz_effect_t * const _effect, dz_uint32_t _index, dz_effect_layer_desc_t * const _layer )
@@ -494,16 +463,9 @@ void dz_effect_remove_layer( dz_effect_t * const _effect, dz_uint32_t _index, dz
 
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_set_layer( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_layer_desc_t * _layer )
+void dz_effect_set_layer( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_layer_desc_t * _layer )
 {
-    if( __effect_validate_layer( _layer ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
     _effect->layers[_index] = *_layer;
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_get_layer( const dz_effect_t * _effect, dz_uint32_t _index, dz_effect_layer_desc_t * const _layer )
@@ -511,58 +473,13 @@ void dz_effect_get_layer( const dz_effect_t * _effect, dz_uint32_t _index, dz_ef
     *_layer = _effect->layers[_index];
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __effect_validate_trigger( const dz_effect_t * _effect, const dz_effect_trigger_desc_t * _trigger )
-{
-#ifdef DZ_DEBUG
-    if( _trigger == DZ_NULLPTR )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( _trigger->event_type >= __DZ_EFFECT_EVENT_MAX__ )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( _trigger->target_layer_index >= _effect->layer_count )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( _trigger->source_layer_index != DZ_EFFECT_LAYER_NONE && _trigger->source_layer_index >= _effect->layer_count )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( _trigger->probability < 0.f )
-    {
-        return DZ_FAILURE;
-    }
-
-    if( _trigger->spawn_count_min > _trigger->spawn_count_max )
-    {
-        return DZ_FAILURE;
-    }
-#else
-    DZ_UNUSED( _effect );
-    DZ_UNUSED( _trigger );
-#endif
-
-    return DZ_SUCCESSFUL;
-}
-//////////////////////////////////////////////////////////////////////////
 dz_uint32_t dz_effect_get_trigger_count( const dz_effect_t * _effect )
 {
     return _effect->trigger_count;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_add_trigger( dz_effect_t * const _effect, const dz_effect_trigger_desc_t * _trigger, dz_uint32_t * const _index )
+void dz_effect_add_trigger( dz_effect_t * const _effect, const dz_effect_trigger_desc_t * _trigger, dz_uint32_t * const _index )
 {
-    if( __effect_validate_trigger( _effect, _trigger ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
     const dz_uint32_t index = _effect->trigger_count++;
 
     _effect->triggers[index] = *_trigger;
@@ -571,8 +488,6 @@ dz_result_t dz_effect_add_trigger( dz_effect_t * const _effect, const dz_effect_
     {
         *_index = index;
     }
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_remove_trigger( dz_effect_t * const _effect, dz_uint32_t _index, dz_effect_trigger_desc_t * const _trigger )
@@ -591,16 +506,9 @@ void dz_effect_remove_trigger( dz_effect_t * const _effect, dz_uint32_t _index, 
 
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_effect_set_trigger( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_trigger_desc_t * _trigger )
+void dz_effect_set_trigger( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_trigger_desc_t * _trigger )
 {
-    if( __effect_validate_trigger( _effect, _trigger ) == DZ_FAILURE )
-    {
-        return DZ_FAILURE;
-    }
-
     _effect->triggers[_index] = *_trigger;
-
-    return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_get_trigger( const dz_effect_t * _effect, dz_uint32_t _index, dz_effect_trigger_desc_t * const _trigger )
