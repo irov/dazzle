@@ -95,7 +95,10 @@ void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effe
         }                                                                                                                                                                          \
     } while( 0 )
 
-    DZ_COLLECT_UNIQUE( atlases, atlas_count, _effect->atlas );
+    if( _effect->atlas != DZ_NULLPTR )
+    {
+        atlases[atlas_count++] = _effect->atlas;
+    }
 
     for( dz_uint32_t layer_index = 0; layer_index != _effect->layer_count; ++layer_index )
     {
