@@ -46,7 +46,7 @@ static void __read_bytes( dz_reader_t * _reader, void * _data, dz_size_t _size )
 
 static dz_uint32_t __read_u32( dz_reader_t * _reader )
 {
-    dz_uint8_t bytes[4];
+    dz_uint8_t bytes[4] = {0};
     __read_bytes( _reader, bytes, sizeof( bytes ) );
     return __load_u32( bytes );
 }

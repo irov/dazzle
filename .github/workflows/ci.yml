@@ -45,7 +45,15 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Download dependencies
+        run: |
+          cmake -S cmake/downloads -B downloads
+          cmake --build downloads --parallel
+      - name: Prepare GLAD generator
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install -r dependencies/glad/requirements.txt
       - name: Configure editor and standalone example
-        run: cmake -S . -B build -DDAZZLE_BUILD_EDITOR=ON -DDAZZLE_BUILD_EXAMPLE=ON -DDAZZLE_WARNINGS_AS_ERRORS=ON -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+        run: cmake -S . -B build -DDAZZLE_BUILD_EDITOR=ON -DDAZZLE_BUILD_EXAMPLE=ON -DDAZZLE_WARNINGS_AS_ERRORS=ON -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DPython_EXECUTABLE=${{ github.workspace }}/.venv/bin/python
       - name: Build editor and standalone example
         run: cmake --build build --config ${{ matrix.config }} --target dazzle_editor dazzle_example --parallel
