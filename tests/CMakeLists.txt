@@ -1,6 +1,12 @@
 function(dazzle_add_test name)
     add_executable(dazzle_${name}_test ${ARGN})
-    target_link_libraries(dazzle_${name}_test PRIVATE dazzle)
+
+    if(name STREQUAL "serialization")
+        target_link_libraries(dazzle_${name}_test PRIVATE dazzle_read dazzle_write)
+    else()
+        target_link_libraries(dazzle_${name}_test PRIVATE dazzle)
+    endif()
+
     target_compile_features(dazzle_${name}_test PRIVATE c_std_99)
 
     dazzle_configure_target(dazzle_${name}_test)
@@ -20,7 +26,6 @@ endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_serialization.c")
     dazzle_add_test(serialization test_serialization.c)
-    target_link_libraries(dazzle_serialization_test PRIVATE dazzle_read dazzle_write)
 endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_geometry.c")

@@ -303,6 +303,78 @@ GLuint dz_render_make_texture_from_memory( const void * _buffer, dz_size_t _size
     return id;
 }
 //////////////////////////////////////////////////////////////////////////
+dz_uint8_t * dz_render_load_rgba_image( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height, dz_int32_t * const _out_pitch )
+{
+    dz_int32_t width;
+    dz_int32_t height;
+    dz_int32_t comp;
+
+    dz_uint8_t * rgba = stbi_load( _path, &width, &height, &comp, STBI_rgb_alpha );
+
+    if( rgba == DZ_NULLPTR || width <= 0 || height <= 0 || width > 0x1fffffff )
+    {
+        stbi_image_free( rgba );
+
+        return DZ_NULLPTR;
+    }
+
+    *_out_width = width;
+    *_out_height = height;
+    *_out_pitch = width * 4;
+
+    return rgba;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_render_free_rgba_image( dz_uint8_t * _buffer )
+{
+    stbi_image_free( _buffer );
+}
+//////////////////////////////////////////////////////////////////////////
+dz_uint8_t * dz_render_load_alpha_mask( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height, dz_int32_t * const _out_pitch )
+{
+    dz_int32_t width;
+    dz_int32_t height;
+    dz_int32_t rgba_pitch;
+    dz_uint8_t * rgba = dz_render_load_rgba_image( _path, &width, &height, &rgba_pitch );
+
+    if( rgba == DZ_NULLPTR || (dz_size_t)width > (dz_size_t)-1 / (dz_size_t)height )
+    {
+        dz_render_free_rgba_image( rgba );
+
+        return DZ_NULLPTR;
+    }
+
+    DZ_UNUSED( rgba_pitch );
+
+    const dz_size_t pixel_count = (dz_size_t)width * (dz_size_t)height;
+    dz_uint8_t * alpha = (dz_uint8_t *)malloc( pixel_count );
+
+    if( alpha == DZ_NULLPTR )
+    {
+        dz_render_free_rgba_image( rgba );
+
+        return DZ_NULLPTR;
+    }
+
+    for( dz_size_t index = 0; index != pixel_count; ++index )
+    {
+        alpha[index] = rgba[index * 4U + 3U];
+    }
+
+    dz_render_free_rgba_image( rgba );
+
+    *_out_width = width;
+    *_out_height = height;
+    *_out_pitch = width;
+
+    return alpha;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_render_free_alpha_mask( dz_uint8_t * _buffer )
+{
+    free( _buffer );
+}
+//////////////////////////////////////////////////////////////////////////
 static dz_bool_t __is_alpha_pixel( const dz_uint8_t * _data, dz_int32_t _width, dz_int32_t _comp, dz_int32_t _x, dz_int32_t _y )
 {
     dz_int32_t alpha_offset;
@@ -806,6 +878,40 @@ static void __multiply_matrix( const dz_float_t * _a, const dz_float_t * _b, dz_
     }
 }
 //////////////////////////////////////////////////////////////////////////
+static void __make_transform_matrix( const dz_transform_t * _transform, dz_float_t * _matrix )
+{
+    const dz_float_t x = _transform->rotation.x;
+    const dz_float_t y = _transform->rotation.y;
+    const dz_float_t z = _transform->rotation.z;
+    const dz_float_t w = _transform->rotation.w;
+    const dz_float_t xx = x * x;
+    const dz_float_t yy = y * y;
+    const dz_float_t zz = z * z;
+    const dz_float_t xy = x * y;
+    const dz_float_t xz = x * z;
+    const dz_float_t yz = y * z;
+    const dz_float_t xw = x * w;
+    const dz_float_t yw = y * w;
+    const dz_float_t zw = z * w;
+
+    _matrix[0] = (1.f - 2.f * (yy + zz)) * _transform->scale.x;
+    _matrix[1] = 2.f * (xy + zw) * _transform->scale.x;
+    _matrix[2] = 2.f * (xz - yw) * _transform->scale.x;
+    _matrix[3] = 0.f;
+    _matrix[4] = 2.f * (xy - zw) * _transform->scale.y;
+    _matrix[5] = (1.f - 2.f * (xx + zz)) * _transform->scale.y;
+    _matrix[6] = 2.f * (yz + xw) * _transform->scale.y;
+    _matrix[7] = 0.f;
+    _matrix[8] = 2.f * (xz + yw) * _transform->scale.z;
+    _matrix[9] = 2.f * (yz - xw) * _transform->scale.z;
+    _matrix[10] = (1.f - 2.f * (xx + yy)) * _transform->scale.z;
+    _matrix[11] = 0.f;
+    _matrix[12] = _transform->position.x;
+    _matrix[13] = _transform->position.y;
+    _matrix[14] = _transform->position.z;
+    _matrix[15] = 1.f;
+}
+//////////////////////////////////////////////////////////////////////////
 static void __set_matrix_uniform( GLuint _program, const char * _name, const dz_float_t * _value )
 {
     const GLint location = glGetUniformLocation( _program, _name );
@@ -815,8 +921,7 @@ static void __set_matrix_uniform( GLuint _program, const char * _name, const dz_
     }
 }
 //////////////////////////////////////////////////////////////////////////
-static void __apply_pass_uniforms( GLuint _program, const dz_material_pass_desc_t * _pass, const dz_mat4_t * _view, const dz_mat4_t * _projection,
-                                   const dz_mat4_t * _view_projection, const dz_float_t * _instance, const dz_camera_state_t * _camera, dz_float_t _time )
+static void __apply_pass_uniforms( GLuint _program, const dz_material_pass_desc_t * _pass, const dz_mat4_t * _view, const dz_mat4_t * _projection, const dz_mat4_t * _view_projection, const dz_float_t * _instance, const dz_camera_state_t * _camera, dz_float_t _time )
 {
     for( dz_uint32_t index = 0; index != _pass->uniform_count; ++index )
     {
@@ -964,7 +1069,7 @@ static void __apply_pass_state( const dz_material_pass_desc_t * _pass )
     }
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_instance_camera( const dz_render_desc_t * _desc, const dz_instance_t * _instance, const dz_camera_state_t * _camera )
+dz_result_t dz_render_instance_camera( const dz_service_t * _service, const dz_render_desc_t * _desc, const dz_instance_t * _instance, const dz_camera_state_t * _camera )
 {
     dz_render_requirements_t requirements;
     dz_instance_prepare_render( _instance, _camera, &requirements );
@@ -998,7 +1103,7 @@ dz_result_t dz_render_instance_camera( const dz_render_desc_t * _desc, const dz_
     buffers.indices_size = requirements.index_count * index_size;
     buffers.index_type = requirements.index_type;
     dz_uint32_t chunk_count = 0;
-    dz_result_t result = dz_instance_fill_render( _instance, _camera, &buffers, chunks, requirements.chunk_count, &chunk_count );
+    dz_result_t result = dz_instance_fill_render( _service, _instance, _camera, &buffers, chunks, requirements.chunk_count, &chunk_count );
     if( result != DZ_SUCCESSFUL )
     {
         free( vertices );
@@ -1025,28 +1130,14 @@ dz_result_t dz_render_instance_camera( const dz_render_desc_t * _desc, const dz_
         dz_camera_state_from_profile( &profile, 1.f, 1.f, &camera );
     }
     dz_mat4_t view, projection, view_projection;
-    dz_camera_compute_view( &camera, &view );
-    dz_camera_compute_projection( &camera, &projection );
+    dz_camera_compute_view( _service, &camera, &view );
+    dz_camera_compute_projection( _service, &camera, &projection );
     __multiply_matrix( projection.m, view.m, view_projection.m );
 
     dz_transform_t instance_transform;
     dz_instance_get_transform( _instance, &instance_transform );
-    dz_float_t instance_matrix[16] = { instance_transform.scale.x,
-                                       0,
-                                       0,
-                                       0,
-                                       0,
-                                       instance_transform.scale.y,
-                                       0,
-                                       0,
-                                       0,
-                                       0,
-                                       instance_transform.scale.z,
-                                       0,
-                                       instance_transform.position.x,
-                                       instance_transform.position.y,
-                                       instance_transform.position.z,
-                                       1 };
+    dz_float_t instance_matrix[16];
+    __make_transform_matrix( &instance_transform, instance_matrix );
 
     for( dz_uint32_t index = 0; result == DZ_SUCCESSFUL && index != chunk_count; ++index )
     {
@@ -1108,8 +1199,8 @@ dz_result_t dz_render_instance_camera( const dz_render_desc_t * _desc, const dz_
     return result;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instance )
+dz_result_t dz_render_instance( const dz_service_t * _service, const dz_render_desc_t * _desc, const dz_instance_t * _instance )
 {
-    return dz_render_instance_camera( _desc, _instance, DZ_NULLPTR );
+    return dz_render_instance_camera( _service, _desc, _instance, DZ_NULLPTR );
 }
 //////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,7 @@
 #include "dazzle/dazzle_write.h"
 
 #include "material.h"
+#include "memory.h"
 #include "atlas.h"
 #include "texture.h"
 #include "timeline_interpolate.h"
@@ -9,10 +10,6 @@
 #include "emitter.h"
 #include "affector.h"
 #include "effect.h"
-
-#include <math.h>
-#include <stdint.h>
-#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_write( dz_stream_write_t _write, dz_userdata_t _ud )
@@ -53,7 +50,7 @@ static void __write_bytes( dz_writer_t * _writer, const void * _data, dz_size_t 
             _writer->result = DZ_FAILURE_BUFFER_TOO_SMALL;
             return;
         }
-        memcpy( _writer->data + _writer->size, _data, _size );
+        dz_memory_copy( _writer->data + _writer->size, _data, _size );
     }
 
     _writer->size += _size;
@@ -68,7 +65,7 @@ static void __write_u32( dz_writer_t * _writer, dz_uint32_t _value )
 static void __write_f32( dz_writer_t * _writer, dz_float_t _value )
 {
     dz_uint32_t bits;
-    memcpy( &bits, &_value, sizeof( bits ) );
+    dz_memory_copy( &bits, &_value, sizeof( bits ) );
     __write_u32( _writer, bits );
 }
 
@@ -210,6 +207,15 @@ static void __write_shape( dz_writer_t * _writer, const dz_shape_t * _shape )
     __write_transform( _writer, &_shape->transform );
     __write_vec3( _writer, _shape->dimensions );
     __write_u32( _writer, _shape->mesh_id );
+
+    __write_u32( _writer, (dz_uint32_t)_shape->has_emitter_texture_desc );
+    __write_u32( _writer, _shape->emitter_texture_desc.alpha_threshold );
+    __write_u32( _writer, _shape->emitter_texture_desc.rgb_threshold );
+    __write_u32( _writer, _shape->emitter_texture_desc.strata );
+    __write_f32( _writer, _shape->emitter_texture_desc.sample_scale );
+    __write_u32( _writer, (dz_uint32_t)_shape->emitter_texture_desc.boundary );
+    __write_u32( _writer, (dz_uint32_t)_shape->emitter_texture_desc.compile );
+
     for( dz_uint32_t i = 0; i != __DZ_SHAPE_TIMELINE_MAX__; ++i )
     {
         __write_timeline( _writer, _shape->timelines[i] );
@@ -224,17 +230,23 @@ static void __write_shape( dz_writer_t * _writer, const dz_shape_t * _shape )
         }
     }
 
-    __write_u32( _writer, _shape->mask_bites );
-    __write_u32( _writer, _shape->mask_pitch );
-    __write_u32( _writer, _shape->mask_width );
-    __write_u32( _writer, _shape->mask_height );
-    __write_u32( _writer, _shape->mask_threshold );
+    __write_u32( _writer, (dz_uint32_t)_shape->mask_uses_bits );
+    __write_u32( _writer, _shape->mask_source.pitch );
+    __write_u32( _writer, _shape->mask_source.width );
+    __write_u32( _writer, _shape->mask_source.height );
+    __write_u32( _writer, _shape->mask_source.channel_count );
+    __write_u32( _writer, _shape->mask_source.alpha_channel );
+    __write_u32( _writer, _shape->mask_source.alpha_threshold );
     __write_f32( _writer, _shape->mask_scale );
-    const dz_size_t mask_size = (dz_size_t)_shape->mask_pitch * _shape->mask_height;
+    __write_u32( _writer, _shape->mask_bits_pitch );
+
+    const void * mask_buffer = _shape->mask_uses_bits == DZ_TRUE ? _shape->mask_bits : _shape->mask_source.buffer;
+    const dz_uint32_t mask_pitch = _shape->mask_uses_bits == DZ_TRUE ? _shape->mask_bits_pitch : _shape->mask_source.pitch;
+    const dz_size_t mask_size = mask_buffer != DZ_NULLPTR ? (dz_size_t)mask_pitch * _shape->mask_source.height : 0U;
     __write_u32( _writer, (dz_uint32_t)mask_size );
     if( mask_size != 0 )
     {
-        __write_bytes( _writer, _shape->mask_buffer, mask_size );
+        __write_bytes( _writer, mask_buffer, mask_size );
     }
 }
 

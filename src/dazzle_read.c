@@ -6,13 +6,12 @@
 #include "effect.h"
 #include "emitter.h"
 #include "material.h"
+#include "memory.h"
 #include "service.h"
 #include "shape.h"
 #include "texture.h"
 #include "timeline_interpolate.h"
 #include "timeline_key.h"
-
-#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 dz_result_t dz_header_read( dz_stream_read_t _read, dz_userdata_t _ud, dz_effect_read_status_e * const _status )
@@ -55,7 +54,7 @@ static dz_float_t __read_f32( dz_reader_t * _reader )
 {
     const dz_uint32_t bits = __read_u32( _reader );
     dz_float_t value;
-    memcpy( &value, &bits, sizeof( value ) );
+    dz_memory_copy( &value, &bits, sizeof( value ) );
     return value;
 }
 
@@ -188,7 +187,7 @@ static void __read_material( const dz_service_t * _service, dz_reader_t * _reade
     for( dz_uint32_t i = 0; i != pass_count; ++i )
     {
         dz_material_pass_desc_t pass;
-        memset( &pass, 0, sizeof( pass ) );
+        dz_memory_zero( &pass, sizeof( pass ) );
         __read_bytes( _reader, pass.technique_id, DZ_TECHNIQUE_ID_MAX );
         pass.blend = (dz_blend_type_e)__read_u32( _reader );
         pass.depth_test = (dz_bool_t)__read_u32( _reader );
@@ -231,6 +230,13 @@ static void __read_shape( const dz_service_t * _service, dz_reader_t * _reader, 
     ( *_shape )->transform = __read_transform( _reader );
     ( *_shape )->dimensions = __read_vec3( _reader );
     ( *_shape )->mesh_id = __read_u32( _reader );
+    ( *_shape )->has_emitter_texture_desc = (dz_bool_t)__read_u32( _reader );
+    ( *_shape )->emitter_texture_desc.alpha_threshold = __read_u32( _reader );
+    ( *_shape )->emitter_texture_desc.rgb_threshold = __read_u32( _reader );
+    ( *_shape )->emitter_texture_desc.strata = __read_u32( _reader );
+    ( *_shape )->emitter_texture_desc.sample_scale = __read_f32( _reader );
+    ( *_shape )->emitter_texture_desc.boundary = (dz_bool_t)__read_u32( _reader );
+    ( *_shape )->emitter_texture_desc.compile = (dz_bool_t)__read_u32( _reader );
 
     for( dz_uint32_t i = 0; i != __DZ_SHAPE_TIMELINE_MAX__; ++i )
     {
@@ -252,18 +258,30 @@ static void __read_shape( const dz_service_t * _service, dz_reader_t * _reader, 
         }
     }
 
-    ( *_shape )->mask_bites = __read_u32( _reader );
-    ( *_shape )->mask_pitch = __read_u32( _reader );
-    ( *_shape )->mask_width = __read_u32( _reader );
-    ( *_shape )->mask_height = __read_u32( _reader );
-    ( *_shape )->mask_threshold = __read_u32( _reader );
+    ( *_shape )->mask_uses_bits = (dz_bool_t)__read_u32( _reader );
+    ( *_shape )->mask_source.pitch = __read_u32( _reader );
+    ( *_shape )->mask_source.width = __read_u32( _reader );
+    ( *_shape )->mask_source.height = __read_u32( _reader );
+    ( *_shape )->mask_source.channel_count = __read_u32( _reader );
+    ( *_shape )->mask_source.alpha_channel = __read_u32( _reader );
+    ( *_shape )->mask_source.alpha_threshold = __read_u32( _reader );
     ( *_shape )->mask_scale = __read_f32( _reader );
+    ( *_shape )->mask_bits_pitch = __read_u32( _reader );
     const dz_uint32_t mask_size = __read_u32( _reader );
     if( mask_size != 0 )
     {
         void * mask = DZ_REALLOCN( _service, DZ_NULLPTR, dz_uint8_t, mask_size );
-        ( *_shape )->mask_buffer = mask;
-        ( *_shape )->owns_mask = DZ_TRUE;
+
+        if( ( *_shape )->mask_uses_bits == DZ_TRUE )
+        {
+            ( *_shape )->mask_bits = mask;
+        }
+        else
+        {
+            ( *_shape )->mask_source.buffer = mask;
+            ( *_shape )->owns_mask_source = DZ_TRUE;
+        }
+
         __read_bytes( _reader, mask, mask_size );
     }
 }
@@ -341,7 +359,7 @@ static dz_result_t __read_trigger( dz_reader_t * _reader, dz_effect_trigger_desc
 static void __read_mesh( const dz_service_t * _service, dz_reader_t * _reader, dz_effect_t * _effect )
 {
     dz_mesh_desc_t mesh;
-    memset( &mesh, 0, sizeof( mesh ) );
+    dz_memory_zero( &mesh, sizeof( mesh ) );
     mesh.id = __read_u32( _reader );
     mesh.vertex_count = __read_u32( _reader );
     mesh.index_count = __read_u32( _reader );
@@ -447,7 +465,7 @@ static dz_result_t __read_decode_effect( const dz_service_t * _service, dz_effec
     {
         dz_physics_object_desc_t object;
         __read_physics( &reader, &object );
-        dz_effect_add_physics_object( effect, &object, DZ_NULLPTR );
+        dz_effect_add_physics_object( _service, effect, &object, DZ_NULLPTR );
     }
 
     *_effect = effect;
@@ -461,6 +479,19 @@ dz_result_t dz_effect_read( const dz_service_t * _service, dz_effect_t ** _effec
     if( result != DZ_SUCCESSFUL )
     {
         return result;
+    }
+
+    const dz_uint32_t magic = __load_u32( header );
+    const dz_uint32_t version = __load_u32( header + 4U );
+
+    if( magic != dz_get_magic() )
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
+
+    if( version != dz_get_version() )
+    {
+        return DZ_FAILURE_INVALID_VERSION;
     }
 
     return __read_decode_effect( _service, _effect, _read, _ud );

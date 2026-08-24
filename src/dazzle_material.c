@@ -2,9 +2,8 @@
 
 #include "alloc.h"
 #include "material.h"
+#include "memory.h"
 #include "texture.h"
-
-#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 dz_material_mode_e dz_material_get_default_mode( void )
@@ -37,8 +36,8 @@ void dz_material_create( const dz_service_t * _service, dz_material_t ** _materi
     material->texture_count = 1;
 
     material->pass_count = 1;
-    memset( material->passes, 0, sizeof( material->passes ) );
-    memcpy( material->passes[0].technique_id, "dazzle.textured", sizeof( "dazzle.textured" ) );
+    dz_memory_zero( material->passes, sizeof( material->passes ) );
+    dz_memory_copy( material->passes[0].technique_id, "dazzle.textured", sizeof( "dazzle.textured" ) );
     material->passes[0].blend = DZ_BLEND_NORMAL;
     material->passes[0].depth_test = DZ_FALSE;
     material->passes[0].depth_write = DZ_FALSE;

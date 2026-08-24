@@ -136,12 +136,12 @@ const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_time
     return interpolate;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpolate, dz_timeline_key_t * const _key )
+void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpolate, const dz_timeline_key_t * _key )
 {
     _interpolate->key = _key;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate )
+void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, const dz_timeline_interpolate_t * _interpolate )
 {
     _key->interpolate = _interpolate;
 

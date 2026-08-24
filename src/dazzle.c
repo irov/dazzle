@@ -8,5 +8,5 @@ dz_uint32_t dz_get_magic( void )
 //////////////////////////////////////////////////////////////////////////
 dz_uint32_t dz_get_version( void )
 {
-    return 5;
+    return 7;
 }

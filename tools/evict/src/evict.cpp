@@ -249,6 +249,19 @@ static jpp::object __evict_shape_write( const dz_shape_t * _shape )
     obj.set( "dimensions", jpp::make_tuple( dimensions.x, dimensions.y, dimensions.z ) );
     obj.set( "mesh_id", dz_shape_get_mesh_id( _shape ) );
 
+    dz_emitter_texture_desc_t emitter_texture_desc;
+    if( dz_shape_get_emitter_texture_desc( _shape, &emitter_texture_desc ) == DZ_TRUE )
+    {
+        jpp::object emitter_texture = jpp::make_object();
+        emitter_texture.set( "alpha_threshold", emitter_texture_desc.alpha_threshold );
+        emitter_texture.set( "rgb_threshold", emitter_texture_desc.rgb_threshold );
+        emitter_texture.set( "strata", emitter_texture_desc.strata );
+        emitter_texture.set( "sample_scale", emitter_texture_desc.sample_scale );
+        emitter_texture.set( "boundary", emitter_texture_desc.boundary == DZ_TRUE );
+        emitter_texture.set( "compile", emitter_texture_desc.compile == DZ_TRUE );
+        obj.set( "emitter_texture", emitter_texture );
+    }
+
     jpp::object obj_timeline = jpp::make_object();
 
     for( dz_uint32_t index = 0; index != __DZ_SHAPE_TIMELINE_MAX__; ++index )
@@ -573,7 +586,7 @@ jpp::object dz_evict_write( const dz_effect_t * _effect )
     return obj;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __evict_texture_load( dz_service_t * _service, dz_texture_t ** _texture, dz_float_t * const _random_weight, const jpp::object & _data )
+static void __evict_texture_load( const dz_service_t * _service, dz_texture_t ** _texture, dz_float_t * const _random_weight, const jpp::object & _data )
 {
     dz_texture_t * texture;
     dz_texture_create( _service, &texture, DZ_NULLPTR );
@@ -620,7 +633,7 @@ static void __evict_texture_load( dz_service_t * _service, dz_texture_t ** _text
 
 }
 //////////////////////////////////////////////////////////////////////////
-static void __evict_atlas_load( dz_service_t * _service, dz_atlas_t ** _atlas, const jpp::object & _data )
+static void __evict_atlas_load( const dz_service_t * _service, dz_atlas_t ** _atlas, const jpp::object & _data )
 {
     DZ_UNUSED( _data );
 
@@ -630,7 +643,7 @@ static void __evict_atlas_load( dz_service_t * _service, dz_atlas_t ** _atlas, c
     *_atlas = atlas;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_material_load( dz_service_t * _service, dz_material_t ** _material, const dz_atlas_t * _atlas, const jpp::object & _data )
+static dz_result_t __evict_material_load( const dz_service_t * _service, dz_material_t ** _material, const dz_atlas_t * _atlas, const jpp::object & _data )
 {
     dz_material_t * material;
     dz_material_create( _service, &material, DZ_NULLPTR );
@@ -793,9 +806,9 @@ static dz_timeline_interpolate_type_e __load_timeline_interpolate_type( const ch
     return __DZ_TIMELINE_INTERPOLATE_MAX__;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeline_key_t ** _key, const jpp::object & _data );
+static dz_result_t __evict_timeline_key_load( const dz_service_t * _service, dz_timeline_key_t ** _key, const jpp::object & _data );
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_timeline_interpolate_load( dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, const jpp::object & _data )
+static dz_result_t __evict_timeline_interpolate_load( const dz_service_t * _service, dz_timeline_interpolate_t ** _interpolate, const jpp::object & _data )
 {
     const char * j_interpolate_type = _data["type"];
 
@@ -845,7 +858,7 @@ static dz_timeline_key_type_e __load_timeline_key_type( const char * _type )
     return __DZ_TIMELINE_KEY_MAX__;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_timeline_key_load( dz_service_t * _service, dz_timeline_key_t ** _key, const jpp::object & _data )
+static dz_result_t __evict_timeline_key_load( const dz_service_t * _service, dz_timeline_key_t ** _key, const jpp::object & _data )
 {
     dz_float_t p = _data["p"];
 
@@ -944,7 +957,7 @@ static dz_shape_type_e __load_shape_type( const char * _type )
     return __DZ_SHAPE_MAX__;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _shape, const jpp::object & _data )
+static dz_result_t __evict_shape_load( const dz_service_t * _service, dz_shape_t ** _shape, const jpp::object & _data )
 {
     const char * j_shape_type = _data["type"];
 
@@ -972,11 +985,31 @@ static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _s
     transform.scale.x = scale[0];
     transform.scale.y = scale[1];
     transform.scale.z = scale[2];
-    dz_shape_set_transform( shape, &transform );
+    dz_shape_set_transform( _service, shape, &transform );
     jpp::array dimensions_data = _data.get( "dimensions", jpp::make_tuple( 1.f, 1.f, 1.f ) );
     dz_vec3_t dimensions = { dimensions_data[0], dimensions_data[1], dimensions_data[2] };
     dz_shape_set_dimensions( shape, &dimensions );
     dz_shape_set_mesh_id( shape, _data.get( "mesh_id", DZ_RESOURCE_ID_NONE ) );
+
+    jpp::object emitter_texture;
+    if( _data.exist( "emitter_texture", &emitter_texture ) == true )
+    {
+        dz_emitter_texture_desc_t emitter_texture_desc;
+        dz_emitter_texture_desc_default( &emitter_texture_desc );
+        emitter_texture_desc.alpha_threshold = emitter_texture.get( "alpha_threshold", emitter_texture_desc.alpha_threshold );
+        emitter_texture_desc.rgb_threshold = emitter_texture.get( "rgb_threshold", emitter_texture_desc.rgb_threshold );
+        emitter_texture_desc.strata = emitter_texture.get( "strata", emitter_texture_desc.strata );
+        emitter_texture_desc.sample_scale = emitter_texture.get( "sample_scale", emitter_texture_desc.sample_scale );
+        emitter_texture_desc.boundary = emitter_texture.get( "boundary", emitter_texture_desc.boundary == DZ_TRUE ) == true ? DZ_TRUE : DZ_FALSE;
+        emitter_texture_desc.compile = emitter_texture.get( "compile", emitter_texture_desc.compile == DZ_TRUE ) == true ? DZ_TRUE : DZ_FALSE;
+
+        if( dz_shape_set_emitter_texture_desc( shape, &emitter_texture_desc ) != DZ_SUCCESSFUL )
+        {
+            dz_shape_destroy( _service, shape );
+
+            return DZ_FAILURE;
+        }
+    }
 
     jpp::object j_timeline = _data["timeline"];
 
@@ -1006,7 +1039,7 @@ static dz_result_t __evict_shape_load( dz_service_t * _service, dz_shape_t ** _s
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t ** _emitter, const jpp::object & _data )
+static dz_result_t __evict_emitter_load( const dz_service_t * _service, dz_emitter_t ** _emitter, const jpp::object & _data )
 {
     dz_emitter_t * emitter;
     dz_emitter_create( _service, &emitter, DZ_NULLPTR );
@@ -1043,7 +1076,7 @@ static dz_result_t __evict_emitter_load( dz_service_t * _service, dz_emitter_t *
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t __evict_affector_load( dz_service_t * _service, dz_affector_t ** _affector, const jpp::object & _data )
+dz_result_t __evict_affector_load( const dz_service_t * _service, dz_affector_t ** _affector, const jpp::object & _data )
 {
     dz_affector_t * affector;
     dz_affector_create( _service, &affector, DZ_NULLPTR );
@@ -1076,7 +1109,7 @@ dz_result_t __evict_affector_load( dz_service_t * _service, dz_affector_t ** _af
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __evict_effect_layer_load( dz_service_t * _service, dz_effect_layer_desc_t * const _layer, const dz_atlas_t * _atlas, const jpp::object & _data )
+static dz_result_t __evict_effect_layer_load( const dz_service_t * _service, dz_effect_layer_desc_t * const _layer, const dz_atlas_t * _atlas, const jpp::object & _data )
 {
     jpp::object j_material = _data["material"];
 
@@ -1181,7 +1214,7 @@ static dz_result_t __evict_effect_trigger_load( dz_effect_trigger_desc_t * const
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data )
+dz_result_t dz_evict_load( const dz_service_t * _service, dz_effect_t ** _effect, const jpp::object & _data )
 {
     dz_atlas_t * atlas = DZ_NULLPTR;
 
@@ -1333,7 +1366,7 @@ dz_result_t dz_evict_load( dz_service_t * _service, dz_effect_t ** _effect, cons
         object.restitution = value.get( "restitution", 0.f );
         object.friction = value.get( "friction", 0.f );
         object.response = (dz_collision_response_e)value.get( "response", (dz_uint32_t)DZ_COLLISION_BOUNCE );
-        dz_effect_add_physics_object( effect, &object, DZ_NULLPTR );
+        dz_effect_add_physics_object( _service, effect, &object, DZ_NULLPTR );
     }
 
     *_effect = effect;

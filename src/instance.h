@@ -62,6 +62,10 @@ typedef struct dz_instance_t
     dz_uint32_t birth_order;
     dz_transform_t physics_transforms[DZ_EFFECT_PHYSICS_OBJECT_MAX];
 
+    dz_path_point_t * path_points;
+    dz_uint32_t path_point_count;
+    dz_uint32_t path_point_capacity;
+
     dz_float_t r;
     dz_float_t g;
     dz_float_t b;

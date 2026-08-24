@@ -314,6 +314,33 @@ static dz_float_t dz_sinf( dz_float_t _a, dz_userdata_t _ud )
     return value;
 }
 //////////////////////////////////////////////////////////////////////////
+static dz_float_t dz_atan2f( dz_float_t _y, dz_float_t _x, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    dz_float_t value = atan2f( _y, _x );
+
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_float_t dz_asinf( dz_float_t _a, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    dz_float_t value = asinf( _a );
+
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_float_t dz_tanf( dz_float_t _a, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    dz_float_t value = tanf( _a );
+
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
 static dz_result_t addZipFile( zipFile _zf, const char * _file, const void * _buffer, size_t _size )
 {
     zip_fileinfo zi;
@@ -393,7 +420,7 @@ static dz_result_t openZipFile( unzFile _uf, const char * _file, er_byte_buffer_
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, dz_float_t _value )
+static dz_result_t __set_shape_timeline_const( const dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
@@ -405,7 +432,7 @@ static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points )
+static dz_result_t __reset_shape_timeline_linear_from_points( const dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, PointsArray _points )
 {
     // first create new timeline
     dz_timeline_key_t * key0 = DZ_NULLPTR;
@@ -475,7 +502,7 @@ static dz_result_t __reset_shape_timeline_linear_from_points( dz_service_t * _se
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
+static dz_result_t __set_emitter_timeline_const( const dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
@@ -487,7 +514,7 @@ static dz_result_t __set_emitter_timeline_const( dz_service_t * _service, dz_emi
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, PointsArray _points )
+static dz_result_t __reset_emitter_timeline_linear_from_points( const dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, PointsArray _points )
 {
     // first create new timeline
     dz_timeline_key_t * key0;
@@ -554,7 +581,7 @@ static dz_result_t __reset_emitter_timeline_linear_from_points( dz_service_t * _
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _value )
+static dz_result_t __set_affector_timeline_const( const dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
@@ -566,7 +593,7 @@ static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_af
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __reset_affector_timeline_linear_from_points( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, PointsArray _points )
+static dz_result_t __reset_affector_timeline_linear_from_points( const dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, PointsArray _points )
 {
     // first create new timeline
     dz_timeline_key_t * key0;
@@ -963,6 +990,9 @@ dz_result_t editor::init()
         providers.f_sqrtf = &dz_sqrtf;
         providers.f_cosf = &dz_cosf;
         providers.f_sinf = &dz_sinf;
+        providers.f_atan2f = &dz_atan2f;
+        providers.f_asinf = &dz_asinf;
+        providers.f_tanf = &dz_tanf;
 
         dz_service_create( &m_service, &providers, DZ_NULLPTR );
         dz_atlas_create( m_service, &m_atlas, &m_textureId, DZ_NULLPTR );
@@ -2995,8 +3025,7 @@ static dz_int32_t __obj_resolve_index( dz_int32_t _index, size_t _count )
     return -1;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_bool_t __obj_parse_vertex( const std::string & _token, size_t _positionCount, size_t _uvCount, size_t _normalCount, dz_int32_t * _position, dz_int32_t * _uv,
-                                     dz_int32_t * _normal )
+static dz_bool_t __obj_parse_vertex( const std::string & _token, size_t _positionCount, size_t _uvCount, size_t _normalCount, dz_int32_t * _position, dz_int32_t * _uv, dz_int32_t * _normal )
 {
     *_position = *_uv = *_normal = -1;
     const size_t first = _token.find( '/' );
@@ -4345,7 +4374,7 @@ void editor::showEffectData()
         object.direction.y = -1.f;
         object.strength = 9.8f;
         object.response = DZ_COLLISION_BOUNCE;
-        dz_effect_add_physics_object( m_effect, &object, DZ_NULLPTR );
+        dz_effect_add_physics_object( m_service, m_effect, &object, DZ_NULLPTR );
         dz_instance_restart( m_instance );
     }
 
@@ -4383,10 +4412,10 @@ void editor::showEffectData()
             }
             changed |= ImGui::InputFloat3( "Position", &object.transform.position.x );
             dz_vec3_t euler;
-            dz_quat_to_euler_xyz_degrees( &object.transform.rotation, &euler );
+            dz_quat_to_euler_xyz_degrees( m_service, &object.transform.rotation, &euler );
             if( ImGui::InputFloat3( "Rotation", &euler.x ) )
             {
-                dz_quat_from_euler_xyz_degrees( &euler, &object.transform.rotation );
+                dz_quat_from_euler_xyz_degrees( m_service, &euler, &object.transform.rotation );
                 changed = true;
             }
             changed |= ImGui::InputFloat3( "Scale", &object.transform.scale.x );
@@ -4442,7 +4471,7 @@ void editor::showEffectData()
                     object.transform.scale.z = 0.0001f;
                 }
             }
-            dz_effect_set_physics_object( m_effect, physicsIndex, &object );
+            dz_effect_set_physics_object( m_service, m_effect, physicsIndex, &object );
             dz_instance_restart( m_instance );
         }
         if( remove )
@@ -4987,10 +5016,10 @@ dz_result_t editor::showComposerData()
         }
         layerChanged |= ImGui::InputFloat( ER_WINDOW_COMPOSER_LAYER_ANGLE_LABEL, &layer.angle, 0.1f, 1.f, "%.3f", ImGuiInputTextFlags_None );
         dz_vec3_t euler;
-        dz_quat_to_euler_xyz_degrees( &layer.rotation, &euler );
+        dz_quat_to_euler_xyz_degrees( m_service, &layer.rotation, &euler );
         if( ImGui::InputFloat3( "Rotation Euler (deg)", &euler.x ) == true )
         {
-            dz_quat_from_euler_xyz_degrees( &euler, &layer.rotation );
+            dz_quat_from_euler_xyz_degrees( m_service, &euler, &layer.rotation );
             layerChanged = true;
         }
 
@@ -6965,7 +6994,7 @@ void editor::showDazzleCanvas()
     dz_effect_get_project_profile( m_effect, &profile );
     dz_camera_state_t camera;
     dz_camera_state_from_profile( &profile, (dz_float_t)m_dzWindowSize.x, (dz_float_t)m_dzWindowSize.y, &camera );
-    dz_render_instance_camera( &m_openglDesc, m_instance, &camera );
+    dz_render_instance_camera( m_service, &m_openglDesc, m_instance, &camera );
 
     GLCALL( glViewport, (oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]) );
 }
@@ -7301,7 +7330,7 @@ dz_result_t editor::showContentPane()
     {
         const ImU32 boundsColor = IM_COL32( 96, 255, 128, 220 );
         dz_aabb_t bounds;
-        dz_instance_get_aabb( m_instance, &bounds );
+        dz_instance_get_aabb( m_service, m_instance, &bounds );
         if( bounds.valid == DZ_TRUE )
         {
             const ImVec2 minimum = __canvas_world_to_screen( ImVec2( bounds.minimum.x, bounds.minimum.y ), cursorPos, m_dzWindowSize );

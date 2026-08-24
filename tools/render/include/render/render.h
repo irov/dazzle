@@ -81,6 +81,10 @@ void dz_render_set_proj( const dz_render_desc_t * _desc, dz_float_t _left, dz_fl
 //////////////////////////////////////////////////////////////////////////
 GLuint dz_render_make_texture( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height );
 GLuint dz_render_make_texture_from_memory( const void * _buffer, dz_size_t _size, dz_int32_t * const _out_width, dz_int32_t * const _out_height );
+dz_uint8_t * dz_render_load_rgba_image( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height, dz_int32_t * const _out_pitch );
+void dz_render_free_rgba_image( dz_uint8_t * _buffer );
+dz_uint8_t * dz_render_load_alpha_mask( const char * _path, dz_int32_t * const _out_width, dz_int32_t * const _out_height, dz_int32_t * const _out_pitch );
+void dz_render_free_alpha_mask( dz_uint8_t * _buffer );
 dz_result_t dz_render_find_alpha_bounds_near_from_memory( const void * _buffer, dz_size_t _size, dz_int32_t _x, dz_int32_t _y, dz_int32_t _border, dz_int32_t * const _out_x, dz_int32_t * const _out_y, dz_int32_t * const _out_width, dz_int32_t * const _out_height );
 void dz_render_delete_texture( GLuint _id );
 //////////////////////////////////////////////////////////////////////////
@@ -89,8 +93,8 @@ void dz_render_use_texture_program( dz_render_desc_t * _desc );
 void dz_render_set_camera( dz_render_desc_t * _desc, dz_float_t _offsetX, dz_float_t _offsetY, dz_float_t _scale );
 dz_result_t dz_render_register_technique( dz_render_desc_t * _desc, const char * _id, const char * _vertex_shader, const char * _fragment_shader );
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_render_instance( const dz_render_desc_t * _desc, const dz_instance_t * _instnace );
-dz_result_t dz_render_instance_camera( const dz_render_desc_t * _desc, const dz_instance_t * _instance, const dz_camera_state_t * _camera );
+dz_result_t dz_render_instance( const dz_service_t * _service, const dz_render_desc_t * _desc, const dz_instance_t * _instnace );
+dz_result_t dz_render_instance_camera( const dz_service_t * _service, const dz_render_desc_t * _desc, const dz_instance_t * _instance, const dz_camera_state_t * _camera );
 //////////////////////////////////////////////////////////////////////////
 
 #endif

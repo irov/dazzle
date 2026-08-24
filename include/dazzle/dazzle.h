@@ -6,6 +6,8 @@
 dz_uint32_t dz_get_magic( void );
 dz_uint32_t dz_get_version( void );
 
+typedef struct dz_service_t dz_service_t;
+
 typedef struct dz_vec2_t
 {
     dz_float_t x;
@@ -108,15 +110,13 @@ typedef struct dz_camera_state_t
 } dz_camera_state_t;
 
 void dz_project_profile_default( dz_project_profile_t * _profile, dz_projection_type_e _projection );
-void dz_quat_to_euler_xyz_degrees( const dz_quat_t * _quat, dz_vec3_t * _euler );
-void dz_quat_from_euler_xyz_degrees( const dz_vec3_t * _euler, dz_quat_t * _quat );
+void dz_quat_to_euler_xyz_degrees( const dz_service_t * _service, const dz_quat_t * _quat, dz_vec3_t * _euler );
+void dz_quat_from_euler_xyz_degrees( const dz_service_t * _service, const dz_vec3_t * _euler, dz_quat_t * _quat );
 void dz_camera_state_from_profile( const dz_project_profile_t * _profile, dz_float_t _viewport_width, dz_float_t _viewport_height, dz_camera_state_t * _camera );
 void dz_mat4_identity( dz_mat4_t * _matrix );
-void dz_camera_compute_view( const dz_camera_state_t * _camera, dz_mat4_t * _view );
-void dz_camera_compute_projection( const dz_camera_state_t * _camera, dz_mat4_t * _projection );
-void dz_camera_test_aabb( const dz_camera_state_t * _camera, const dz_aabb_t * _aabb, dz_bool_t * _visible );
-
-typedef struct dz_service_t dz_service_t;
+void dz_camera_compute_view( const dz_service_t * _service, const dz_camera_state_t * _camera, dz_mat4_t * _view );
+void dz_camera_compute_projection( const dz_service_t * _service, const dz_camera_state_t * _camera, dz_mat4_t * _projection );
+void dz_camera_test_aabb( const dz_service_t * _service, const dz_camera_state_t * _camera, const dz_aabb_t * _aabb, dz_bool_t * _visible );
 
 typedef void * (*dz_malloc_t)(dz_size_t _size, dz_userdata_t _ud);
 typedef void * (*dz_realloc_t)(void * const _ptr, dz_size_t _size, dz_userdata_t _ud);
@@ -124,6 +124,9 @@ typedef void (*dz_free_t)(const void * _ptr, dz_userdata_t _ud);
 typedef dz_float_t (*dz_sqrtf_t)(dz_float_t _a, dz_userdata_t _ud);
 typedef dz_float_t(*dz_cosf_t)(dz_float_t _a, dz_userdata_t _ud);
 typedef dz_float_t(*dz_sinf_t)(dz_float_t _a, dz_userdata_t _ud);
+typedef dz_float_t(*dz_atan2f_t)(dz_float_t _y, dz_float_t _x, dz_userdata_t _ud);
+typedef dz_float_t(*dz_asinf_t)(dz_float_t _a, dz_userdata_t _ud);
+typedef dz_float_t(*dz_tanf_t)(dz_float_t _a, dz_userdata_t _ud);
 
 typedef struct dz_service_providers_t
 {
@@ -133,10 +136,13 @@ typedef struct dz_service_providers_t
     dz_sqrtf_t f_sqrtf;
     dz_cosf_t f_cosf;
     dz_sinf_t f_sinf;
+    dz_atan2f_t f_atan2f;
+    dz_asinf_t f_asinf;
+    dz_tanf_t f_tanf;
 } dz_service_providers_t;
 
 void dz_service_create( dz_service_t ** _service, const dz_service_providers_t * _providers, dz_userdata_t _ud );
-void dz_service_destroy( dz_service_t * const _service );
+void dz_service_destroy( const dz_service_t * _service );
 
 void dz_service_get_providers( const dz_service_t * _service, dz_service_providers_t * _providers );
 
@@ -291,8 +297,8 @@ void dz_timeline_interpolate_get_hermite( const dz_timeline_interpolate_t * _int
 
 const dz_timeline_key_t * dz_timeline_interpolate_get_key( const dz_timeline_interpolate_t * _interpolate );
 const dz_timeline_interpolate_t * dz_timeline_key_get_interpolate( const dz_timeline_key_t * _key );
-void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpolate, dz_timeline_key_t * const _key );
-void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, dz_timeline_interpolate_t * const _interpolate );
+void dz_timeline_interpolate_set_key( dz_timeline_interpolate_t * const _interpolate, const dz_timeline_key_t * _key );
+void dz_timeline_key_set_interpolate( dz_timeline_key_t * const _key, const dz_timeline_interpolate_t * _interpolate );
 
 typedef struct dz_affector_t dz_affector_t;
 
@@ -373,7 +379,7 @@ dz_userdata_t dz_shape_get_ud( const dz_shape_t * _shape );
 
 void dz_shape_set_type( dz_shape_t * const _shape, dz_shape_type_e _type );
 dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape );
-void dz_shape_set_transform( dz_shape_t * _shape, const dz_transform_t * _transform );
+void dz_shape_set_transform( const dz_service_t * _service, dz_shape_t * _shape, const dz_transform_t * _transform );
 void dz_shape_get_transform( const dz_shape_t * _shape, dz_transform_t * _transform );
 void dz_shape_set_dimensions( dz_shape_t * _shape, const dz_vec3_t * _dimensions );
 void dz_shape_get_dimensions( const dz_shape_t * _shape, dz_vec3_t * _dimensions );
@@ -416,14 +422,47 @@ void dz_shape_timeline_get_limit( dz_shape_timeline_type_e _timeline, dz_timelin
 void dz_shape_set_polygon( dz_shape_t * const _shape, const dz_float_t * _triangles, dz_uint32_t _count );
 void dz_shape_get_polygon( const dz_shape_t * _shape, const dz_float_t ** _triangles, dz_uint32_t * _count );
 
-void dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, dz_uint32_t _bites, dz_uint32_t _pitch, dz_uint32_t _width, dz_uint32_t _height );
-void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, dz_uint32_t * const _bites, dz_uint32_t * const _pitch, dz_uint32_t * const _width, dz_uint32_t * const _height );
+typedef struct dz_shape_mask_source_t
+{
+    const void * buffer;
+    dz_uint32_t pitch;
+    dz_uint32_t width;
+    dz_uint32_t height;
+    dz_uint32_t channel_count;
+    dz_uint32_t alpha_channel;
+    dz_uint32_t alpha_threshold;
+} dz_shape_mask_source_t;
+
+typedef struct dz_emitter_texture_desc_t
+{
+    dz_uint32_t alpha_threshold;
+    dz_uint32_t rgb_threshold;
+    dz_uint32_t strata;
+    dz_float_t sample_scale;
+    dz_bool_t boundary;
+    dz_bool_t compile;
+} dz_emitter_texture_desc_t;
+
+void dz_emitter_texture_desc_default( dz_emitter_texture_desc_t * const _desc );
+
+dz_result_t dz_shape_set_emitter_texture_desc( dz_shape_t * const _shape, const dz_emitter_texture_desc_t * _desc );
+dz_bool_t dz_shape_get_emitter_texture_desc( const dz_shape_t * _shape, dz_emitter_texture_desc_t * const _desc );
+void dz_shape_clear_emitter_texture_desc( dz_shape_t * const _shape );
+
+dz_result_t dz_shape_set_mask_source( const dz_service_t * _service, dz_shape_t * const _shape, const dz_shape_mask_source_t * _source );
+void dz_shape_get_mask_source( const dz_shape_t * _shape, dz_shape_mask_source_t * const _source );
+
+dz_result_t dz_shape_build_mask( const dz_service_t * _service, dz_shape_t * const _shape, const dz_shape_mask_source_t * _source );
+void dz_shape_get_mask_bits( const dz_shape_t * _shape, const void ** _buffer, dz_uint32_t * const _pitch );
+void dz_shape_clear_mask( const dz_service_t * _service, dz_shape_t * const _shape );
 
 void dz_shape_set_mask_scale( dz_shape_t * const _shape, dz_float_t _scale );
 dz_float_t dz_shape_get_mask_scale( const dz_shape_t * _shape );
 
-void dz_shape_set_mask_threshold( dz_shape_t * const _shape, dz_uint32_t _threshold );
-dz_uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape );
+dz_result_t dz_shape_build_rgba_boundary( const dz_service_t * _service, dz_shape_t * const _shape, const void * _rgba, dz_uint32_t _pitch, dz_uint32_t _width, dz_uint32_t _height, dz_uint32_t _alpha_threshold, dz_uint32_t _rgb_threshold, dz_uint32_t _strata );
+void dz_shape_clear_mask_boundary( const dz_service_t * _service, dz_shape_t * const _shape );
+dz_uint32_t dz_shape_get_mask_boundary_point_count( const dz_shape_t * _shape );
+dz_uint32_t dz_shape_get_mask_boundary_strata_count( const dz_shape_t * _shape );
 
 typedef struct dz_emitter_t dz_emitter_t;
 
@@ -560,8 +599,7 @@ typedef struct dz_effect_trigger_desc_t
 } dz_effect_trigger_desc_t;
 
 void dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, dz_float_t _life, dz_uint32_t _seed, dz_userdata_t _ud );
-void dz_effect_create_with_profile( const dz_service_t * _service, dz_effect_t ** _effect, const dz_project_profile_t * _profile, dz_float_t _life, dz_uint32_t _seed,
-                                    dz_userdata_t _ud );
+void dz_effect_create_with_profile( const dz_service_t * _service, dz_effect_t ** _effect, const dz_project_profile_t * _profile, dz_float_t _life, dz_uint32_t _seed, dz_userdata_t _ud );
 void dz_effect_destroy( const dz_service_t * _service, const dz_effect_t * _effect );
 void dz_effect_get_project_profile( const dz_effect_t * _effect, dz_project_profile_t * _profile );
 void dz_effect_set_camera_defaults( dz_effect_t * _effect, const dz_project_profile_t * _profile );
@@ -584,6 +622,9 @@ void dz_effect_remove_layer( dz_effect_t * const _effect, dz_uint32_t _index, dz
 void dz_effect_set_layer( dz_effect_t * const _effect, dz_uint32_t _index, const dz_effect_layer_desc_t * _layer );
 void dz_effect_get_layer( const dz_effect_t * _effect, dz_uint32_t _index, dz_effect_layer_desc_t * const _layer );
 
+dz_bool_t dz_effect_requires_emitter_texture( const dz_effect_t * _effect );
+dz_result_t dz_effect_set_emitter_texture( const dz_service_t * _service, dz_effect_t * const _effect, const dz_shape_mask_source_t * _source );
+
 dz_uint32_t dz_effect_get_trigger_count( const dz_effect_t * _effect );
 void dz_effect_add_trigger( dz_effect_t * const _effect, const dz_effect_trigger_desc_t * _trigger, dz_uint32_t * const _index );
 void dz_effect_remove_trigger( dz_effect_t * const _effect, dz_uint32_t _index, dz_effect_trigger_desc_t * const _trigger );
@@ -597,6 +638,22 @@ void dz_effect_set_seed( dz_effect_t * const _effect, dz_uint32_t _seed );
 dz_uint32_t dz_effect_get_seed( const dz_effect_t * _effect );
 
 typedef struct dz_instance_t dz_instance_t;
+
+typedef enum dz_path_point_flag_e
+{
+    DZ_PATH_POINT_FLAG_NONE = 0,
+    DZ_PATH_POINT_FLAG_BREAK = 1 << 0,
+    DZ_PATH_POINT_FLAG_COLOR = 1 << 1
+} dz_path_point_flag_e;
+
+typedef struct dz_path_point_t
+{
+    dz_vec3_t position;
+    dz_float_t scale;
+    dz_float_t alpha;
+    dz_vec4_t color;
+    dz_uint32_t flags;
+} dz_path_point_t;
 
 void dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instance, const dz_effect_t * _effect, dz_userdata_t _ud );
 void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _instance );
@@ -625,7 +682,7 @@ void dz_instance_set_position( dz_instance_t * const _instance, dz_float_t _x, d
 void dz_instance_get_position( const dz_instance_t * _instance, dz_float_t * const _x, dz_float_t * const _y );
 void dz_instance_set_position3( dz_instance_t * const _instance, const dz_vec3_t * _position );
 void dz_instance_get_position3( const dz_instance_t * _instance, dz_vec3_t * _position );
-void dz_instance_set_transform( dz_instance_t * const _instance, const dz_transform_t * _transform );
+void dz_instance_set_transform( const dz_service_t * _service, dz_instance_t * const _instance, const dz_transform_t * _transform );
 void dz_instance_get_transform( const dz_instance_t * _instance, dz_transform_t * _transform );
 
 void dz_instance_set_color( dz_instance_t * const _instance, dz_float_t _r, dz_float_t _g, dz_float_t _b, dz_float_t _a );
@@ -633,6 +690,10 @@ void dz_instance_get_color( const dz_instance_t * _instance, dz_float_t * const 
 
 void dz_instance_set_rotate( dz_instance_t * const _instance, dz_float_t _angle );
 dz_float_t dz_instance_get_rotate( const dz_instance_t * _instance );
+
+dz_result_t dz_instance_set_path_points( const dz_service_t * _service, dz_instance_t * const _instance, const dz_path_point_t * _points, dz_uint32_t _count );
+void dz_instance_clear_path_points( dz_instance_t * const _instance );
+dz_uint32_t dz_instance_get_path_point_count( const dz_instance_t * _instance );
 
 void dz_instance_reset( dz_instance_t * const _instance );
 void dz_instance_restart( dz_instance_t * const _instance );
@@ -669,7 +730,7 @@ typedef struct dz_particle_state_t
     dz_uint32_t birth_order;
 } dz_particle_state_t;
 void dz_instance_get_particle_state( const dz_instance_t * _instance, dz_uint16_t _index, dz_particle_state_t * _state );
-void dz_instance_get_aabb( const dz_instance_t * _instance, dz_aabb_t * _aabb );
+void dz_instance_get_aabb( const dz_service_t * _service, const dz_instance_t * _instance, dz_aabb_t * _aabb );
 
 typedef enum dz_index_type_e
 {
@@ -822,8 +883,7 @@ typedef struct dz_render_chunk_t
 } dz_render_chunk_t;
 
 void dz_instance_prepare_render( const dz_instance_t * _instance, const dz_camera_state_t * _camera, dz_render_requirements_t * _requirements );
-dz_result_t dz_instance_fill_render( const dz_instance_t * _instance, const dz_camera_state_t * _camera, const dz_render_buffers_t * _buffers, dz_render_chunk_t * _chunks,
-                                     dz_uint32_t _chunk_capacity, dz_uint32_t * _chunk_count );
+dz_result_t dz_instance_fill_render( const dz_service_t * _service, const dz_instance_t * _instance, const dz_camera_state_t * _camera, const dz_render_buffers_t * _buffers, dz_render_chunk_t * _chunks, dz_uint32_t _chunk_capacity, dz_uint32_t * _chunk_count );
 
 typedef enum dz_physics_object_type_e
 {
@@ -865,10 +925,10 @@ typedef struct dz_physics_object_desc_t
 #define DZ_EFFECT_PHYSICS_OBJECT_MAX 64
 
 dz_uint32_t dz_effect_get_physics_object_count( const dz_effect_t * _effect );
-void dz_effect_add_physics_object( dz_effect_t * _effect, const dz_physics_object_desc_t * _object, dz_uint32_t * _index );
-void dz_effect_set_physics_object( dz_effect_t * _effect, dz_uint32_t _index, const dz_physics_object_desc_t * _object );
+void dz_effect_add_physics_object( const dz_service_t * _service, dz_effect_t * _effect, const dz_physics_object_desc_t * _object, dz_uint32_t * _index );
+void dz_effect_set_physics_object( const dz_service_t * _service, dz_effect_t * _effect, dz_uint32_t _index, const dz_physics_object_desc_t * _object );
 void dz_effect_remove_physics_object( dz_effect_t * _effect, dz_uint32_t _index );
 void dz_effect_get_physics_object( const dz_effect_t * _effect, dz_uint32_t _index, dz_physics_object_desc_t * _object );
-dz_result_t dz_instance_set_physics_transform( dz_instance_t * _instance, dz_uint32_t _id, const dz_transform_t * _transform );
+dz_result_t dz_instance_set_physics_transform( const dz_service_t * _service, dz_instance_t * _instance, dz_uint32_t _id, const dz_transform_t * _transform );
 
 #endif

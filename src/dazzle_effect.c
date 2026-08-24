@@ -7,10 +7,9 @@
 #include "emitter.h"
 #include "material.h"
 #include "math3d.h"
+#include "memory.h"
 #include "shape.h"
 #include "texture.h"
-
-#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, dz_float_t _life, dz_uint32_t _seed, dz_userdata_t _ud )
@@ -20,8 +19,7 @@ void dz_effect_create( const dz_service_t * _service, dz_effect_t ** _effect, dz
     dz_effect_create_with_profile( _service, _effect, &profile, _life, _seed, _ud );
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_create_with_profile( const dz_service_t * _service, dz_effect_t ** _effect, const dz_project_profile_t * _profile, dz_float_t _life, dz_uint32_t _seed,
-                                    dz_userdata_t _ud )
+void dz_effect_create_with_profile( const dz_service_t * _service, dz_effect_t ** _effect, const dz_project_profile_t * _profile, dz_float_t _life, dz_uint32_t _seed, dz_userdata_t _ud )
 {
     dz_effect_t * effect = DZ_NEW( _service, dz_effect_t );
 
@@ -55,7 +53,7 @@ void dz_effect_set_camera_defaults( dz_effect_t * _effect, const dz_project_prof
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_layer_desc_default( dz_effect_layer_desc_t * _layer )
 {
-    memset( _layer, 0, sizeof( *_layer ) );
+    dz_memory_zero( _layer, sizeof( *_layer ) );
     _layer->rotation = dz_math_quat_identity();
     _layer->scale = dz_math_vec3( 1.f, 1.f, 1.f );
     _layer->particle_mode = DZ_PARTICLE_MODE_SPRITE;
@@ -336,8 +334,8 @@ void dz_effect_add_mesh( const dz_service_t * _service, dz_effect_t * _effect, c
     dz_mesh_vertex_t * vertices = DZ_REALLOCN( _service, DZ_NULLPTR, dz_mesh_vertex_t, _mesh->vertex_count );
     dz_uint32_t * indices = DZ_REALLOCN( _service, DZ_NULLPTR, dz_uint32_t, _mesh->index_count );
 
-    memcpy( vertices, _mesh->vertices, sizeof( *vertices ) * _mesh->vertex_count );
-    memcpy( indices, _mesh->indices, sizeof( *indices ) * _mesh->index_count );
+    dz_memory_copy( vertices, _mesh->vertices, sizeof( *vertices ) * _mesh->vertex_count );
+    dz_memory_copy( indices, _mesh->indices, sizeof( *indices ) * _mesh->index_count );
 
     dz_mesh_desc_t resource = *_mesh;
     resource.vertices = vertices;
@@ -473,6 +471,93 @@ void dz_effect_get_layer( const dz_effect_t * _effect, dz_uint32_t _index, dz_ef
     *_layer = _effect->layers[_index];
 }
 //////////////////////////////////////////////////////////////////////////
+dz_bool_t dz_effect_requires_emitter_texture( const dz_effect_t * _effect )
+{
+#if defined( DZ_DEBUG )
+    if( _effect == DZ_NULLPTR )
+    {
+        return DZ_FALSE;
+    }
+#endif
+
+    for( dz_uint32_t index = 0U; index != _effect->layer_count; ++index )
+    {
+        const dz_shape_t * shape = _effect->layers[index].shape;
+
+        if( dz_shape_get_emitter_texture_desc( shape, DZ_NULLPTR ) == DZ_TRUE )
+        {
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_effect_set_emitter_texture( const dz_service_t * _service, dz_effect_t * const _effect, const dz_shape_mask_source_t * _source )
+{
+#if defined( DZ_DEBUG )
+    if( _service == DZ_NULLPTR || _effect == DZ_NULLPTR || _source == DZ_NULLPTR || _source->buffer == DZ_NULLPTR || _source->width == 0U ||
+        _source->height == 0U || _source->channel_count == 0U || _source->alpha_channel >= _source->channel_count ||
+        _source->pitch / _source->channel_count < _source->width )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+#endif
+
+    dz_bool_t applied = DZ_FALSE;
+
+    for( dz_uint32_t index = 0U; index != _effect->layer_count; ++index )
+    {
+        dz_shape_t * shape = (dz_shape_t *)_effect->layers[index].shape;
+        dz_emitter_texture_desc_t desc;
+
+        if( dz_shape_get_emitter_texture_desc( shape, &desc ) == DZ_FALSE )
+        {
+            continue;
+        }
+
+        dz_shape_clear_mask( _service, shape );
+        dz_shape_clear_mask_boundary( _service, shape );
+
+        dz_result_t result;
+
+        if( desc.boundary == DZ_TRUE )
+        {
+#if defined( DZ_DEBUG )
+            if( _source->channel_count != 4U || _source->alpha_channel != 3U )
+            {
+                return DZ_FAILURE_INVALID_ARGUMENT;
+            }
+#endif
+
+            result = dz_shape_build_rgba_boundary( _service, shape, _source->buffer, _source->pitch, _source->width, _source->height, desc.alpha_threshold,
+                desc.rgb_threshold, desc.strata );
+        }
+        else
+        {
+            dz_shape_mask_source_t source = *_source;
+            source.alpha_threshold = desc.alpha_threshold;
+
+            result = desc.compile == DZ_TRUE ? dz_shape_build_mask( _service, shape, &source ) : dz_shape_set_mask_source( _service, shape, &source );
+        }
+
+        if( result != DZ_SUCCESSFUL )
+        {
+            return result;
+        }
+
+        dz_shape_set_mask_scale( shape, desc.sample_scale );
+        applied = DZ_TRUE;
+    }
+
+    if( applied == DZ_FALSE )
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
 dz_uint32_t dz_effect_get_trigger_count( const dz_effect_t * _effect )
 {
     return _effect->trigger_count;
@@ -541,11 +626,11 @@ dz_uint32_t dz_effect_get_physics_object_count( const dz_effect_t * _effect )
     return _effect->physics_object_count;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_add_physics_object( dz_effect_t * _effect, const dz_physics_object_desc_t * _object, dz_uint32_t * _index )
+void dz_effect_add_physics_object( const dz_service_t * _service, dz_effect_t * _effect, const dz_physics_object_desc_t * _object, dz_uint32_t * _index )
 {
     const dz_uint32_t index = _effect->physics_object_count++;
     _effect->physics_objects[index] = *_object;
-    _effect->physics_objects[index].transform.rotation = dz_math_quat_normalize( _object->transform.rotation );
+    _effect->physics_objects[index].transform.rotation = dz_math_quat_normalize( _service, _object->transform.rotation );
 
     if( _index != DZ_NULLPTR )
     {
@@ -559,10 +644,10 @@ void dz_effect_get_physics_object( const dz_effect_t * _effect, dz_uint32_t _ind
     *_object = _effect->physics_objects[_index];
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_effect_set_physics_object( dz_effect_t * _effect, dz_uint32_t _index, const dz_physics_object_desc_t * _object )
+void dz_effect_set_physics_object( const dz_service_t * _service, dz_effect_t * _effect, dz_uint32_t _index, const dz_physics_object_desc_t * _object )
 {
     _effect->physics_objects[_index] = *_object;
-    _effect->physics_objects[_index].transform.rotation = dz_math_quat_normalize( _object->transform.rotation );
+    _effect->physics_objects[_index].transform.rotation = dz_math_quat_normalize( _service, _object->transform.rotation );
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_effect_remove_physics_object( dz_effect_t * _effect, dz_uint32_t _index )

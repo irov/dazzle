@@ -2,6 +2,7 @@
 
 #include "alloc.h"
 #include "math3d.h"
+#include "memory.h"
 #include "shape.h"
 #include "timeline_key.h"
 #include "timeline_limits.h"
@@ -22,14 +23,18 @@ void dz_shape_create( const dz_service_t * _service, dz_shape_t ** _shape, dz_sh
     shape->triangle_count = 0;
     shape->owns_triangles = DZ_FALSE;
 
-    shape->mask_buffer = DZ_NULLPTR;
-    shape->mask_bites = 0;
-    shape->mask_pitch = 0;
-    shape->mask_width = 0;
-    shape->mask_height = 0;
-    shape->mask_threshold = 0;
+    dz_memory_zero( &shape->mask_source, sizeof( shape->mask_source ) );
+    shape->mask_bits = DZ_NULLPTR;
+    shape->mask_bits_pitch = 0U;
+    shape->mask_uses_bits = DZ_FALSE;
     shape->mask_scale = 1.f;
-    shape->owns_mask = DZ_FALSE;
+    shape->owns_mask_source = DZ_FALSE;
+    shape->mask_boundary_points = DZ_NULLPTR;
+    shape->mask_boundary_point_count = 0U;
+    shape->mask_boundary_offsets = DZ_NULLPTR;
+    shape->mask_boundary_strata_count = 0U;
+    dz_emitter_texture_desc_default( &shape->emitter_texture_desc );
+    shape->has_emitter_texture_desc = DZ_FALSE;
 
     shape->transform.position = dz_math_vec3( 0.f, 0.f, 0.f );
     shape->transform.rotation = dz_math_quat_identity();
@@ -62,9 +67,24 @@ void dz_shape_destroy( const dz_service_t * _service, const dz_shape_t * _shape 
         DZ_FREE( _service, _shape->triangles );
     }
 
-    if( _shape->owns_mask == DZ_TRUE )
+    if( _shape->owns_mask_source == DZ_TRUE )
     {
-        DZ_FREE( _service, _shape->mask_buffer );
+        DZ_FREE( _service, _shape->mask_source.buffer );
+    }
+
+    if( _shape->mask_bits != DZ_NULLPTR )
+    {
+        DZ_FREE( _service, _shape->mask_bits );
+    }
+
+    if( _shape->mask_boundary_points != DZ_NULLPTR )
+    {
+        DZ_FREE( _service, _shape->mask_boundary_points );
+    }
+
+    if( _shape->mask_boundary_offsets != DZ_NULLPTR )
+    {
+        DZ_FREE( _service, _shape->mask_boundary_offsets );
     }
 
     DZ_FREE( _service, _shape );
@@ -90,10 +110,10 @@ dz_shape_type_e dz_shape_get_type( const dz_shape_t * _shape )
     return _shape->type;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_transform( dz_shape_t * _shape, const dz_transform_t * _transform )
+void dz_shape_set_transform( const dz_service_t * _service, dz_shape_t * _shape, const dz_transform_t * _transform )
 {
     _shape->transform = *_transform;
-    _shape->transform.rotation = dz_math_quat_normalize( _transform->rotation );
+    _shape->transform.rotation = dz_math_quat_normalize( _service, _transform->rotation );
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_shape_get_transform( const dz_shape_t * _shape, dz_transform_t * _transform )
@@ -182,23 +202,187 @@ void dz_shape_get_polygon( const dz_shape_t * _shape, const dz_float_t ** _trian
     *_count = _shape->triangle_count;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_mask( dz_shape_t * const _shape, const void * _buffer, dz_uint32_t _bites, dz_uint32_t _pitch, dz_uint32_t _width, dz_uint32_t _height )
+void dz_emitter_texture_desc_default( dz_emitter_texture_desc_t * const _desc )
 {
-    _shape->mask_buffer = _buffer;
-    _shape->mask_bites = _bites;
-    _shape->mask_pitch = _pitch;
-    _shape->mask_width = _width;
-    _shape->mask_height = _height;
-
+    _desc->alpha_threshold = 0U;
+    _desc->rgb_threshold = 255U;
+    _desc->strata = 192U;
+    _desc->sample_scale = 1.f;
+    _desc->boundary = DZ_FALSE;
+    _desc->compile = DZ_TRUE;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_get_mask( const dz_shape_t * _shape, const void ** _buffer, dz_uint32_t * const _bites, dz_uint32_t * const _pitch, dz_uint32_t * const _width, dz_uint32_t * const _height )
+dz_result_t dz_shape_set_emitter_texture_desc( dz_shape_t * const _shape, const dz_emitter_texture_desc_t * _desc )
 {
-    *_buffer = _shape->mask_buffer;
-    *_bites = _shape->mask_bites;
-    *_pitch = _shape->mask_pitch;
-    *_width = _shape->mask_width;
-    *_height = _shape->mask_height;
+#if defined( DZ_DEBUG )
+    if( _shape == DZ_NULLPTR || _desc == DZ_NULLPTR || _shape->type != DZ_SHAPE_MASK || _desc->alpha_threshold > 255U || _desc->rgb_threshold > 255U ||
+        _desc->sample_scale <= 0.f || (_desc->boundary == DZ_TRUE && _desc->strata == 0U) )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+#endif
+
+    _shape->emitter_texture_desc = *_desc;
+    _shape->has_emitter_texture_desc = DZ_TRUE;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_bool_t dz_shape_get_emitter_texture_desc( const dz_shape_t * _shape, dz_emitter_texture_desc_t * const _desc )
+{
+#if defined( DZ_DEBUG )
+    if( _shape == DZ_NULLPTR )
+    {
+        return DZ_FALSE;
+    }
+#endif
+
+    if( _shape->has_emitter_texture_desc == DZ_FALSE )
+    {
+        return DZ_FALSE;
+    }
+
+    if( _desc != DZ_NULLPTR )
+    {
+        *_desc = _shape->emitter_texture_desc;
+    }
+
+    return DZ_TRUE;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_clear_emitter_texture_desc( dz_shape_t * const _shape )
+{
+#if defined( DZ_DEBUG )
+    if( _shape == DZ_NULLPTR )
+    {
+        return;
+    }
+#endif
+
+    dz_emitter_texture_desc_default( &_shape->emitter_texture_desc );
+    _shape->has_emitter_texture_desc = DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+#if defined( DZ_DEBUG )
+static dz_result_t __shape_validate_mask_source( const dz_shape_mask_source_t * _source )
+{
+    if( _source == DZ_NULLPTR || _source->buffer == DZ_NULLPTR || _source->width == 0U || _source->height == 0U || _source->channel_count == 0U ||
+        _source->alpha_channel >= _source->channel_count || _source->pitch / _source->channel_count < _source->width || _source->alpha_threshold > 255U )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+
+    return DZ_SUCCESSFUL;
+}
+#endif
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_clear_mask( const dz_service_t * _service, dz_shape_t * const _shape )
+{
+    if( _shape->owns_mask_source == DZ_TRUE )
+    {
+        DZ_FREE( _service, _shape->mask_source.buffer );
+    }
+
+    if( _shape->mask_bits != DZ_NULLPTR )
+    {
+        DZ_FREE( _service, _shape->mask_bits );
+    }
+
+    dz_memory_zero( &_shape->mask_source, sizeof( _shape->mask_source ) );
+    _shape->mask_bits = DZ_NULLPTR;
+    _shape->mask_bits_pitch = 0U;
+    _shape->mask_uses_bits = DZ_FALSE;
+    _shape->owns_mask_source = DZ_FALSE;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_shape_set_mask_source( const dz_service_t * _service, dz_shape_t * const _shape, const dz_shape_mask_source_t * _source )
+{
+#if defined( DZ_DEBUG )
+    if( _service == DZ_NULLPTR || _shape == DZ_NULLPTR )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+
+    const dz_result_t validation = __shape_validate_mask_source( _source );
+
+    if( validation != DZ_SUCCESSFUL )
+    {
+        return validation;
+    }
+#endif
+
+    dz_shape_clear_mask( _service, _shape );
+
+    _shape->mask_source = *_source;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_get_mask_source( const dz_shape_t * _shape, dz_shape_mask_source_t * const _source )
+{
+    *_source = _shape->mask_source;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_shape_build_mask( const dz_service_t * _service, dz_shape_t * const _shape, const dz_shape_mask_source_t * _source )
+{
+#if defined( DZ_DEBUG )
+    if( _service == DZ_NULLPTR || _shape == DZ_NULLPTR )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+
+    const dz_result_t validation = __shape_validate_mask_source( _source );
+
+    if( validation != DZ_SUCCESSFUL )
+    {
+        return validation;
+    }
+#endif
+
+    const dz_uint32_t bits_pitch = (_source->width + 7U) / 8U;
+    const dz_size_t bits_size = (dz_size_t)bits_pitch * _source->height;
+    dz_uint8_t * bits = DZ_REALLOCN( _service, DZ_NULLPTR, dz_uint8_t, bits_size );
+
+    if( bits == DZ_NULLPTR )
+    {
+        return DZ_FAILURE;
+    }
+
+    dz_memory_zero( bits, bits_size );
+
+    for( dz_uint32_t y = 0U; y != _source->height; ++y )
+    {
+        const dz_uint8_t * source_row = (const dz_uint8_t *)_source->buffer + (dz_size_t)y * _source->pitch;
+        dz_uint8_t * bits_row = bits + (dz_size_t)y * bits_pitch;
+
+        for( dz_uint32_t x = 0U; x != _source->width; ++x )
+        {
+            const dz_uint8_t alpha = source_row[(dz_size_t)x * _source->channel_count + _source->alpha_channel];
+
+            if( (dz_uint32_t)alpha <= _source->alpha_threshold )
+            {
+                continue;
+            }
+
+            bits_row[x >> 3U] |= (dz_uint8_t)(1U << (x & 7U));
+        }
+    }
+
+    dz_shape_clear_mask( _service, _shape );
+
+    _shape->mask_source = *_source;
+    _shape->mask_source.buffer = DZ_NULLPTR;
+    _shape->mask_bits = bits;
+    _shape->mask_bits_pitch = bits_pitch;
+    _shape->mask_uses_bits = DZ_TRUE;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_shape_get_mask_bits( const dz_shape_t * _shape, const void ** _buffer, dz_uint32_t * const _pitch )
+{
+    *_buffer = _shape->mask_uses_bits == DZ_TRUE ? _shape->mask_bits : DZ_NULLPTR;
+    *_pitch = _shape->mask_uses_bits == DZ_TRUE ? _shape->mask_bits_pitch : 0U;
 }
 //////////////////////////////////////////////////////////////////////////
 void dz_shape_set_mask_scale( dz_shape_t * const _shape, dz_float_t _scale )
@@ -211,12 +395,179 @@ dz_float_t dz_shape_get_mask_scale( const dz_shape_t * _shape )
     return _shape->mask_scale;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_shape_set_mask_threshold( dz_shape_t * const _shape, dz_uint32_t _threshold )
+static dz_bool_t __shape_rgba_is_boundary( const dz_uint8_t * _rgba, dz_uint32_t _pitch, dz_uint32_t _width, dz_uint32_t _height, dz_uint32_t _x, dz_uint32_t _y, dz_uint32_t _alpha_threshold, dz_uint32_t _rgb_threshold )
 {
-    _shape->mask_threshold = _threshold;
+    const dz_uint8_t * pixel = _rgba + (dz_size_t)_y * _pitch + (dz_size_t)_x * 4U;
+
+    if( (dz_uint32_t)pixel[3] <= _alpha_threshold )
+    {
+        return DZ_FALSE;
+    }
+
+    static const dz_int32_t neighbor_x[4] = {-1, 1, 0, 0};
+    static const dz_int32_t neighbor_y[4] = {0, 0, -1, 1};
+
+    for( dz_uint32_t index = 0U; index != 4U; ++index )
+    {
+        const dz_int32_t nx = (dz_int32_t)_x + neighbor_x[index];
+        const dz_int32_t ny = (dz_int32_t)_y + neighbor_y[index];
+
+        if( nx < 0 || ny < 0 || nx >= (dz_int32_t)_width || ny >= (dz_int32_t)_height )
+        {
+            return DZ_TRUE;
+        }
+
+        const dz_uint8_t * neighbor = _rgba + (dz_size_t)ny * _pitch + (dz_size_t)nx * 4U;
+
+        if( (dz_uint32_t)neighbor[3] <= _alpha_threshold )
+        {
+            return DZ_TRUE;
+        }
+
+        const dz_uint32_t difference_r = pixel[0] > neighbor[0] ? (dz_uint32_t)(pixel[0] - neighbor[0]) : (dz_uint32_t)(neighbor[0] - pixel[0]);
+        const dz_uint32_t difference_g = pixel[1] > neighbor[1] ? (dz_uint32_t)(pixel[1] - neighbor[1]) : (dz_uint32_t)(neighbor[1] - pixel[1]);
+        const dz_uint32_t difference_b = pixel[2] > neighbor[2] ? (dz_uint32_t)(pixel[2] - neighbor[2]) : (dz_uint32_t)(neighbor[2] - pixel[2]);
+        const dz_uint32_t difference = DZ_MAX( difference_r, DZ_MAX( difference_g, difference_b ) );
+
+        if( difference > _rgb_threshold )
+        {
+            return DZ_TRUE;
+        }
+    }
+
+    return DZ_FALSE;
 }
 //////////////////////////////////////////////////////////////////////////
-dz_uint32_t dz_shape_get_mask_threshold( const dz_shape_t * _shape )
+void dz_shape_clear_mask_boundary( const dz_service_t * _service, dz_shape_t * const _shape )
 {
-    return _shape->mask_threshold;
+    if( _shape->mask_boundary_points != DZ_NULLPTR )
+    {
+        DZ_FREE( _service, _shape->mask_boundary_points );
+        _shape->mask_boundary_points = DZ_NULLPTR;
+    }
+
+    if( _shape->mask_boundary_offsets != DZ_NULLPTR )
+    {
+        DZ_FREE( _service, _shape->mask_boundary_offsets );
+        _shape->mask_boundary_offsets = DZ_NULLPTR;
+    }
+
+    _shape->mask_boundary_point_count = 0U;
+    _shape->mask_boundary_strata_count = 0U;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_result_t dz_shape_build_rgba_boundary( const dz_service_t * _service, dz_shape_t * const _shape, const void * _rgba, dz_uint32_t _pitch, dz_uint32_t _width, dz_uint32_t _height, dz_uint32_t _alpha_threshold, dz_uint32_t _rgb_threshold, dz_uint32_t _strata )
+{
+#if defined( DZ_DEBUG )
+    if( _service == DZ_NULLPTR || _shape == DZ_NULLPTR || _rgba == DZ_NULLPTR || _width == 0U || _height == 0U || _pitch / 4U < _width )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+#endif
+
+    dz_shape_clear_mask_boundary( _service, _shape );
+
+    const dz_uint8_t * rgba = (const dz_uint8_t *)_rgba;
+    dz_uint32_t boundary_point_count = 0U;
+
+    for( dz_uint32_t y = 0U; y != _height; ++y )
+    {
+        for( dz_uint32_t x = 0U; x != _width; ++x )
+        {
+            if( __shape_rgba_is_boundary( rgba, _pitch, _width, _height, x, y, _alpha_threshold, _rgb_threshold ) == DZ_TRUE )
+            {
+                ++boundary_point_count;
+            }
+        }
+    }
+
+    if( boundary_point_count == 0U )
+    {
+        return DZ_FAILURE_INVALID_DATA;
+    }
+
+    const dz_uint32_t requested_strata = DZ_MAX( 1U, DZ_MIN( _strata, boundary_point_count ) );
+    dz_uint32_t columns = 1U;
+    const dz_uint64_t target = (dz_uint64_t)requested_strata * _width;
+
+    while( columns < _width && (dz_uint64_t)(columns + 1U) * (columns + 1U) * _height <= target )
+    {
+        ++columns;
+    }
+
+    dz_uint32_t rows = (requested_strata + columns - 1U) / columns;
+    rows = DZ_MAX( 1U, DZ_MIN( rows, _height ) );
+    columns = DZ_MAX( 1U, DZ_MIN( columns, _width ) );
+
+    dz_shape_mask_boundary_point_t * points = DZ_REALLOCN( _service, DZ_NULLPTR, dz_shape_mask_boundary_point_t, boundary_point_count );
+    dz_uint32_t * offsets = DZ_REALLOCN( _service, DZ_NULLPTR, dz_uint32_t, columns * rows + 1U );
+
+    if( points == DZ_NULLPTR || offsets == DZ_NULLPTR )
+    {
+        if( points != DZ_NULLPTR )
+        {
+            DZ_FREE( _service, points );
+        }
+
+        if( offsets != DZ_NULLPTR )
+        {
+            DZ_FREE( _service, offsets );
+        }
+
+        return DZ_FAILURE;
+    }
+
+    dz_uint32_t point_index = 0U;
+    dz_uint32_t stratum_index = 0U;
+
+    for( dz_uint32_t row = 0U; row != rows; ++row )
+    {
+        const dz_uint32_t y_begin = (dz_uint32_t)(((dz_uint64_t)row * _height) / rows);
+        const dz_uint32_t y_end = (dz_uint32_t)(((dz_uint64_t)(row + 1U) * _height) / rows);
+
+        for( dz_uint32_t column = 0U; column != columns; ++column )
+        {
+            const dz_uint32_t x_begin = (dz_uint32_t)(((dz_uint64_t)column * _width) / columns);
+            const dz_uint32_t x_end = (dz_uint32_t)(((dz_uint64_t)(column + 1U) * _width) / columns);
+            const dz_uint32_t stratum_begin = point_index;
+
+            for( dz_uint32_t y = y_begin; y != y_end; ++y )
+            {
+                for( dz_uint32_t x = x_begin; x != x_end; ++x )
+                {
+                    if( __shape_rgba_is_boundary( rgba, _pitch, _width, _height, x, y, _alpha_threshold, _rgb_threshold ) == DZ_FALSE )
+                    {
+                        continue;
+                    }
+
+                    points[point_index].x = x;
+                    points[point_index].y = y;
+                    ++point_index;
+                }
+            }
+
+            if( point_index != stratum_begin )
+            {
+                offsets[stratum_index++] = stratum_begin;
+            }
+        }
+    }
+
+    offsets[stratum_index] = point_index;
+    _shape->mask_boundary_points = points;
+    _shape->mask_boundary_point_count = point_index;
+    _shape->mask_boundary_offsets = offsets;
+    _shape->mask_boundary_strata_count = stratum_index;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_uint32_t dz_shape_get_mask_boundary_point_count( const dz_shape_t * _shape )
+{
+    return _shape->mask_boundary_point_count;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_uint32_t dz_shape_get_mask_boundary_strata_count( const dz_shape_t * _shape )
+{
+    return _shape->mask_boundary_strata_count;
 }

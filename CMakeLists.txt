@@ -58,6 +58,7 @@ set(DAZZLE_PRIVATE_HEADERS
     src/emitter.h
     src/instance.h
     src/material.h
+    src/memory.h
     src/math_provider.h
     src/math3d.h
     src/particle.h
@@ -83,6 +84,7 @@ add_library(dazzle STATIC
     src/dazzle_shape.c
     src/dazzle_texture.c
     src/dazzle_timeline.c
+    src/memory.c
     ${DAZZLE_PUBLIC_HEADERS}
     ${DAZZLE_PRIVATE_HEADERS}
 )

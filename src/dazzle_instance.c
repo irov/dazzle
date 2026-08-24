@@ -8,12 +8,10 @@
 #include "material.h"
 #include "math3d.h"
 #include "math_provider.h"
+#include "memory.h"
 #include "particle.h"
 #include "shape.h"
 #include "texture.h"
-
-#include <math.h>
-#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 static dz_float_t __get_affector_timeline_default( dz_affector_timeline_type_e _timeline )
@@ -49,13 +47,18 @@ static dz_float_t __get_emitter_timeline_default( dz_emitter_timeline_type_e _ti
     return default_value;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_uint16_t __get_rand( dz_uint32_t * _seed )
+static dz_uint32_t __get_rand32( dz_uint32_t * _seed )
 {
     const dz_uint32_t value = DZ_RAND_FUNCTION( *_seed );
 
     *_seed = value;
 
-    return value & 0xffff;
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_uint16_t __get_rand( dz_uint32_t * _seed )
+{
+    return __get_rand32( _seed ) & 0xffff;
 }
 //////////////////////////////////////////////////////////////////////////
 static dz_float_t __get_randf( dz_uint32_t * _seed )
@@ -147,14 +150,14 @@ static dz_float_t __get_timeline_value( dz_float_t _t, const dz_timeline_key_t *
     }
 }
 //////////////////////////////////////////////////////////////////////////
-dz_result_t dz_instance_set_physics_transform( dz_instance_t * _instance, dz_uint32_t _id, const dz_transform_t * _transform )
+dz_result_t dz_instance_set_physics_transform( const dz_service_t * _service, dz_instance_t * _instance, dz_uint32_t _id, const dz_transform_t * _transform )
 {
     for( dz_uint32_t index = 0; index != _instance->effect->physics_object_count; ++index )
     {
         if( _instance->effect->physics_objects[index].id == _id )
         {
             _instance->physics_transforms[index] = *_transform;
-            _instance->physics_transforms[index].rotation = dz_math_quat_normalize( _transform->rotation );
+            _instance->physics_transforms[index].rotation = dz_math_quat_normalize( _service, _transform->rotation );
             return DZ_SUCCESSFUL;
         }
     }
@@ -197,6 +200,10 @@ void dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instan
     instance->transform.scale = dz_math_vec3( 1.f, 1.f, 1.f );
     instance->birth_order = 0;
 
+    instance->path_points = DZ_NULLPTR;
+    instance->path_point_count = 0U;
+    instance->path_point_capacity = 0U;
+
     for( dz_uint32_t index = 0; index != _effect->physics_object_count; ++index )
     {
         instance->physics_transforms[index] = _effect->physics_objects[index].transform;
@@ -215,6 +222,7 @@ void dz_instance_create( const dz_service_t * _service, dz_instance_t ** _instan
 //////////////////////////////////////////////////////////////////////////
 void dz_instance_destroy( const dz_service_t * _service, const dz_instance_t * _instance )
 {
+    DZ_FREE( _service, _instance->path_points );
     DZ_FREE( _service, _instance->partices );
 
     DZ_FREE( _service, _instance );
@@ -475,13 +483,13 @@ static void __particle_collision_response( dz_particle_t * _particle, dz_vec3_t 
     _particle->vz *= 1.f - friction;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_vec3_t __inverse_transform_point( const dz_transform_t * _transform, dz_vec3_t _point )
+static dz_vec3_t __inverse_transform_point( const dz_service_t * _service, const dz_transform_t * _transform, dz_vec3_t _point )
 {
-    dz_quat_t inverse = dz_math_quat_normalize( _transform->rotation );
+    dz_quat_t inverse = dz_math_quat_normalize( _service, _transform->rotation );
     inverse.x = -inverse.x;
     inverse.y = -inverse.y;
     inverse.z = -inverse.z;
-    dz_vec3_t local = dz_math_quat_rotate3( inverse, dz_math_sub3( _point, _transform->position ) );
+    dz_vec3_t local = dz_math_quat_rotate3( _service, inverse, dz_math_sub3( _point, _transform->position ) );
     if( _transform->scale.x != 0.f )
     {
         local.x /= _transform->scale.x;
@@ -497,14 +505,14 @@ static dz_vec3_t __inverse_transform_point( const dz_transform_t * _transform, d
     return local;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_bool_t __segment_triangle_intersection( dz_vec3_t _start, dz_vec3_t _end, dz_vec3_t _a, dz_vec3_t _b, dz_vec3_t _c, dz_float_t * _time, dz_vec3_t * _normal )
+static dz_bool_t __segment_triangle_intersection( const dz_service_t * _service, dz_vec3_t _start, dz_vec3_t _end, dz_vec3_t _a, dz_vec3_t _b, dz_vec3_t _c, dz_float_t * _time, dz_vec3_t * _normal )
 {
     const dz_vec3_t direction = dz_math_sub3( _end, _start );
     const dz_vec3_t edge1 = dz_math_sub3( _b, _a );
     const dz_vec3_t edge2 = dz_math_sub3( _c, _a );
     const dz_vec3_t p = dz_math_cross3( direction, edge2 );
     const dz_float_t determinant = dz_math_dot3( edge1, p );
-    if( fabsf( determinant ) <= 0.000001f )
+    if( dz_math_absf( determinant ) <= 0.000001f )
     {
         return DZ_FALSE;
     }
@@ -530,7 +538,7 @@ static dz_bool_t __segment_triangle_intersection( dz_vec3_t _start, dz_vec3_t _e
         return DZ_FALSE;
     }
 
-    dz_vec3_t normal = dz_math_normalize3( dz_math_cross3( edge1, edge2 ), dz_math_vec3( 0.f, 1.f, 0.f ) );
+    dz_vec3_t normal = dz_math_normalize3( _service, dz_math_cross3( edge1, edge2 ), dz_math_vec3( 0.f, 1.f, 0.f ) );
     if( dz_math_dot3( normal, direction ) > 0.f )
     {
         normal = dz_math_mul3( normal, -1.f );
@@ -540,8 +548,7 @@ static dz_bool_t __segment_triangle_intersection( dz_vec3_t _start, dz_vec3_t _e
     return DZ_TRUE;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_bool_t __segment_sphere_intersection( const dz_service_t * _service, dz_vec3_t _start, dz_vec3_t _end, dz_vec3_t _center, dz_float_t _radius, dz_float_t * _time,
-                                                dz_vec3_t * _normal )
+static dz_bool_t __segment_sphere_intersection( const dz_service_t * _service, dz_vec3_t _start, dz_vec3_t _end, dz_vec3_t _center, dz_float_t _radius, dz_float_t * _time, dz_vec3_t * _normal )
 {
     const dz_vec3_t direction = dz_math_sub3( _end, _start );
     const dz_vec3_t offset = dz_math_sub3( _start, _center );
@@ -567,7 +574,7 @@ static dz_bool_t __segment_sphere_intersection( const dz_service_t * _service, d
 
     const dz_vec3_t point = dz_math_add3( _start, dz_math_mul3( direction, time ) );
     *_time = time;
-    *_normal = dz_math_normalize3( dz_math_sub3( point, _center ), dz_math_vec3( 0.f, 1.f, 0.f ) );
+    *_normal = dz_math_normalize3( _service, dz_math_sub3( point, _center ), dz_math_vec3( 0.f, 1.f, 0.f ) );
     return DZ_TRUE;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -583,7 +590,7 @@ static dz_bool_t __segment_box_intersection( dz_vec3_t _start, dz_vec3_t _end, d
 
     for( dz_uint32_t axis = 0; axis != 3U; ++axis )
     {
-        if( fabsf( directions[axis] ) <= 0.000001f )
+        if( dz_math_absf( directions[axis] ) <= 0.000001f )
         {
             if( starts[axis] < -extents[axis] || starts[axis] > extents[axis] )
             {
@@ -644,8 +651,7 @@ static dz_bool_t __segment_aabb_intersection( dz_vec3_t _start, dz_vec3_t _end, 
     return __segment_box_intersection( dz_math_sub3( _start, center ), dz_math_sub3( _end, center ), extents, &time, &normal ) == DZ_TRUE && time <= _maximum_time;
 }
 //////////////////////////////////////////////////////////////////////////
-static void __mesh_bvh_intersection( const dz_mesh_desc_t * _mesh, const dz_mesh_bvh_t * _bvh, dz_uint32_t _node_index, dz_vec3_t _start, dz_vec3_t _end, dz_float_t * _earliest,
-                                     dz_vec3_t * _normal )
+static void __mesh_bvh_intersection( const dz_service_t * _service, const dz_mesh_desc_t * _mesh, const dz_mesh_bvh_t * _bvh, dz_uint32_t _node_index, dz_vec3_t _start, dz_vec3_t _end, dz_float_t * _earliest, dz_vec3_t * _normal )
 {
     const dz_mesh_bvh_node_t * node = _bvh->nodes + _node_index;
     if( __segment_aabb_intersection( _start, _end, &node->bounds, *_earliest ) == DZ_FALSE )
@@ -663,7 +669,7 @@ static void __mesh_bvh_intersection( const dz_mesh_desc_t * _mesh, const dz_mesh
             const dz_vec3_t c = _mesh->vertices[_mesh->indices[triangle + 2U]].position;
             dz_float_t hit_time;
             dz_vec3_t hit_normal;
-            if( __segment_triangle_intersection( _start, _end, a, b, c, &hit_time, &hit_normal ) == DZ_TRUE && hit_time < *_earliest )
+            if( __segment_triangle_intersection( _service, _start, _end, a, b, c, &hit_time, &hit_normal ) == DZ_TRUE && hit_time < *_earliest )
             {
                 *_earliest = hit_time;
                 *_normal = hit_normal;
@@ -672,16 +678,16 @@ static void __mesh_bvh_intersection( const dz_mesh_desc_t * _mesh, const dz_mesh
         return;
     }
 
-    __mesh_bvh_intersection( _mesh, _bvh, node->left, _start, _end, _earliest, _normal );
-    __mesh_bvh_intersection( _mesh, _bvh, node->right, _start, _end, _earliest, _normal );
+    __mesh_bvh_intersection( _service, _mesh, _bvh, node->left, _start, _end, _earliest, _normal );
+    __mesh_bvh_intersection( _service, _mesh, _bvh, node->right, _start, _end, _earliest, _normal );
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_vec3_t __transform_normal( const dz_transform_t * _transform, dz_vec3_t _normal )
+static dz_vec3_t __transform_normal( const dz_service_t * _service, const dz_transform_t * _transform, dz_vec3_t _normal )
 {
     _normal.x /= _transform->scale.x;
     _normal.y /= _transform->scale.y;
     _normal.z /= _transform->scale.z;
-    return dz_math_normalize3( dz_math_quat_rotate3( _transform->rotation, _normal ), dz_math_vec3( 0.f, 1.f, 0.f ) );
+    return dz_math_normalize3( _service, dz_math_quat_rotate3( _service, _transform->rotation, _normal ), dz_math_vec3( 0.f, 1.f, 0.f ) );
 }
 //////////////////////////////////////////////////////////////////////////
 static void __particle_apply_physics( const dz_service_t * _service, const dz_instance_t * _instance, dz_particle_t * _particle, dz_float_t _time )
@@ -713,7 +719,7 @@ static void __particle_apply_physics( const dz_service_t * _service, const dz_in
         case DZ_PHYSICS_MAGNET:
         {
             dz_vec3_t delta = dz_math_sub3( transform->position, dz_math_vec3( _particle->x, _particle->y, _particle->z ) );
-            const dz_float_t distance = dz_math_length3( delta );
+            const dz_float_t distance = dz_math_length3( _service, delta );
             if( distance > 0.000001f )
             {
                 delta = dz_math_mul3( delta, 1.f / distance );
@@ -726,8 +732,8 @@ static void __particle_apply_physics( const dz_service_t * _service, const dz_in
         break;
         case DZ_PHYSICS_PLANE:
         {
-            dz_vec3_t normal = dz_math_normalize3( object->direction, dz_math_vec3( 0.f, 1.f, 0.f ) );
-            normal = dz_math_quat_rotate3( transform->rotation, normal );
+            dz_vec3_t normal = dz_math_normalize3( _service, object->direction, dz_math_vec3( 0.f, 1.f, 0.f ) );
+            normal = dz_math_quat_rotate3( _service, transform->rotation, normal );
             const dz_vec3_t previous = dz_math_vec3( _particle->previous_x, _particle->previous_y, _particle->previous_z );
             const dz_vec3_t current = dz_math_vec3( _particle->x, _particle->y, _particle->z );
             const dz_float_t previous_distance = dz_math_dot3( dz_math_sub3( previous, transform->position ), normal );
@@ -743,7 +749,7 @@ static void __particle_apply_physics( const dz_service_t * _service, const dz_in
         break;
         case DZ_PHYSICS_SPHERE:
         {
-            const dz_float_t radius_scale = DZ_MAX( fabsf( transform->scale.x ), DZ_MAX( fabsf( transform->scale.y ), fabsf( transform->scale.z ) ) );
+            const dz_float_t radius_scale = DZ_MAX( dz_math_absf( transform->scale.x ), DZ_MAX( dz_math_absf( transform->scale.y ), dz_math_absf( transform->scale.z ) ) );
             const dz_float_t radius = DZ_MAX( object->radius * radius_scale, 0.f );
             const dz_vec3_t previous = dz_math_vec3( _particle->previous_x, _particle->previous_y, _particle->previous_z );
             const dz_vec3_t current = dz_math_vec3( _particle->x, _particle->y, _particle->z );
@@ -760,10 +766,10 @@ static void __particle_apply_physics( const dz_service_t * _service, const dz_in
             }
 
             const dz_vec3_t delta = dz_math_sub3( current, transform->position );
-            const dz_float_t distance = dz_math_length3( delta );
+            const dz_float_t distance = dz_math_length3( _service, delta );
             if( distance < radius && radius > 0.f )
             {
-                const dz_vec3_t normal = dz_math_normalize3( delta, dz_math_vec3( 0.f, 1.f, 0.f ) );
+                const dz_vec3_t normal = dz_math_normalize3( _service, delta, dz_math_vec3( 0.f, 1.f, 0.f ) );
                 _particle->x = transform->position.x + normal.x * radius;
                 _particle->y = transform->position.y + normal.y * radius;
                 _particle->z = transform->position.z + normal.z * radius;
@@ -775,14 +781,14 @@ static void __particle_apply_physics( const dz_service_t * _service, const dz_in
         {
             const dz_vec3_t previous_world = dz_math_vec3( _particle->previous_x, _particle->previous_y, _particle->previous_z );
             const dz_vec3_t current_world = dz_math_vec3( _particle->x, _particle->y, _particle->z );
-            const dz_vec3_t previous = __inverse_transform_point( transform, previous_world );
-            const dz_vec3_t current = __inverse_transform_point( transform, current_world );
+            const dz_vec3_t previous = __inverse_transform_point( _service, transform, previous_world );
+            const dz_vec3_t current = __inverse_transform_point( _service, transform, current_world );
             dz_float_t hit_time;
             dz_vec3_t local_normal;
             if( __segment_box_intersection( previous, current, object->half_extents, &hit_time, &local_normal ) == DZ_TRUE )
             {
                 const dz_vec3_t hit = dz_math_add3( previous_world, dz_math_mul3( dz_math_sub3( current_world, previous_world ), hit_time ) );
-                const dz_vec3_t normal = dz_math_normalize3( dz_math_quat_rotate3( transform->rotation, local_normal ), dz_math_vec3( 0.f, 1.f, 0.f ) );
+                const dz_vec3_t normal = dz_math_normalize3( _service, dz_math_quat_rotate3( _service, transform->rotation, local_normal ), dz_math_vec3( 0.f, 1.f, 0.f ) );
                 _particle->x = hit.x + normal.x * 0.0001f;
                 _particle->y = hit.y + normal.y * 0.0001f;
                 _particle->z = hit.z + normal.z * 0.0001f;
@@ -802,15 +808,15 @@ static void __particle_apply_physics( const dz_service_t * _service, const dz_in
             const dz_mesh_bvh_t * bvh = effect->mesh_bvhs + mesh_index;
             const dz_vec3_t previous_world = dz_math_vec3( _particle->previous_x, _particle->previous_y, _particle->previous_z );
             const dz_vec3_t current_world = dz_math_vec3( _particle->x, _particle->y, _particle->z );
-            const dz_vec3_t previous = __inverse_transform_point( transform, previous_world );
-            const dz_vec3_t current = __inverse_transform_point( transform, current_world );
+            const dz_vec3_t previous = __inverse_transform_point( _service, transform, previous_world );
+            const dz_vec3_t current = __inverse_transform_point( _service, transform, current_world );
             dz_float_t earliest = 2.f;
             dz_vec3_t local_normal = dz_math_vec3( 0.f, 1.f, 0.f );
-            __mesh_bvh_intersection( mesh, bvh, 0U, previous, current, &earliest, &local_normal );
+            __mesh_bvh_intersection( _service, mesh, bvh, 0U, previous, current, &earliest, &local_normal );
 
             if( earliest <= 1.f )
             {
-                dz_vec3_t normal = __transform_normal( transform, local_normal );
+                dz_vec3_t normal = __transform_normal( _service, transform, local_normal );
                 const dz_vec3_t world_direction = dz_math_sub3( current_world, previous_world );
                 if( dz_math_dot3( normal, world_direction ) > 0.f )
                 {
@@ -893,9 +899,6 @@ static void __particle_update( const dz_service_t * _service, const dz_instance_
     _p->previous_x = _p->x;
     _p->previous_y = _p->y;
     _p->previous_z = _p->z;
-    _p->birth_x = _p->x;
-    _p->birth_y = _p->y;
-    _p->birth_z = _p->z;
 
     _p->move_accelerate_aux += move_accelerate * _time;
     const dz_float_t authored_speed = move_speed + _p->move_accelerate_aux;
@@ -1025,17 +1028,17 @@ static dz_float_t __calc_triangle_area( dz_float_t ax, dz_float_t ay, dz_float_t
     return area;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_float_t __calc_triangle_area3( dz_vec3_t _a, dz_vec3_t _b, dz_vec3_t _c )
+static dz_float_t __calc_triangle_area3( const dz_service_t * _service, dz_vec3_t _a, dz_vec3_t _b, dz_vec3_t _c )
 {
-    return 0.5f * dz_math_length3( dz_math_cross3( dz_math_sub3( _b, _a ), dz_math_sub3( _c, _a ) ) );
+    return 0.5f * dz_math_length3( _service, dz_math_cross3( dz_math_sub3( _b, _a ), dz_math_sub3( _c, _a ) ) );
 }
 //////////////////////////////////////////////////////////////////////////
 static dz_float_t __calc_tetrahedron_volume( dz_vec3_t _a, dz_vec3_t _b, dz_vec3_t _c )
 {
-    return fabsf( dz_math_dot3( _a, dz_math_cross3( _b, _c ) ) ) / 6.f;
+    return dz_math_absf( dz_math_dot3( _a, dz_math_cross3( _b, _c ) ) ) / 6.f;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __sample_mesh_shape( const dz_effect_t * _effect, const dz_shape_t * _shape, dz_bool_t _volume, dz_uint32_t * _seed, dz_vec3_t * _position )
+static dz_result_t __sample_mesh_shape( const dz_service_t * _service, const dz_effect_t * _effect, const dz_shape_t * _shape, dz_bool_t _volume, dz_uint32_t * _seed, dz_vec3_t * _position )
 {
     const dz_mesh_desc_t * mesh = dz_effect_find_mesh( _effect, _shape->mesh_id );
     if( mesh == DZ_NULLPTR || mesh->index_count < 3U )
@@ -1049,10 +1052,10 @@ static dz_result_t __sample_mesh_shape( const dz_effect_t * _effect, const dz_sh
         const dz_vec3_t a = mesh->vertices[mesh->indices[index + 0U]].position;
         const dz_vec3_t b = mesh->vertices[mesh->indices[index + 1U]].position;
         const dz_vec3_t c = mesh->vertices[mesh->indices[index + 2U]].position;
-        total_weight += _volume == DZ_TRUE ? __calc_tetrahedron_volume( a, b, c ) : __calc_triangle_area3( a, b, c );
+        total_weight += _volume == DZ_TRUE ? __calc_tetrahedron_volume( a, b, c ) : __calc_triangle_area3( _service, a, b, c );
     }
 
-    if( total_weight <= 0.f || isfinite( total_weight ) == 0 )
+    if( total_weight <= 0.f || dz_math_is_finite( total_weight ) == DZ_FALSE )
     {
         return DZ_FAILURE_INVALID_DATA;
     }
@@ -1064,7 +1067,7 @@ static dz_result_t __sample_mesh_shape( const dz_effect_t * _effect, const dz_sh
         const dz_vec3_t a = mesh->vertices[mesh->indices[index + 0U]].position;
         const dz_vec3_t b = mesh->vertices[mesh->indices[index + 1U]].position;
         const dz_vec3_t c = mesh->vertices[mesh->indices[index + 2U]].position;
-        const dz_float_t weight = _volume == DZ_TRUE ? __calc_tetrahedron_volume( a, b, c ) : __calc_triangle_area3( a, b, c );
+        const dz_float_t weight = _volume == DZ_TRUE ? __calc_tetrahedron_volume( a, b, c ) : __calc_triangle_area3( _service, a, b, c );
         selected_index = index;
         if( selected_weight <= weight )
         {
@@ -1079,7 +1082,7 @@ static dz_result_t __sample_mesh_shape( const dz_effect_t * _effect, const dz_sh
 
     if( _volume == DZ_FALSE )
     {
-        const dz_float_t root = sqrtf( __get_randf( _seed ) );
+        const dz_float_t root = DZ_SQRTF( _service, __get_randf( _seed ) );
         const dz_float_t r = __get_randf( _seed );
         *_position = dz_math_add3( dz_math_mul3( a, 1.f - root ), dz_math_add3( dz_math_mul3( b, root * ( 1.f - r ) ), dz_math_mul3( c, root * r ) ) );
         return DZ_SUCCESSFUL;
@@ -1110,114 +1113,12 @@ static dz_result_t __sample_mesh_shape( const dz_effect_t * _effect, const dz_sh
     return DZ_SUCCESSFUL;
 }
 //////////////////////////////////////////////////////////////////////////
-static dz_uint32_t __calc_mask_threshold_value_count( const void * _buffer, dz_uint32_t _pitch, dz_uint32_t _bites, dz_uint32_t _width, dz_uint32_t _height, dz_uint32_t _threshold )
-{
-    dz_uint32_t threshold_value_count = 0;
-
-    const void * buffer_iterator = _buffer;
-
-    for( dz_uint32_t h = 0; h != _height; ++h )
-    {
-        for( dz_uint32_t w = 0; w != _width; ++w )
-        {
-            dz_uint32_t value = 0;
-
-            switch( _bites )
-            {
-            case 1:
-                {
-                    const dz_uint8_t * point = (const dz_uint8_t *)buffer_iterator + w;
-
-                    value = (dz_uint32_t)*point;
-                }break;
-            case 2:
-                {
-                    const dz_uint16_t * point = (const dz_uint16_t *)buffer_iterator + w;
-
-                    value = (dz_uint32_t)*point;
-                }break;
-            case 4:
-                {
-                    const dz_uint32_t * point = (const dz_uint32_t *)buffer_iterator + w;
-
-                    value = (dz_uint32_t)*point;
-                }break;
-            default:
-                break;
-            }
-
-            if( value <= _threshold )
-            {
-                continue;
-            }
-
-            ++threshold_value_count;
-        }
-
-        buffer_iterator = (const dz_uint8_t *)buffer_iterator + _pitch;
-    }
-
-    return threshold_value_count;
-}
-//////////////////////////////////////////////////////////////////////////
-static dz_result_t __get_mask_threshold_value( const void * _buffer, dz_uint32_t _pitch, dz_uint32_t _bites, dz_uint32_t _width, dz_uint32_t _height, dz_uint32_t _threshold, dz_uint32_t _index, dz_uint32_t * _x, dz_uint32_t * _y )
-{
-    const void * buffer_iterator = _buffer;
-
-    for( dz_uint32_t h = 0; h != _height; ++h )
-    {
-        for( dz_uint32_t w = 0; w != _width; ++w )
-        {
-            dz_uint32_t mask_value = 0;
-
-            switch( _bites )
-            {
-            case 1:
-                {
-                    const dz_uint8_t * mask_point = (const dz_uint8_t *)buffer_iterator + w;
-
-                    mask_value = (dz_uint32_t)*mask_point;
-                }break;
-            case 2:
-                {
-                    const dz_uint16_t * mask_point = (const dz_uint16_t *)buffer_iterator + w;
-
-                    mask_value = (dz_uint32_t)*mask_point;
-                }break;
-            case 4:
-                {
-                    const dz_uint32_t * mask_point = (const dz_uint32_t *)buffer_iterator + w;
-
-                    mask_value = (dz_uint32_t)*mask_point;
-                }break;
-            default:
-                break;
-            }
-
-            if( mask_value <= _threshold )
-            {
-                continue;
-            }
-
-            if( _index-- == 0 )
-            {
-                *_x = w;
-                *_y = h;
-
-                return DZ_SUCCESSFUL;
-            }
-        }
-
-        buffer_iterator = (const dz_uint8_t *)buffer_iterator + _pitch;
-    }
-
-    return DZ_FAILURE;
-}
-//////////////////////////////////////////////////////////////////////////
 static dz_float_t __effect_layer_get_life( const dz_effect_t * _effect, const dz_effect_layer_desc_t * _layer );
 //////////////////////////////////////////////////////////////////////////
-static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_effect_emitter_instance_t * const _emitter_instance, dz_particle_t * _p, dz_float_t _life, dz_float_t _spawn_time )
+static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_instance_t * _instance, dz_effect_emitter_instance_t * const _emitter_instance, dz_particle_t * _p, dz_float_t _life, dz_float_t _spawn_time, dz_bool_t * const _spawned )
 {
+    *_spawned = DZ_TRUE;
+
     dz_uint32_t * seed = &_emitter_instance->seed;
 
     for( dz_uint32_t index = 0; index != __DZ_AFFECTOR_TIMELINE_MAX__; ++index )
@@ -1401,34 +1302,75 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         }break;
     case DZ_SHAPE_MASK:
         {
-            const void * mask_buffer = layer->shape->mask_buffer;
-            const dz_uint32_t mask_bites = layer->shape->mask_bites;
-            const dz_uint32_t mask_pitch = layer->shape->mask_pitch;
-            const dz_uint32_t mask_width = layer->shape->mask_width;
-            const dz_uint32_t mask_height = layer->shape->mask_height;
-            const dz_uint32_t mask_threshold = layer->shape->mask_threshold;
+            const dz_uint32_t boundary_point_count = layer->shape->mask_boundary_point_count;
+            const dz_uint32_t boundary_strata_count = layer->shape->mask_boundary_strata_count;
+            const dz_shape_mask_boundary_point_t * boundary_points = layer->shape->mask_boundary_points;
+            const dz_uint32_t * boundary_offsets = layer->shape->mask_boundary_offsets;
             const dz_float_t mask_scale = layer->shape->mask_scale;
 
-            const dz_uint32_t threshold_value_count = __calc_mask_threshold_value_count( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold );
+            if( boundary_point_count != 0U && boundary_strata_count != 0U && boundary_points != DZ_NULLPTR && boundary_offsets != DZ_NULLPTR )
+            {
+                const dz_uint32_t stratum = _instance->birth_order % boundary_strata_count;
+                const dz_uint32_t begin = boundary_offsets[stratum];
+                const dz_uint32_t end = boundary_offsets[stratum + 1U];
+                const dz_uint32_t count = end - begin;
+                const dz_uint32_t offset = (dz_uint32_t)(((dz_uint64_t)__get_rand32( seed ) * count) >> 32U);
+                const dz_shape_mask_boundary_point_t * point = boundary_points + begin + offset;
 
-            if( threshold_value_count == 0U )
+                _p->x += ((dz_float_t)point->x + __get_randf( seed )) * mask_scale;
+                _p->y += ((dz_float_t)point->y + __get_randf( seed )) * mask_scale;
+
+                const dz_float_t angle = __get_randf( seed ) * DZ_PI2;
+                _p->angle += angle;
+
+                break;
+            }
+
+            const dz_shape_mask_source_t * mask_source = &layer->shape->mask_source;
+
+            if( mask_source->width == 0U || mask_source->height == 0U )
             {
                 return DZ_FAILURE_INVALID_DATA;
             }
 
-            const dz_float_t r = __get_randf( seed );
+            const dz_uint32_t w_found = (dz_uint32_t)(((dz_uint64_t)__get_rand32( seed ) * mask_source->width) >> 32U);
+            const dz_uint32_t h_found = (dz_uint32_t)(((dz_uint64_t)__get_rand32( seed ) * mask_source->height) >> 32U);
+            dz_bool_t accepted = DZ_FALSE;
 
-            const dz_uint32_t threshold_value_index = (dz_uint32_t)(r * (threshold_value_count - 1) + 0.5f);
-
-            dz_uint32_t w_found;
-            dz_uint32_t h_found;
-            if( __get_mask_threshold_value( mask_buffer, mask_pitch, mask_bites, mask_width, mask_height, mask_threshold, threshold_value_index, &w_found, &h_found ) == DZ_FAILURE )
+            if( layer->shape->mask_uses_bits == DZ_TRUE )
             {
-                return DZ_FAILURE;
+                const dz_uint32_t minimum_pitch = (mask_source->width + 7U) / 8U;
+
+                if( layer->shape->mask_bits == DZ_NULLPTR || layer->shape->mask_bits_pitch < minimum_pitch )
+                {
+                    return DZ_FAILURE_INVALID_DATA;
+                }
+
+                const dz_uint8_t * row = layer->shape->mask_bits + (dz_size_t)h_found * layer->shape->mask_bits_pitch;
+                accepted = (row[w_found >> 3U] & (dz_uint8_t)(1U << (w_found & 7U))) != 0U ? DZ_TRUE : DZ_FALSE;
+            }
+            else
+            {
+                if( mask_source->buffer == DZ_NULLPTR || mask_source->channel_count == 0U || mask_source->alpha_channel >= mask_source->channel_count ||
+                    mask_source->pitch / mask_source->channel_count < mask_source->width || mask_source->alpha_threshold > 255U )
+                {
+                    return DZ_FAILURE_INVALID_DATA;
+                }
+
+                const dz_uint8_t * row = (const dz_uint8_t *)mask_source->buffer + (dz_size_t)h_found * mask_source->pitch;
+                const dz_uint8_t alpha = row[(dz_size_t)w_found * mask_source->channel_count + mask_source->alpha_channel];
+                accepted = (dz_uint32_t)alpha > mask_source->alpha_threshold ? DZ_TRUE : DZ_FALSE;
             }
 
-            _p->x += w_found * mask_scale;
-            _p->y += h_found * mask_scale;
+            if( accepted == DZ_FALSE )
+            {
+                *_spawned = DZ_FALSE;
+
+                return DZ_SUCCESSFUL;
+            }
+
+            _p->x += ((dz_float_t)w_found + __get_randf( seed )) * mask_scale;
+            _p->y += ((dz_float_t)h_found + __get_randf( seed )) * mask_scale;
 
             const dz_float_t angle = __get_randf( seed ) * DZ_PI2;
 
@@ -1492,7 +1434,8 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
         case DZ_SHAPE_MESH_VOLUME:
         {
             dz_vec3_t sampled_position;
-            const dz_result_t sample_result = __sample_mesh_shape( effect, layer->shape, shape_type == DZ_SHAPE_MESH_VOLUME ? DZ_TRUE : DZ_FALSE, seed, &sampled_position );
+            const dz_result_t sample_result = __sample_mesh_shape( _service, effect, layer->shape, shape_type == DZ_SHAPE_MESH_VOLUME ? DZ_TRUE : DZ_FALSE, seed,
+                                                                    &sampled_position );
             if( sample_result != DZ_SUCCESSFUL )
             {
                 return sample_result;
@@ -1518,7 +1461,7 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     _p->y = _emitter_instance->y + spawn_x * layer_sin + spawn_y * layer_cos;
 
     dz_vec3_t local_position = dz_math_vec3( _p->x - _emitter_instance->x, _p->y - _emitter_instance->y, _p->z - _emitter_instance->z );
-    local_position = dz_math_transform_point( &layer->shape->transform, local_position );
+    local_position = dz_math_transform_point( _service, &layer->shape->transform, local_position );
     _p->x = _emitter_instance->x + local_position.x;
     _p->y = _emitter_instance->y + local_position.y;
     _p->z = _emitter_instance->z + local_position.z;
@@ -1547,6 +1490,9 @@ static dz_result_t __emitter_setup_particle( const dz_service_t * _service, dz_i
     _p->previous_x = _p->x;
     _p->previous_y = _p->y;
     _p->previous_z = _p->z;
+    _p->birth_x = _p->x;
+    _p->birth_y = _p->y;
+    _p->birth_z = _p->z;
     _p->birth_order = _instance->birth_order++;
 
     _p->born_color_r = _instance->r;
@@ -1601,10 +1547,16 @@ static dz_result_t __emitter_spawn_particle( const dz_service_t * _service, dz_i
 
     dz_particle_t * p = _instance->partices + _instance->partices_count;
 
-    const dz_result_t setup_result = __emitter_setup_particle( _service, _instance, _emitter_instance, p, _life, _spawn_time );
+    dz_bool_t spawned;
+    const dz_result_t setup_result = __emitter_setup_particle( _service, _instance, _emitter_instance, p, _life, _spawn_time, &spawned );
     if( setup_result != DZ_SUCCESSFUL )
     {
         return setup_result;
+    }
+
+    if( spawned == DZ_FALSE )
+    {
+        return DZ_SUCCESSFUL;
     }
 
     ++_instance->partices_count;
@@ -1643,10 +1595,10 @@ void dz_instance_get_position3( const dz_instance_t * _instance, dz_vec3_t * _po
     *_position = _instance->transform.position;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_set_transform( dz_instance_t * const _instance, const dz_transform_t * _transform )
+void dz_instance_set_transform( const dz_service_t * _service, dz_instance_t * const _instance, const dz_transform_t * _transform )
 {
     _instance->transform = *_transform;
-    _instance->transform.rotation = dz_math_quat_normalize( _transform->rotation );
+    _instance->transform.rotation = dz_math_quat_normalize( _service, _transform->rotation );
     _instance->x = _transform->position.x;
     _instance->y = _transform->position.y;
     _instance->z = _transform->position.z;
@@ -1683,6 +1635,42 @@ dz_float_t dz_instance_get_rotate( const dz_instance_t * _instance )
     return _instance->angle;
 }
 //////////////////////////////////////////////////////////////////////////
+dz_result_t dz_instance_set_path_points( const dz_service_t * _service, dz_instance_t * const _instance, const dz_path_point_t * _points, dz_uint32_t _count )
+{
+#if defined( DZ_DEBUG )
+    if( _count != 0U && _points == DZ_NULLPTR )
+    {
+        return DZ_FAILURE_INVALID_ARGUMENT;
+    }
+#endif
+
+    if( _instance->path_point_capacity < _count )
+    {
+        dz_path_point_t * points = DZ_REALLOCN( _service, _instance->path_points, dz_path_point_t, _count );
+        _instance->path_points = points;
+        _instance->path_point_capacity = _count;
+    }
+
+    if( _count != 0U )
+    {
+        dz_memory_copy( _instance->path_points, _points, sizeof( dz_path_point_t ) * _count );
+    }
+
+    _instance->path_point_count = _count;
+
+    return DZ_SUCCESSFUL;
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_clear_path_points( dz_instance_t * const _instance )
+{
+    _instance->path_point_count = 0U;
+}
+//////////////////////////////////////////////////////////////////////////
+dz_uint32_t dz_instance_get_path_point_count( const dz_instance_t * _instance )
+{
+    return _instance->path_point_count;
+}
+//////////////////////////////////////////////////////////////////////////
 void dz_instance_reset( dz_instance_t * const _instance )
 {
     _instance->seed = _instance->init_seed;
@@ -1695,6 +1683,7 @@ void dz_instance_reset( dz_instance_t * const _instance )
     _instance->emit_pause = DZ_FALSE;
     _instance->fixed_step_accumulator = 0.f;
     _instance->birth_order = 0;
+    _instance->path_point_count = 0U;
 
     _instance->partices_count = 0;
     for( dz_uint32_t index = 0; index != _instance->effect->physics_object_count; ++index )
@@ -2052,11 +2041,14 @@ static dz_result_t __emitter_update_instance( const dz_service_t * _service, dz_
             else
             {
                 dz_particle_t p_fake;
-                const dz_result_t setup_result = __emitter_setup_particle( _service, _instance, _emitter_instance, &p_fake, life, spawn_time );
+                dz_bool_t spawned;
+                const dz_result_t setup_result = __emitter_setup_particle( _service, _instance, _emitter_instance, &p_fake, life, spawn_time, &spawned );
                 if( setup_result != DZ_SUCCESSFUL )
                 {
                     return setup_result;
                 }
+
+                DZ_UNUSED( spawned );
             }
 
             count -= 1.f;
@@ -2189,7 +2181,7 @@ static dz_result_t __instance_update_step( const dz_service_t * _service, dz_ins
     }
 
     const dz_float_t effect_life = effect->life;
-    if( effect_life <= 0.f || isfinite( effect_life ) == 0 )
+    if( effect_life <= 0.f || dz_math_is_finite( effect_life ) == DZ_FALSE )
     {
         return DZ_FAILURE_INVALID_DATA;
     }
@@ -2371,7 +2363,25 @@ void dz_instance_get_particle_state( const dz_instance_t * _instance, dz_uint16_
     _state->birth_order = particle->birth_order;
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_instance_get_aabb( const dz_instance_t * _instance, dz_aabb_t * _aabb )
+static void __aabb_add( dz_aabb_t * _aabb, dz_vec3_t _minimum, dz_vec3_t _maximum )
+{
+    if( _aabb->valid == DZ_FALSE )
+    {
+        _aabb->minimum = _minimum;
+        _aabb->maximum = _maximum;
+        _aabb->valid = DZ_TRUE;
+        return;
+    }
+
+    _aabb->minimum.x = DZ_MIN( _aabb->minimum.x, _minimum.x );
+    _aabb->minimum.y = DZ_MIN( _aabb->minimum.y, _minimum.y );
+    _aabb->minimum.z = DZ_MIN( _aabb->minimum.z, _minimum.z );
+    _aabb->maximum.x = DZ_MAX( _aabb->maximum.x, _maximum.x );
+    _aabb->maximum.y = DZ_MAX( _aabb->maximum.y, _maximum.y );
+    _aabb->maximum.z = DZ_MAX( _aabb->maximum.z, _maximum.z );
+}
+//////////////////////////////////////////////////////////////////////////
+void dz_instance_get_aabb( const dz_service_t * _service, const dz_instance_t * _instance, dz_aabb_t * _aabb )
 {
     _aabb->valid = DZ_FALSE;
     _aabb->minimum = dz_math_vec3( 0.f, 0.f, 0.f );
@@ -2381,21 +2391,43 @@ void dz_instance_get_aabb( const dz_instance_t * _instance, dz_aabb_t * _aabb )
     {
         const dz_particle_t * particle = _instance->partices + index;
         const dz_effect_layer_desc_t * layer = _instance->effect->layers + particle->layer_index;
-        dz_float_t extent = DZ_PARTICLE_SIZE * 0.5f * fabsf( particle->scale ) * DZ_MAX( fabsf( particle->aspect ), 1.f );
+        dz_float_t extent = DZ_PARTICLE_SIZE * 0.5f * dz_math_absf( particle->scale ) * DZ_MAX( dz_math_absf( particle->aspect ), 1.f );
         if( particle->texture != DZ_NULLPTR )
         {
-            extent = 0.5f * DZ_MAX( particle->texture->width, particle->texture->height ) * fabsf( particle->scale ) * DZ_MAX( fabsf( particle->aspect ), 1.f );
+            extent = 0.5f * DZ_MAX( particle->texture->width, particle->texture->height ) * dz_math_absf( particle->scale ) * DZ_MAX( dz_math_absf( particle->aspect ), 1.f );
         }
         else if( layer->particle_mode == DZ_PARTICLE_MODE_MESH && layer->mesh_id != DZ_RESOURCE_ID_NONE )
         {
             const dz_mesh_desc_t * mesh = dz_effect_find_mesh( _instance->effect, layer->mesh_id );
             if( mesh != DZ_NULLPTR )
             {
-                const dz_float_t mx = DZ_MAX( fabsf( mesh->bounds.minimum.x ), fabsf( mesh->bounds.maximum.x ) ) * fabsf( layer->scale.x * particle->scale * particle->aspect );
-                const dz_float_t my = DZ_MAX( fabsf( mesh->bounds.minimum.y ), fabsf( mesh->bounds.maximum.y ) ) * fabsf( layer->scale.y * particle->scale );
-                const dz_float_t mz = DZ_MAX( fabsf( mesh->bounds.minimum.z ), fabsf( mesh->bounds.maximum.z ) ) * fabsf( layer->scale.z * particle->scale );
-                extent = sqrtf( mx * mx + my * my + mz * mz );
+                const dz_float_t mx = DZ_MAX( dz_math_absf( mesh->bounds.minimum.x ), dz_math_absf( mesh->bounds.maximum.x ) ) * dz_math_absf( layer->scale.x * particle->scale * particle->aspect );
+                const dz_float_t my = DZ_MAX( dz_math_absf( mesh->bounds.minimum.y ), dz_math_absf( mesh->bounds.maximum.y ) ) * dz_math_absf( layer->scale.y * particle->scale );
+                const dz_float_t mz = DZ_MAX( dz_math_absf( mesh->bounds.minimum.z ), dz_math_absf( mesh->bounds.maximum.z ) ) * dz_math_absf( layer->scale.z * particle->scale );
+                extent = DZ_SQRTF( _service, mx * mx + my * my + mz * mz );
             }
+        }
+
+        if( (layer->particle_mode == DZ_PARTICLE_MODE_BEAM || layer->particle_mode == DZ_PARTICLE_MODE_PATH) && _instance->path_point_count != 0U )
+        {
+            for( dz_uint32_t point_index = 0U; point_index != _instance->path_point_count; ++point_index )
+            {
+                const dz_path_point_t * point = _instance->path_points + point_index;
+                dz_float_t point_extent;
+                if( layer->particle_mode == DZ_PARTICLE_MODE_BEAM )
+                {
+                    point_extent = layer->trail_width * dz_math_absf( particle->scale * point->scale ) * 0.5f;
+                }
+                else
+                {
+                    point_extent = extent * dz_math_absf( point->scale );
+                }
+
+                const dz_vec3_t point_extent3 = dz_math_vec3( point_extent, point_extent, point_extent );
+                __aabb_add( _aabb, dz_math_sub3( point->position, point_extent3 ), dz_math_add3( point->position, point_extent3 ) );
+            }
+
+            continue;
         }
 
         dz_vec3_t segment_start = dz_math_vec3( particle->previous_x, particle->previous_y, particle->previous_z );
@@ -2404,12 +2436,12 @@ void dz_instance_get_aabb( const dz_instance_t * _instance, dz_aabb_t * _aabb )
             const dz_float_t trail_age = DZ_MIN( DZ_MAX( particle->time, 0.f ), layer->trail_lifetime );
             segment_start =
                 dz_math_sub3( dz_math_vec3( particle->x, particle->y, particle->z ), dz_math_mul3( dz_math_vec3( particle->vx, particle->vy, particle->vz ), trail_age ) );
-            extent = DZ_MAX( extent, layer->trail_width * fabsf( particle->scale ) * 0.5f );
+            extent = DZ_MAX( extent, layer->trail_width * dz_math_absf( particle->scale ) * 0.5f );
         }
         else if( layer->particle_mode == DZ_PARTICLE_MODE_BEAM )
         {
             segment_start = dz_math_vec3( particle->birth_x, particle->birth_y, particle->birth_z );
-            extent = DZ_MAX( extent, layer->trail_width * fabsf( particle->scale ) * 0.5f );
+            extent = DZ_MAX( extent, layer->trail_width * dz_math_absf( particle->scale ) * 0.5f );
         }
 
         const dz_vec3_t minimum =
@@ -2417,21 +2449,7 @@ void dz_instance_get_aabb( const dz_instance_t * _instance, dz_aabb_t * _aabb )
         const dz_vec3_t maximum =
             dz_math_vec3( DZ_MAX( particle->x, segment_start.x ) + extent, DZ_MAX( particle->y, segment_start.y ) + extent, DZ_MAX( particle->z, segment_start.z ) + extent );
 
-        if( _aabb->valid == DZ_FALSE )
-        {
-            _aabb->minimum = minimum;
-            _aabb->maximum = maximum;
-            _aabb->valid = DZ_TRUE;
-        }
-        else
-        {
-            _aabb->minimum.x = DZ_MIN( _aabb->minimum.x, minimum.x );
-            _aabb->minimum.y = DZ_MIN( _aabb->minimum.y, minimum.y );
-            _aabb->minimum.z = DZ_MIN( _aabb->minimum.z, minimum.z );
-            _aabb->maximum.x = DZ_MAX( _aabb->maximum.x, maximum.x );
-            _aabb->maximum.y = DZ_MAX( _aabb->maximum.y, maximum.y );
-            _aabb->maximum.z = DZ_MAX( _aabb->maximum.z, maximum.z );
-        }
+        __aabb_add( _aabb, minimum, maximum );
     }
 
 }

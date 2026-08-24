@@ -66,6 +66,21 @@ static dz_float_t dz_test_sinf( dz_float_t _value, dz_userdata_t _ud )
     DZ_UNUSED( _ud );
     return sinf( _value );
 }
+static dz_float_t dz_test_atan2f( dz_float_t _y, dz_float_t _x, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+    return atan2f( _y, _x );
+}
+static dz_float_t dz_test_asinf( dz_float_t _value, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+    return asinf( _value );
+}
+static dz_float_t dz_test_tanf( dz_float_t _value, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+    return tanf( _value );
+}
 
 static void dz_test_service_create( dz_service_t ** _service, dz_test_memory_t * _memory )
 {
@@ -76,6 +91,9 @@ static void dz_test_service_create( dz_service_t ** _service, dz_test_memory_t *
     providers.f_sqrtf = &dz_test_sqrtf;
     providers.f_cosf = &dz_test_cosf;
     providers.f_sinf = &dz_test_sinf;
+    providers.f_atan2f = &dz_test_atan2f;
+    providers.f_asinf = &dz_test_asinf;
+    providers.f_tanf = &dz_test_tanf;
     dz_service_create( _service, &providers, _memory );
 }
 

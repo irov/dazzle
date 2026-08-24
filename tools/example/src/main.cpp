@@ -61,8 +61,35 @@ static dz_float_t dz_sinf( dz_float_t _a, dz_userdata_t _ud )
 
     return value;
 }
+//////////////////////////////////////////////////////////////////////////
+static dz_float_t dz_atan2f( dz_float_t _y, dz_float_t _x, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    dz_float_t value = atan2f( _y, _x );
+
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_float_t dz_asinf( dz_float_t _a, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    dz_float_t value = asinf( _a );
+
+    return value;
+}
+//////////////////////////////////////////////////////////////////////////
+static dz_float_t dz_tanf( dz_float_t _a, dz_userdata_t _ud )
+{
+    DZ_UNUSED( _ud );
+
+    dz_float_t value = tanf( _a );
+
+    return value;
+}
 ////////////////////////////////////////////////////////////////////////////
-//static dz_result_t __set_shape_timeline_const( dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
+//static dz_result_t __set_shape_timeline_const( const dz_service_t * _service, dz_shape_t * _shape, dz_shape_timeline_type_e _type, float _value )
 //{
 //    dz_timeline_key_t * timeline;
 //    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
@@ -77,7 +104,7 @@ static dz_float_t dz_sinf( dz_float_t _a, dz_userdata_t _ud )
 //    return DZ_SUCCESSFUL;
 //}
 //////////////////////////////////////////////////////////////////////////
-static void __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
+static void __set_emitter_timeline_const( const dz_service_t * _service, dz_emitter_t * _emitter, dz_emitter_timeline_type_e _type, dz_float_t _value )
 {
     dz_timeline_key_t * timeline;
     dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
@@ -87,7 +114,7 @@ static void __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t 
     dz_emitter_set_timeline( _emitter, _type, timeline );
 }
 ////////////////////////////////////////////////////////////////////////////
-//static dz_result_t __set_affector_timeline_const( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
+//static dz_result_t __set_affector_timeline_const( const dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, float _value )
 //{
 //    dz_timeline_key_t * timeline;
 //    dz_timeline_key_create( _service, &timeline, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
@@ -102,7 +129,7 @@ static void __set_emitter_timeline_const( dz_service_t * _service, dz_emitter_t 
 //    return DZ_SUCCESSFUL;
 //}
 //////////////////////////////////////////////////////////////////////////
-static void __set_affector_timeline_linear2( dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _time0, dz_float_t _time1, dz_float_t _value0, dz_float_t _value1, dz_float_t _value2 )
+static void __set_affector_timeline_linear2( const dz_service_t * _service, dz_affector_t * _affector, dz_affector_timeline_type_e _type, dz_float_t _time0, dz_float_t _time1, dz_float_t _value0, dz_float_t _value1, dz_float_t _value2 )
 {
     dz_timeline_key_t * key0;
     dz_timeline_key_create( _service, &key0, 0.f, DZ_TIMELINE_KEY_CONST, DZ_NULLPTR );
@@ -300,6 +327,9 @@ int main( int argc, char ** argv )
     providers.f_sqrtf = &dz_sqrtf;
     providers.f_cosf = &dz_cosf;
     providers.f_sinf = &dz_sinf;
+    providers.f_atan2f = &dz_atan2f;
+    providers.f_asinf = &dz_asinf;
+    providers.f_tanf = &dz_tanf;
 
     dz_service_t * service;
     dz_service_create( &service, &providers, DZ_NULLPTR );
@@ -360,7 +390,8 @@ int main( int argc, char ** argv )
         0, 0, 0, 0, 0
     };
 
-    dz_shape_set_mask( shape, mask, 1, 5, 5, 5 );
+    const dz_shape_mask_source_t maskSource = {mask, 5, 5, 5, 1, 0, 0};
+    dz_shape_build_mask( service, shape, &maskSource );
 
     dz_shape_set_mask_scale( shape, 50.f );
 
@@ -490,7 +521,7 @@ int main( int argc, char ** argv )
     wind.strength = 8.f;
     wind.turbulence = 4.f;
     wind.response = DZ_COLLISION_BOUNCE;
-    dz_effect_add_physics_object( effect, &wind, DZ_NULLPTR );
+    dz_effect_add_physics_object( service, effect, &wind, DZ_NULLPTR );
 
     dz_physics_object_desc_t magnet = {};
     magnet.id = 2U;
@@ -501,7 +532,7 @@ int main( int argc, char ** argv )
     magnet.strength = 35.f;
     magnet.falloff = 0.02f;
     magnet.response = DZ_COLLISION_BOUNCE;
-    dz_effect_add_physics_object( effect, &magnet, DZ_NULLPTR );
+    dz_effect_add_physics_object( service, effect, &magnet, DZ_NULLPTR );
 
     dz_physics_object_desc_t plane = {};
     plane.id = 3U;
@@ -513,7 +544,7 @@ int main( int argc, char ** argv )
     plane.restitution = 0.65f;
     plane.friction = 0.1f;
     plane.response = DZ_COLLISION_BOUNCE;
-    dz_effect_add_physics_object( effect, &plane, DZ_NULLPTR );
+    dz_effect_add_physics_object( service, effect, &plane, DZ_NULLPTR );
 
     dz_instance_t * instnace;
     dz_instance_create( service, &instnace, effect, DZ_NULLPTR );
@@ -538,7 +569,7 @@ int main( int argc, char ** argv )
         {
             camera.orthographic_height /= camera_scale;
         }
-        dz_render_instance_camera( &opengl_desc, instnace, &camera );
+        dz_render_instance_camera( service, &opengl_desc, instnace, &camera );
 
         glfwSwapBuffers( fwWindow );
     }

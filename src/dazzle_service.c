@@ -15,7 +15,7 @@ void dz_service_create( dz_service_t ** _service, const dz_service_providers_t *
 
 }
 //////////////////////////////////////////////////////////////////////////
-void dz_service_destroy( dz_service_t * const _service )
+void dz_service_destroy( const dz_service_t * _service )
 {
     DZ_FREE( _service, _service );
 }

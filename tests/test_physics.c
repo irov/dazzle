@@ -110,7 +110,7 @@ int main( void )
     dz_physics_object_desc_t field = default_object( 1U, DZ_PHYSICS_GRAVITY );
     field.direction.z = -1.f;
     field.strength = 20.f;
-    dz_effect_add_physics_object( effect, &field, DZ_NULLPTR );
+    dz_effect_add_physics_object( service, effect, &field, DZ_NULLPTR );
     dz_particle_state_t state;
     DZ_TEST_CHECK( simulate_one( service, effect, 0.3f, &state, &count ) == DZ_SUCCESSFUL && state.velocity.z < baseline.velocity.z );
 
@@ -119,14 +119,14 @@ int main( void )
     field.direction.z = 0.f;
     field.strength = 15.f;
     field.turbulence = 3.f;
-    dz_effect_set_physics_object( effect, 0U, &field );
+    dz_effect_set_physics_object( service, effect, 0U, &field );
     DZ_TEST_CHECK( simulate_one( service, effect, 0.3f, &state, &count ) == DZ_SUCCESSFUL && state.velocity.x != baseline.velocity.x );
 
     field.type = DZ_PHYSICS_MAGNET;
     field.transform.position.z = 10.f;
     field.strength = 30.f;
     field.falloff = 0.1f;
-    dz_effect_set_physics_object( effect, 0U, &field );
+    dz_effect_set_physics_object( service, effect, 0U, &field );
     DZ_TEST_CHECK( simulate_one( service, effect, 0.3f, &state, &count ) == DZ_SUCCESSFUL && state.velocity.z > baseline.velocity.z );
     dz_effect_remove_physics_object( effect, 0U );
 
@@ -137,7 +137,7 @@ int main( void )
     dz_physics_object_desc_t obstacle = default_object( 2U, DZ_PHYSICS_PLANE );
     obstacle.transform.position = obstacle_position;
     obstacle.direction = opposing_normal;
-    dz_effect_add_physics_object( effect, &obstacle, DZ_NULLPTR );
+    dz_effect_add_physics_object( service, effect, &obstacle, DZ_NULLPTR );
     DZ_TEST_CHECK( simulate_one( service, effect, 0.3f, &state, &count ) == DZ_SUCCESSFUL && count == baseline_count );
     DZ_TEST_CHECK( dot3( state.velocity, opposing_normal ) > 0.f );
 
@@ -145,14 +145,14 @@ int main( void )
     obstacle.radius = 1.f;
     obstacle.response = DZ_COLLISION_SLIDE;
     obstacle.friction = 0.f;
-    dz_effect_set_physics_object( effect, 0U, &obstacle );
+    dz_effect_set_physics_object( service, effect, 0U, &obstacle );
     DZ_TEST_CHECK( simulate_one( service, effect, 0.3f, &state, &count ) == DZ_SUCCESSFUL && count == baseline_count );
     DZ_TEST_CHECK( isfinite( state.position.x ) && isfinite( state.position.y ) && isfinite( state.position.z ) );
 
     obstacle.type = DZ_PHYSICS_BOX;
     obstacle.half_extents.x = obstacle.half_extents.y = obstacle.half_extents.z = 1.f;
     obstacle.response = DZ_COLLISION_BOUNCE;
-    dz_effect_set_physics_object( effect, 0U, &obstacle );
+    dz_effect_set_physics_object( service, effect, 0U, &obstacle );
     DZ_TEST_CHECK( simulate_one( service, effect, 0.3f, &state, &count ) == DZ_SUCCESSFUL && count == baseline_count );
     DZ_TEST_CHECK( dot3( state.velocity, direction ) < 0.f );
 
@@ -198,15 +198,15 @@ int main( void )
     obstacle.mesh_id = 77U;
     obstacle.transform.position = (dz_vec3_t){ 0.f, 0.f, 0.f };
     obstacle.response = DZ_COLLISION_KILL;
-    dz_effect_set_physics_object( effect, 0U, &obstacle );
+    dz_effect_set_physics_object( service, effect, 0U, &obstacle );
     DZ_TEST_CHECK( simulate_one( service, effect, 0.3f, &state, &count ) == DZ_SUCCESSFUL && count == 0U );
 
     dz_instance_t * transform_instance = DZ_NULLPTR;
     dz_instance_create( service, &transform_instance, effect, DZ_NULLPTR );
     dz_transform_t moved = obstacle.transform;
     moved.position.z = 100.f;
-    DZ_TEST_CHECK( dz_instance_set_physics_transform( transform_instance, obstacle.id, &moved ) == DZ_SUCCESSFUL );
-    DZ_TEST_CHECK( dz_instance_set_physics_transform( transform_instance, 999U, &moved ) == DZ_FAILURE_INVALID_DATA );
+    DZ_TEST_CHECK( dz_instance_set_physics_transform( service, transform_instance, obstacle.id, &moved ) == DZ_SUCCESSFUL );
+    DZ_TEST_CHECK( dz_instance_set_physics_transform( service, transform_instance, 999U, &moved ) == DZ_FAILURE_INVALID_DATA );
     dz_instance_destroy( service, transform_instance );
 
     dz_effect_destroy( service, effect );

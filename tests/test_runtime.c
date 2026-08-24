@@ -56,7 +56,7 @@ static dz_result_t make_effect( const dz_service_t * service, dz_projection_type
     gravity.direction.y = -1.f;
     gravity.strength = 9.8f;
     gravity.response = DZ_COLLISION_BOUNCE;
-    dz_effect_add_physics_object( *effect, &gravity, DZ_NULLPTR );
+    dz_effect_add_physics_object( service, *effect, &gravity, DZ_NULLPTR );
 
     return DZ_SUCCESSFUL;
 }
@@ -96,9 +96,9 @@ int main( void )
 
     const dz_vec3_t expected_euler = { 23.f, -31.f, 47.f };
     dz_quat_t rotation;
-    dz_quat_from_euler_xyz_degrees( &expected_euler, &rotation );
+    dz_quat_from_euler_xyz_degrees( service, &expected_euler, &rotation );
     dz_vec3_t actual_euler;
-    dz_quat_to_euler_xyz_degrees( &rotation, &actual_euler );
+    dz_quat_to_euler_xyz_degrees( service, &rotation, &actual_euler );
     DZ_TEST_CHECK( fabsf( actual_euler.x - expected_euler.x ) < 0.0001f );
     DZ_TEST_CHECK( fabsf( actual_euler.y - expected_euler.y ) < 0.0001f );
     DZ_TEST_CHECK( fabsf( actual_euler.z - expected_euler.z ) < 0.0001f );
@@ -155,18 +155,18 @@ int main( void )
     memset( &empty_buffers, 0, sizeof( empty_buffers ) );
     empty_buffers.index_type = requirements.index_type;
     dz_uint32_t chunk_count;
-    DZ_TEST_CHECK( dz_instance_fill_render( ortho_instance, &ortho_camera, &empty_buffers, DZ_NULLPTR, 0, &chunk_count ) == DZ_FAILURE_BUFFER_TOO_SMALL );
+    DZ_TEST_CHECK( dz_instance_fill_render( service, ortho_instance, &ortho_camera, &empty_buffers, DZ_NULLPTR, 0, &chunk_count ) == DZ_FAILURE_BUFFER_TOO_SMALL );
 
     dz_aabb_t bounds;
-    dz_instance_get_aabb( ortho_instance, &bounds );
+    dz_instance_get_aabb( service, ortho_instance, &bounds );
     DZ_TEST_CHECK( bounds.valid == DZ_TRUE );
     dz_bool_t visible = DZ_FALSE;
-    dz_camera_test_aabb( &ortho_camera, &bounds, &visible );
+    dz_camera_test_aabb( service, &ortho_camera, &bounds, &visible );
     DZ_TEST_CHECK( visible == DZ_TRUE );
     dz_aabb_t distant = bounds;
     distant.minimum.x += 100000.f;
     distant.maximum.x += 100000.f;
-    dz_camera_test_aabb( &ortho_camera, &distant, &visible );
+    dz_camera_test_aabb( service, &ortho_camera, &distant, &visible );
     DZ_TEST_CHECK( visible == DZ_FALSE );
 
     dz_instance_destroy( service, ortho_instance );

@@ -75,9 +75,23 @@ static dz_result_t make_serialized_effect( const dz_service_t * service, dz_effe
     dz_emitter_t * emitter;
     dz_affector_t * affector;
     dz_material_create( service, &material, DZ_NULLPTR );
-    dz_shape_create( service, &shape, DZ_SHAPE_BOX, DZ_NULLPTR );
+    dz_shape_create( service, &shape, DZ_SHAPE_MASK, DZ_NULLPTR );
     dz_emitter_create( service, &emitter, DZ_NULLPTR );
     dz_affector_create( service, &affector, DZ_NULLPTR );
+
+    static const dz_uint8_t mask[4U * 4U] = {
+        255U, 255U, 255U, 0U,
+        255U, 255U, 255U, 64U,
+        255U, 255U, 255U, 192U,
+        255U, 255U, 255U, 255U
+    };
+    const dz_shape_mask_source_t mask_source = { mask, 2U * 4U, 2U, 2U, 4U, 3U, 10U };
+    dz_shape_build_mask( service, shape, &mask_source );
+    dz_emitter_texture_desc_t emitter_texture_desc;
+    dz_emitter_texture_desc_default( &emitter_texture_desc );
+    emitter_texture_desc.alpha_threshold = 10U;
+    emitter_texture_desc.sample_scale = 2.f;
+    dz_shape_set_emitter_texture_desc( shape, &emitter_texture_desc );
 
     dz_material_pass_desc_t pass;
     memset( &pass, 0, sizeof( pass ) );
@@ -139,13 +153,15 @@ static dz_result_t make_serialized_effect( const dz_service_t * service, dz_effe
     object.restitution = 0.5f;
     object.friction = 0.2f;
     object.response = DZ_COLLISION_BOUNCE;
-    dz_effect_add_physics_object( *effect, &object, DZ_NULLPTR );
+    dz_effect_add_physics_object( service, *effect, &object, DZ_NULLPTR );
 
     return DZ_SUCCESSFUL;
 }
 
 int main( void )
 {
+    DZ_TEST_CHECK( dz_get_version() == 7U );
+
     dz_test_memory_t memory = { 0, 0, 0 };
     dz_service_t * service;
     dz_test_service_create( &service, &memory );
@@ -167,6 +183,20 @@ int main( void )
     dz_uint8_t * data = (dz_uint8_t *)malloc( size );
     DZ_TEST_CHECK( dz_effect_write_memory( source, data, size, &size ) == DZ_SUCCESSFUL );
 
+    const dz_uint8_t magic_byte = data[0];
+    data[0] = 0U;
+    unchanged = source;
+    DZ_TEST_CHECK( read_effect_bytes( service, &unchanged, data, size ) == DZ_FAILURE_INVALID_DATA );
+    DZ_TEST_CHECK( unchanged == source );
+    data[0] = magic_byte;
+
+    const dz_uint8_t version_byte = data[4];
+    data[4] = 4U;
+    unchanged = source;
+    DZ_TEST_CHECK( read_effect_bytes( service, &unchanged, data, size ) == DZ_FAILURE_INVALID_VERSION );
+    DZ_TEST_CHECK( unchanged == source );
+    data[4] = version_byte;
+
     dz_effect_t * roundtrip;
     DZ_TEST_CHECK( read_effect_bytes( service, &roundtrip, data, size ) == DZ_SUCCESSFUL );
     DZ_TEST_CHECK( dz_effect_get_layer_count( roundtrip ) == 1U );
@@ -177,6 +207,20 @@ int main( void )
     dz_effect_get_layer( roundtrip, 0, &loaded_layer );
     DZ_TEST_CHECK( loaded_layer.z == 4.f && loaded_layer.particle_mode == DZ_PARTICLE_MODE_MESH );
     DZ_TEST_CHECK( loaded_layer.mesh_id == 7U && dz_effect_get_mesh_count( roundtrip ) == 1U );
+    dz_shape_mask_source_t loaded_mask_source;
+    dz_shape_get_mask_source( loaded_layer.shape, &loaded_mask_source );
+    DZ_TEST_CHECK( loaded_mask_source.buffer == DZ_NULLPTR && loaded_mask_source.pitch == 8U );
+    DZ_TEST_CHECK( loaded_mask_source.width == 2U && loaded_mask_source.height == 2U );
+    DZ_TEST_CHECK( loaded_mask_source.channel_count == 4U && loaded_mask_source.alpha_channel == 3U && loaded_mask_source.alpha_threshold == 10U );
+    const void * loaded_mask_bits = DZ_NULLPTR;
+    dz_uint32_t loaded_mask_pitch = 0U;
+    dz_shape_get_mask_bits( loaded_layer.shape, &loaded_mask_bits, &loaded_mask_pitch );
+    DZ_TEST_CHECK( loaded_mask_bits != DZ_NULLPTR && loaded_mask_pitch == 1U );
+    DZ_TEST_CHECK( memcmp( loaded_mask_bits, "\x02\x03", 2U ) == 0 );
+    dz_emitter_texture_desc_t loaded_emitter_texture_desc;
+    DZ_TEST_CHECK( dz_shape_get_emitter_texture_desc( loaded_layer.shape, &loaded_emitter_texture_desc ) == DZ_TRUE );
+    DZ_TEST_CHECK( loaded_emitter_texture_desc.alpha_threshold == 10U && loaded_emitter_texture_desc.sample_scale == 2.f );
+    DZ_TEST_CHECK( dz_effect_requires_emitter_texture( roundtrip ) == DZ_TRUE );
     dz_mesh_desc_t loaded_mesh;
     DZ_TEST_CHECK( dz_effect_get_mesh( roundtrip, 7U, &loaded_mesh ) == DZ_SUCCESSFUL && loaded_mesh.vertex_count == 4U && loaded_mesh.index_count == 12U );
     DZ_TEST_CHECK( dz_material_get_pass_count( loaded_layer.material ) == 2U );
